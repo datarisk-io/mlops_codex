@@ -4,7 +4,8 @@ setup(
     name='Neomaril Logger',
     version='1.0',
     install_requires = [
-        'hy'
+        'hy==1.0a1',
+        'funcparserlib==1.0.0a0'
     ],
-    packages=['.neomaril-logger'],
+    packages=['.neomaril_logger'],
 )
