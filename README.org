@@ -1,0 +1,16 @@
+#+TITLE: Neomaril Logger
+
+* About
+
+* How to generate a package
+
+#+BEGIN_SRC shell
+  pip install virtualenv venv
+#+END_SRC
+
+#+BEGIN_SRC shell
+  pip install wheel setuptools
+  python setup.py bdist_wheel --universal
+#+END_SRC
+
+
