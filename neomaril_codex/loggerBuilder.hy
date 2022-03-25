@@ -15,9 +15,9 @@
     (if (self.level? level)
         (if self.logToFile
             (with [file (open (+ (str (datetime.datetime.now)) ".log") "a")]
-              (.write file (+ "[" level "]: " message "\n"))
+              (.write file (+ "[" level "] " message " [" level "]" "\n"))
               (.close file))
-            (print :flush True (+ "[" level "]: " message)))
+            (print :flush True (+ "[" level "] " message " [" level "]")))
         (raise (Exception (+ "Invalid level on class definition '" level "'")))))
 
   (defn logDebug [self message]

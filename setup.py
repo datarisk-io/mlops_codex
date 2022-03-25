@@ -7,5 +7,8 @@ setup(
         'hy==1.0a1',
         'funcparserlib==1.0.0a0'
     ],
-    packages=['.neomaril_logger'],
+    package_data={
+		"neomaril_codex": ["*.hy"],
+	},
+    zip_safe=False,
 )
