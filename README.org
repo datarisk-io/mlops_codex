@@ -1,16 +1,31 @@
-#+TITLE: Neomaril Logger
+#+TITLE: Neomaril Codex
 
 * About
+Package for interacting with [[https://gitlab.com/datarisk-dev/product/mlops/proof-of-concept/neomaril][Neomaril]], a tool for deploying ML models.
 
-* How to generate a package
+** How to generate a package
 
+Install poetry
 #+BEGIN_SRC shell
-  pip install virtualenv venv
+  pip install poetry
 #+END_SRC
 
+Install the package
 #+BEGIN_SRC shell
-  pip install wheel setuptools
-  python setup.py bdist_wheel --universal
+  poetry shell
+  poetry install
 #+END_SRC
 
+** Publish
 
+Add the repository (this only need to be done once)
+#+BEGIN_SRC shell
+  poetry config repositories.neomaril-codex https://gitlab.com/api/v4/projects/34747110/packages/pypi
+  poetry config http-basic.neomaril-codex {username} {personal acess token}
+#+END_SRC
+
+Publish
+#+BEGIN_SRC shell
+  poetry build -f wheel
+  poetry publish -r neomaril-codex
+#+END_SRC
