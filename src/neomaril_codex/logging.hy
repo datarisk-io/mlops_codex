@@ -1,4 +1,4 @@
-(import datetime)
+(import time)
 (import os)
 
 (defclass Logger [object]
@@ -16,9 +16,10 @@
         file (bool, optional): Should the logs be saved in a file. Defaults to False.
         filePath (str, optional): Path where the log file will be save. Defaults to './'."
 
-    (setv self.levels (list (map (fn [x] (hy.models.Symbol x)) levels)))
+    (setv self.levels (list (map (fn [x] (hy.models.Symbol x)) (+ levels ["OUTPUT"]))))
     (setv self.logToFile file)
-    (setv self.filePath filePath))
+    (setv self.filePath filePath)
+    (setv self.accumulator ""))
   
   (defn __level? [self symbol]
     (if (in (hy.models.Symbol symbol) self.levels)
@@ -37,10 +38,11 @@
           (if self.logToFile
             (do
               (os.makedirs self.filePath :exist_ok True) 
-              (with [file (open (+ self.filePath (str (datetime.date.today)) ".log") "a")]
-                  (.write file (+ "[" level "] - " (str (datetime.datetime.now)) " - " message " [" level "]" "\n"))
+              (with [file (open (+ self.filePath (.replace (str (time.time)) "." "") ".log") "a")]
+                  (.write file (+ "[" level "]" message "[" level "]" "\n"))
                   (.close file))))
-          (print :flush True (+ "[" level "] - " (str (datetime.datetime.now)) " - " message " [" level "]")))
+          (print :flush True (+ "[" level "]" message "[" level "]")
+          (+= self.accumulator (+ "[" level "]" message "[" level "]\n"))))
         (raise (Exception (+ "Invalid level on class definition '" level "'")))))
 
   (defn info [self message]
@@ -69,4 +71,15 @@
 
     Args:
         message (str): Message that will be logged"
-    (self.log 'ERROR message)))
+    (self.log 'ERROR message))
+    
+  (defn callback [self final_response]
+    "Adds the final output to the logs and returns 
+    the accumulative object for Neomaril
+    
+    Args:
+        final_response (ISerializable): Any type that can be 
+        serializable, such as a dictionary or list
+    "
+    (self.log 'OUTPUT (str final_response))
+    self.accumulator))
