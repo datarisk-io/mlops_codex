@@ -1,0 +1,18 @@
+
+{
+    "period": "week",
+    "train_data": {
+        "mlflow_model_name": "Teste",
+        "mlflow_model_version": "1",
+        "train_date_ref": "2022-09-01"
+    },
+    "input_cols": ["mean radius", "mean texture", "mean perimeter", "mean area", "mean smoothness", "mean compactness", 
+                  "mean concavity", "mean concave points", "mean symmetry", "mean fractal dimension", "radius error",
+                  "texture error", "perimeter error", "area error", "smoothness error", "compactness error", 
+                  "concavity error", "concave points error", "symmetry error", "fractal dimension error", "worst radius",
+                  "worst texture", "worst perimeter", "worst area", "worst smoothness", "worst compactness", "worst concavity",
+                  "worst concave points", "worst symmetry", "worst fractal dimension"],
+    "output_cols": ["score"]
+}
+
+

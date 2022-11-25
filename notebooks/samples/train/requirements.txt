@@ -1,0 +1,4 @@
+pandas==1.4.0
+xgboost==1.5.2
+scikit-learn==1.0.2
+setuptools
