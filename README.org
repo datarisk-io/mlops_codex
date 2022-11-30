@@ -1,7 +1,7 @@
 #+TITLE: Neomaril Codex
 
 * About
-Package for interacting with [[https://gitlab.com/datarisk-dev/product/mlops/proof-of-concept/neomaril][Neomaril]], a tool for deploying ML models.
+Package for interacting with [[https://github.com/datarisk-io/neomaril][Neomaril]], a tool for deploying ML models.
 
 ** How to generate a package
 
