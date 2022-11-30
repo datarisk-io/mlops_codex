@@ -10,6 +10,18 @@ class ModelError(Exception):
     """Raised when a model is not avaliable"""
     pass
 
+class GroupError(Exception):
+    """Raised when a group is not avaliable"""
+    pass
+
+class ExecutionError(Exception):
+    """Raised when a execution is not avaliable"""
+    pass
+
+class TrainingError(Exception):
+    """Raised when a training is not avaliable"""
+    pass
+
 class InputError(Exception):
     """Raised when a user input is not valid"""
     pass
