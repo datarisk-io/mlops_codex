@@ -15,17 +15,3 @@ Install the package
   poetry shell
   poetry install
 #+END_SRC
-
-** Publish
-
-Add the repository (this only need to be done once)
-#+BEGIN_SRC shell
-  poetry config repositories.neomaril-codex https://gitlab.com/api/v4/projects/34747110/packages/pypi
-  poetry config http-basic.neomaril-codex {username} {personal acess token}
-#+END_SRC
-
-Publish
-#+BEGIN_SRC shell
-  poetry build -f wheel
-  poetry publish -r neomaril-codex
-#+END_SRC
