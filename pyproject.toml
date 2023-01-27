@@ -5,7 +5,7 @@ description = "Package for interacting with Neomaril, a tool for deploying ML mo
 authors = ["jonathan.carvalho <jonathan.carvalho@datarisk.io>"]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.7"
 requests = "2.26.0"
 
 [tool.poetry.dev-dependencies]
