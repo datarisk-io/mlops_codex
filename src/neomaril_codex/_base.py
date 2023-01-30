@@ -1,32 +1,64 @@
-from typing import Optional
 import requests
+from datetime import datetime, timedelta
+from typing import Optional
+from loguru import logger
 
-from neomaril_codex.logging import Logger
 from neomaril_codex.exceptions import *
 
 def try_login(password:str, base_url:str) -> bool:
 
     response = requests.get(f"{base_url}/health", headers={'Authorization': 'Bearer ' + password})
-    
+
     server_status = response.status_code
-    
+
     if server_status == 200:
       return response.json()['Version']
-      
+
     elif server_status == 401:
       raise AuthenticationError('Invalid credentials.')
-    
+
     elif server_status >= 500:
       raise ServerError('Neomaril server unavailable at the moment.')
 
 class BaseNeomaril(object):
-  """Base class for others Neomaril related classes.
-  """
+    """Base class for others Neomaril related classes.
+    """
 
-  def __init__(self) -> None:
-    self.production_url = "http://neomaril.datarisk.net/api"
-    self.staging_url = "http://neomaril.staging.datarisk.net/api"
-    self.log = Logger()
+    def __init__(self) -> None:
+        self.production_url = "http://neomaril.datarisk.net/api"
+        self.staging_url = "http://localhost:7070/api"
+
+
+    def logs(url, creds, start:Optional[str]=None, end:Optional[str]=None, routine:Optional[str]=None, type:Optional[str]=None):
+        
+        query = {}
+       
+        if not start and not end:
+            end = datetime.today().strftime("%d-%m-%Y")
+            start = (datetime.today() - timedelta(days=7)).strftime("%d-%m-%Y")
+
+        if not start and end:
+            start = (datetime.strptime(end, "%d-%m-%Y") - timedelta(days=7)).strftime("%d-%m-%Y")
+
+        if start and not end:
+            end = (datetime.strptime(start, "%d-%m-%Y") + timedelta(days=7)).strftime("%d-%m-%Y")
+
+        if routine:
+            assert routine in ['Run', 'Host']
+            query['routine'] = routine
+
+        if type:
+            assert type in ['Ok', 'Error', 'Debug', 'Warning']
+            query['type'] = type
+
+        response = requests.get(url, params=query,
+                            headers={'Authorization': 'Bearer ' + creds})
+    
+        if response.status_code == 200: 
+            return response.json()
+        else:
+            raise ServerError('Unexpected server error: ', response.text)
+
 
 class BaseNeomarilClient(BaseNeomaril):
   """Base class for others client related classes.
@@ -35,20 +67,20 @@ class BaseNeomarilClient(BaseNeomaril):
     super().__init__()
     self.__credentials = password
     if test_enviroment:
-      self.enviroment = "Staging"
-      self.base_url = self.staging_url
-      self.log.info("You are using the test enviroment that will have the data cleaned from time to time. If your model is ready to use change the flag test_enviroment to False")
-      
+        self.enviroment = "Staging"
+        self.base_url = self.staging_url
+        logger.info("You are using the test enviroment that will have the data cleaned from time to time. If your model is ready to use change the flag test_enviroment to False")
+
     else:
-      raise NotImplementedError
-      # self.enviroment = "Production"
-      # self.base_url = self.production_url
-      # self.log.info("You are using the production enviroment, please use the test enviroment if you are still developing the model.")
+        raise NotImplementedError
+        # self.enviroment = "Production"
+        # self.base_url = self.production_url
+        # logger.info("You are using the production enviroment, please use the test enviroment if you are still developing the model.")
 
     self.client_version = try_login(self.__credentials, self.base_url)
-    self.log.info(f"Successfully connected to Neomaril")
+    logger.info(f"Successfully connected to Neomaril")
 
-  
+
   def list_groups(self) -> list:
     """List existing groups
 
@@ -61,16 +93,16 @@ class BaseNeomarilClient(BaseNeomaril):
 
     url = f"{self.base_url}/groups"
     response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
-    
+
     if response.status_code == 200:
-      results = response.json()['Results']
-      
-      return results
+        results = response.json()['Results']
+
+        return results
     else:
-      raise ServerError('Unexpected server error: ', response.text)
+        raise ServerError('Unexpected server error: ', response.text)
 
 
-  def create_group(self, name:str, description:str) -> bool: 
+  def create_group(self, name:str, description:str) -> bool:
     """Create a group for multiple models of the same final client
 
     Args:
@@ -90,15 +122,15 @@ class BaseNeomarilClient(BaseNeomaril):
                              headers={'Authorization': 'Bearer ' + self.__credentials})
 
     if response.status_code == 201:
-      self.log.info(response.json()['Message'])
-      return True
+        logger.info(response.json()['Message'])
+        return True
     elif response.status_code == 400:
-      self.log.error("Group already exist, nothing was changed.")
-      return False
+        logger.error("Group already exist, nothing was changed.")
+        return False
     else:
-      raise ServerError('Unexpected server error: ', response.text)
+        raise ServerError('Unexpected server error: ', response.text)
 
-  def refresh_group_token(self, name:str, force:bool=False) -> bool: 
+  def refresh_group_token(self, name:str, force:bool=False) -> bool:
     """Create a group for multiple models of the same final client
 
     Args:
@@ -117,9 +149,9 @@ class BaseNeomarilClient(BaseNeomaril):
                              headers={'Authorization': 'Bearer ' + self.__credentials})
 
     if response.status_code == 201:
-      return response.json()['Message']
+        return response.json()['Message']
     else:
-      raise ServerError('Unexpected server error: ', response.text)
+        raise ServerError('Unexpected server error: ', response.text)
 
 
 class NeomarilExecution(BaseNeomaril):
@@ -135,29 +167,29 @@ class NeomarilExecution(BaseNeomaril):
     self.__credentials = password
 
     if enviroment == "Staging":
-      self.base_url = self.staging_url
-      self.mlflow_url = 'https://mlflow.staging.datarisk.net/'
+        self.base_url = self.staging_url
+        self.mlflow_url = 'https://mlflow.staging.datarisk.net/'
     else:
-      self.base_url = self.production_url
-      self.mlflow_url = 'https://mlflow.datarisk.net/'
+        self.base_url = self.production_url
+        self.mlflow_url = 'https://mlflow.datarisk.net/'
 
     try_login(self.__credentials, self.base_url)
 
     if exec_type == 'AsyncModel':
-      self.__url_path = 'model/async'
-      del self.mlflow_url
+        self.__url_path = 'model/async'
+        del self.mlflow_url
     elif exec_type == 'Training':
-      self.__url_path = 'training'
+        self.__url_path = 'training'
     else:
-      raise InputError(f"Invalid execution type '{exec_type}'. Valid options are 'AsyncModel' and 'Training'")
+        raise InputError(f"Invalid execution type '{exec_type}'. Valid options are 'AsyncModel' and 'Training'")
 
     url = f"{self.base_url}/{self.__url_path}/status/{self.exec_id}"
     response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
     if response.status_code not in [200, 410]:
-      raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
-    
+        raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
+
     result = response.json()
-    
+
     self.status = result['Status']
 
   def __repr__(self) -> str:
@@ -179,15 +211,15 @@ class NeomarilExecution(BaseNeomaril):
     url = f"{self.base_url}/{self.__url_path}/status/{self.exec_id}"
     response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
     if response.status_code not in [200, 410]:
-      self.log.error(response.text)
-      raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
-    
+        logger.error(response.text)
+        raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
+
     result = response.json()
-    
+
     self.status = result['Status']
     if self.status == 'Succeeded':
-      if self.exec_type == 'Training':
-        self.log.info(f'You can check the run info in {self.mlflow_url} ')
+        if self.exec_type == 'Training':
+            logger.info(f'You can check the run info in {self.mlflow_url} ')
 
     return result
 
@@ -204,21 +236,21 @@ class NeomarilExecution(BaseNeomaril):
       self.status = self.get_status()['Status']
 
     if self.status == 'Succeeded':
-      url = f"{self.base_url}/{self.__url_path}/result/{self.exec_id}"
-      response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
-      if response.status_code not in [200, 410]:
-        self.log.error(response.text)
-        raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
+        url = f"{self.base_url}/{self.__url_path}/result/{self.exec_id}"
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
+        if response.status_code not in [200, 410]:
+            logger.error(response.text)
+            raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
 
-      filename = f'output_{self.exec_id}.zip'
-      if not path.endswith('/'):
-        filename = '/'+filename
+        filename = f'output_{self.exec_id}.zip'
+        if not path.endswith('/'):
+            filename = '/'+filename
 
-      with open(path+filename, 'wb') as f:
-        f.write(response.content)
-      
-      self.log.info(f'Output saved in {path+filename}')
+        with open(path+filename, 'wb') as f:
+            f.write(response.content)
+
+        logger.info(f'Output saved in {path+filename}')
     elif self.status == 'Failed':
-      raise ExecutionError("Execution failed")
+        raise ExecutionError("Execution failed")
     else:
-      self.log.info(f'Execution not ready. Status is {self.status}')
+        logger.info(f'Execution not ready. Status is {self.status}')
