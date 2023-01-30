@@ -1,0 +1,12 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+neomaril-codex = {path = "."}
+
+[dev-packages]
+notebook = "==6.5.2"
+ipykernel = "*"
+pydata-sphinx-theme = "*"

@@ -5,13 +5,13 @@ Package for interacting with [[https://github.com/datarisk-io/neomaril][Neomaril
 
 ** How to generate a package
 
-Install poetry
+Install pipenv
 #+BEGIN_SRC shell
-  pip install poetry
+  pip install pipenv
 #+END_SRC
 
 Install the package
 #+BEGIN_SRC shell
-  poetry shell
-  poetry install
+  pipenv install
+  pipenv shell
 #+END_SRC
