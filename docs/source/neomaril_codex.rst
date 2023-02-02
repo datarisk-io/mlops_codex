@@ -1,14 +1,40 @@
-======================
-neomaril_codex package
-======================
+neomaril\_codex package
+=======================
 
-.. toctree::
-   :maxdepth: 4
+Submodules
+----------
 
-   neomaril_codex.logging
-   neomaril_codex.model
-   neomaril_codex.training
+neomaril\_codex.exceptions module
+---------------------------------
 
+.. automodule:: neomaril_codex.exceptions
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+neomaril\_codex.logging module
+------------------------------
+
+.. automodule:: neomaril_codex.logging
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+neomaril\_codex.model module
+----------------------------
+
+.. automodule:: neomaril_codex.model
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+neomaril\_codex.training module
+-------------------------------
+
+.. automodule:: neomaril_codex.training
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Module contents
 ---------------
@@ -16,4 +42,4 @@ Module contents
 .. automodule:: neomaril_codex
    :members:
    :undoc-members:
-   :show-inheritaneomaril_codexe:
+   :show-inheritance:
