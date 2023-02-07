@@ -3,15 +3,15 @@
 * About
 Package for interacting with [[https://github.com/datarisk-io/neomaril][Neomaril]], a tool for deploying ML models.
 
-** How to generate a package
+** For developers
 
-Install poetry
+Install pipenv
 #+BEGIN_SRC shell
-  pip install poetry
+  pip install pipenv
 #+END_SRC
 
-Install the package
+Install the package enviroment
 #+BEGIN_SRC shell
-  poetry shell
-  poetry install
+  pipenv update --dev
+  pipenv shell
 #+END_SRC

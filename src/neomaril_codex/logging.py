@@ -1,72 +1,79 @@
 import time
 import os
 
+from neomaril_codex.exceptions import InputError
+
 class Logger(object):
-  """Neomaril custom logger for model scripts.
-  Neomaril has a log parser that clean logs and tries to find useful information.
-  Since there are a lot of logger types is hard to create the perfect parser, so using this one helps our model script being parsed by Neomaril and sending cleaner messages"""
-  
-  def __init__(self, levels=[], file=False, filePath="./"):
     """Neomaril custom logger for model scripts.
-     Neomaril has a log parser that clean logs and tries to find useful information.
-     Since there are a lot of logger types is hard to create the perfect parser, so using this one helps our model script being parsed by Neomaril and sending cleaner messages
-
-    Args:
-        levels (list, optional): Log levels allowed. You can create new levels, and the logger will make sure the right format is being used. Defaults to ['INFO', 'DEBUG', 'WARNING', 'ERROR'].
-        file (bool, optional): Should the logs be saved in a file. Defaults to False.
-        filePath (str, optional): Path where the log file will be save. Defaults to './'."""
-
-    self.levels=levels+["OUTPUT", "INFO", "DEBUG", "WARNING", "ERROR"]
-    self.logToFile=file
-    self.filePath=filePath
-  
-  def __level(self, symbol):
-    return symbol in self.levels
-
-  
-  def log(self, level, message):
-    """Base logger function used by others. Use for custom levels.
-
-    Args:
-        level (str): Log level (must be one used when initiating the logger)
-        message (str): Message that will be logged"""
+    Neomaril has a log parser that clean logs and tries to find useful information.
+    Since there are a lot of logger types is hard to create the perfect parser, so using this one helps your model script being parsed by Neomaril and sending cleaner messages"""
     
-    if self.__level(level):
-      log_message = f"[{level}]{message}[{level}]"
-      if self.logToFile:
-        os.makedirs(self.filePath, exist_ok=True)
+    def __init__(self, model_type):
+        """Neomaril custom logger for model scripts.
+        Neomaril has a log parser that clean logs and tries to find useful information.
+        Since there are a lot of logger types is hard to create the perfect parser, so using this one helps your model script being parsed by Neomaril and sending cleaner messages
+
+        Args:
+        model_type (str): Model operation type. Could be Sync or Async
+        """
+        self.operation = model_type
+        self.levels=["OUTPUT", "DEBUG", "WARNING", "ERROR"]
+        self.data = ''
         
-        with open(self.filePath+str(time.time()).replace(".", "")+".log", "a") as file:
-            file.write(log_message+"\n")
+    def __log(self, level, message):
+        """Base logger function used by others.
+
+        Args:
+            level (str): Log level (must be one used when initiating the logger)
+            message (str): Message that will be logged"""
         
-      print(log_message)
-    else:
-      raise Exception(f"Invalid level on class definition '{level}'")
+        if level in self.levels:
+            log_message = f"[{level}]{message}[{level}]"
 
-  def info(self, message):
-    """Short for .log('INFO', message)
+            if self.operation.title() == 'Sync':
+                self.data += log_message
 
-    Args:
-        message (str): Message that will be logged"""
-    self.log('INFO', message)
+            else: 
+                base_path = os.getenv('BASE_PATH')
+                exec_id = os.getenv('EXECUTION_ID')
+                if base_path and exec_id:
+                    with open(f"{base_path}/{exec_id}/output/execution.log", "a") as file:
+                        file.write(log_message+"\n")
+                print(log_message)
 
-  def debug(self, message):
-    """Short for .log('DEBUG', message)
+        else:
+            raise InputError(f'Invalid level {level}. Valid options are {" ".join(self.levels)}')
 
-    Args:
-        message (str): Message that will be logged"""
-    self.log('DEBUG', message)
 
-  def warning(self, message):
-    """Short for .log('WARNING', message)
+    def debug(self, message):
+        """Logs a DEBUG message
 
-    Args:
-        message (str): Message that will be logged"""
-    self.log('WARNING', message)
+        Args:
+                message (str): Message that will be logged"""
+        self.__log('DEBUG', message)
 
-  def error(self, message):
-    """Short for .log('ERROR', message)
+    def warning(self, message):
+        """Logs a WARNING message
 
-    Args:
-        message (str): Message that will be logged"""
-    self.log('ERROR', message)
+        Args:
+                message (str): Message that will be logged"""
+        self.__log('WARNING', message)
+
+    def error(self, message):
+        """Logs a ERROR message
+
+        Args:
+                message (str): Message that will be logged"""
+        self.__log('ERROR', message)
+
+
+    def callback(self, output):
+        """Logs a ERROR message
+
+        Args:
+                message (str): Message that will be logged"""
+        if self.operation == "Sync":
+            self.__log('OUTPUT', output)
+            return self.data
+        else:
+            raise InputError('callback function should only used in Sync models')
