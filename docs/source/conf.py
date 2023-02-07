@@ -74,6 +74,11 @@ html_theme_options = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-html_logo = "_static/logo.png"
+html_theme_options = {
+   "logo": {
+      "image_light": "_static/logo.png",
+      "image_dark": "_static/logo.png",
+   }
+}
 
 source_suffix = [".rst"]

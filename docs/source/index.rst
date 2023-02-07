@@ -9,25 +9,22 @@ Neomaril-Codex
 Package for interacting with Neomaril, a tool for deploying ML models.
 
 
-How to generate a package
--------------------------
+Getting started
+---------------
 
-Install pipenv
-
-.. code:: python
-
-   pip install pipenv
-
-Install the package
+Installation
 
 .. code:: python
 
-   pipenv install
-   pipenv shell
+   pip install neomaril-codex
+
+
+API Reference
+-------------
 
 .. toctree::
    :maxdepth: 1
-   :caption: Contents:
+   :caption: Docs:
 
    modules
 
@@ -36,6 +33,7 @@ Maintainers
 -----------
 
 - Manuella Dias Cruz: https://github.com/ManuDiasCruz
+- Jonathan Carvalho: https://github.com/johnrc90
 
 
 Indices and tables
