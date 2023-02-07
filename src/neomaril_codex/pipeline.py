@@ -1,7 +1,7 @@
 import os
 import yaml
 import json
-os.getenv('')from loguru import logger
+from loguru import logger
 from typing import Optional
 from datetime import datetime
 
