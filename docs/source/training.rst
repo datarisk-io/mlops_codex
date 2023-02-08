@@ -1,9 +1,5 @@
-neomaril\_codex Training module
+Training module
 ===============================
-
-Module contents
----------------
-
 
 neomaril\_codex.training
 ------------------------

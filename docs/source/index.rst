@@ -28,6 +28,9 @@ API Reference
 
    modules
 
+`Examples <https://github.com/datarisk-io/mlops-neomaril-codex/tree/master/notebooks>`_
+
+
 
 Maintainers
 -----------

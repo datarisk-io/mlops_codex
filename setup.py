@@ -2,7 +2,7 @@ from os.path import join
 
 from setuptools import setup, find_packages
 
-MODULE_NAME = 'neomaril_codex'
+MODULE_NAME = 'neomaril-codex'
 MODULE_NAME_IMPORT = 'neomaril_codex'
 REPO_NAME = 'mlops-neomaril-codex'
 MODULE_VERSION='0.1'

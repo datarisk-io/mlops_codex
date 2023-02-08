@@ -1,9 +1,5 @@
-neomaril\_codex Pipeline module
+Pipeline module
 ===============================
-
-Module contents
----------------
-
 
 neomaril\_codex.pipeline
 ------------------------
