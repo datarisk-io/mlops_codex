@@ -1,0 +1,33 @@
+enviroment: staging
+group: datarisk
+python_version: 3.9
+training:
+    training_type: Custom
+    model_type: Classification
+    experiment_name: Teste
+    run_name: Teste 123
+    directory: ./samples/train
+    source: app.py
+    train_function: train_model
+    packages: requirements.txt
+    data: dados.csv
+    extra:
+scoring:
+    name: Teste
+    operation: Sync
+    directory: ./samples/syncModel
+    model:
+    source: app.py
+    score_function: score
+    schema: schema.json
+    input_type: json
+    extra:
+    env:
+monitoring:
+    directory: ./samples/monitoring
+    preprocess: preprocess.py
+    preprocess_function: score
+    shap_function: score
+    config: configuration.json
+    packages: requirements.txt
+
