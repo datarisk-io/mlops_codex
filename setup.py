@@ -23,4 +23,4 @@ setup(name=MODULE_NAME,
       install_requires=requirements_from_pip(),
       include_package_data=True,
       zip_safe=False,
-      classifiers=['Programming Language :: Python :: 3.9'])
+      classifiers=['Programming Language :: Python :: 3'])
