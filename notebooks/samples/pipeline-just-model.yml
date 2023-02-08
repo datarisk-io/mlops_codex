@@ -1,0 +1,15 @@
+enviroment: staging
+group: datarisk
+python_version: 3.9
+scoring:
+    name: Teste
+    operation: Async
+    directory: ./samples/asyncModel
+    model: model.pkl
+    packages: requirements.txt
+    source: app.py
+    score_function: score
+    input_type: csv
+    schema: 
+    extra:
+    env:

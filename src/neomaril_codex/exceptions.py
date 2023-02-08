@@ -25,3 +25,7 @@ class TrainingError(Exception):
 class InputError(Exception):
     """Raised when a user input is not valid"""
     pass
+
+class PipelineError(Exception):
+    """Raised when the pipeline configuration is invalid"""
+    pass
