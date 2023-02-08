@@ -21,7 +21,7 @@ def try_login(password:str, base_url:str) -> bool:
     elif server_status >= 500:
       raise ServerError('Neomaril server unavailable at the moment.')
 
-class BaseNeomaril(object):
+class BaseNeomaril:
     """Base class for others Neomaril related classes.
     """
 
@@ -65,11 +65,11 @@ class BaseNeomaril(object):
 class BaseNeomarilClient(BaseNeomaril):
 	"""Base class for others client related classes.
 	"""
-	def __init__(self, password:str, enviroment:str='staging') -> None:
+	def __init__(self, password:str='', enviroment:str='staging') -> None:
 		super().__init__()
 		load_dotenv()
 
-		self.__credentials = password
+		self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
 		self.enviroment = os.getenv('NEOMARIL_ENVIROMENT') if os.getenv('NEOMARIL_ENVIROMENT') else enviroment
 
 		if self.enviroment == 'dev':

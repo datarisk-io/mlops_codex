@@ -9,21 +9,21 @@ from neomaril_codex.exceptions import *
 from neomaril_codex.training import *
 from neomaril_codex.model import *
 
-class NeomarilPipeline(object):
+class NeomarilPipeline:
     def __init__(self, password:str, group:str, enviroment:str='staging', python_version:float=3.9) -> None:
-        self.__credentials = password
-        self.enviroment = enviroment
+        self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
+        self.enviroment = os.getenv('NEOMARIL_ENVIROMENT') if os.getenv('NEOMARIL_ENVIROMENT') else enviroment
         self.group = group
         self.python_version = python_version
         self.train_config = None
-        self.score_config = None
+        self.deploy_config = None
         self.monitoring_config = None
 
     def register_train_config(self, **kwargs):
         self.train_config = kwargs
 
-    def register_score_config(self, **kwargs):
-        self.score_config = kwargs
+    def register_deploy_config(self, **kwargs):
+        self.deploy_config = kwargs
 
     def register_monitoring_config(self, **kwargs):
         self.monitoring_config = kwargs
@@ -47,8 +47,8 @@ class NeomarilPipeline(object):
         if 'training' in conf.keys():
             pipeline.register_train_config(**conf['training'])
 
-        if 'scoring' in conf.keys():
-            pipeline.register_score_config(**conf['scoring'])
+        if 'deploy' in conf.keys():
+            pipeline.register_deploy_config(**conf['deploy'])
 
         if 'monitoring' in conf.keys():
             pipeline.register_monitoring_config(**conf['monitoring'])
@@ -85,8 +85,8 @@ class NeomarilPipeline(object):
         else:
             raise TrainingError('Training failed: '+status['Message'])
 
-    def run_scoring(self, training_id:Optional[str]=None):
-        conf = self.score_config
+    def run_deploy(self, training_id:Optional[str]=None):
+        conf = self.deploy_config
         PATH = conf['directory']
         extra_files = conf.get('extra')
 
@@ -156,7 +156,7 @@ class NeomarilPipeline(object):
                            
     
     def start(self):
-        if (not self.train_config) and (not self.score_config) and (not self.monitoring_config):
+        if (not self.train_config) and (not self.deploy_config) and (not self.monitoring_config):
             raise PipelineError("Cannot start pipeline without configuration")
 
         if self.train_config:
@@ -164,8 +164,8 @@ class NeomarilPipeline(object):
         else:
             training_id = None
 
-        if self.score_config:
-            model_id = self.run_scoring(training_id=training_id)
+        if self.deploy_config:
+            model_id = self.run_deploy(training_id=training_id)
         else:
             model_id = None
 

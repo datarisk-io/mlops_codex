@@ -1,9 +1,6 @@
-neomaril\_codex Exceptions module
+Exceptions module
 =================================
 
-Module contents
-
----------------
 
 neomaril\_codex.exceptions
 --------------------------
