@@ -4,42 +4,28 @@ neomaril\_codex package
 Submodules
 ----------
 
-neomaril\_codex.model module
-----------------------------
-
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 5
 
    model
 
-neomaril\_codex.training module
--------------------------------
-
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 5
 
    training
 
-neomaril\_codex.pipeline module
--------------------------------
-
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 5
 
    pipeline
 
-neomaril\_codex.logging module
-------------------------------
-
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 5
 
    logging
 
-neomaril\_codex.exceptions module
----------------------------------
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 5
 
    exceptions

@@ -12,7 +12,7 @@ training:
     packages: requirements.txt
     data: dados.csv
     extra:
-scoring:
+deploy:
     name: Teste
     operation: Sync
     directory: ./samples/syncModel

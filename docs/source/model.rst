@@ -1,9 +1,6 @@
-neomaril\_codex Model module
+Model module
 ============================
 
-
-Module contents
----------------
 
 neomaril\_codex.model
 ---------------------

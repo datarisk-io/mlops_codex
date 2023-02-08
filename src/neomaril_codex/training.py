@@ -382,7 +382,7 @@ class NeomarilTrainingClient(BaseNeomarilClient):
     """Client for acessing Neomaril and manage models
 
     """
-    def __init__(self, password:str, enviroment:str='staging') -> None:
+    def __init__(self, password:str='', enviroment:str='staging') -> None:
         """Client for acessing Neomaril and manage models
 
         Args:
