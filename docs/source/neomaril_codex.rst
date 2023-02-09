@@ -1,7 +1,11 @@
 neomaril\_codex package
 =======================
 
-Submodules
+This page gives an overview of all objects, functions and methods present at the package.
+Each module is responsible for different functionalities at Neomaril.
+
+
+Modules
 ----------
 
 .. toctree::
@@ -15,12 +19,12 @@ Submodules
    training
 
 .. toctree::
-   :maxdepth: 5
+   :maxdepth: 4
 
    pipeline
 
 .. toctree::
-   :maxdepth: 5
+   :maxdepth: 4
 
    logging
 
