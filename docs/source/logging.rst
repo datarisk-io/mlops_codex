@@ -1,5 +1,5 @@
 Logging module
-==============================
+==============
 
 
 Neomaril has a log parser that clean logs and tries to find useful information. This is the module to access this functionalities.
@@ -10,4 +10,5 @@ neomaril\_codex.logging.Logger
 ------------------------------
 
 .. autoclass:: neomaril_codex.logging.Logger
-   :members:
+   :members: debug, error, warning, callback
+   :private-members: +__log
