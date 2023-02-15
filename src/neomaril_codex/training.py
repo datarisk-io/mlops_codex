@@ -157,23 +157,30 @@ class NeomarilTrainingExecution(NeomarilExecution):
 
         
 class NeomarilTrainingExperiment(BaseNeomaril):
-    """ Class to manage models being trained inside Neomaril
+    """
+    Class to manage models being trained inside Neomaril
 
+    Arguments
+    ---------
+    password : str
+        Password for authenticating with the client
+    training_id : str
+        Training id (hash) from the experiment you want to acess
+    group : str
+        Group the training is inserted. Default is 'datarisk' (public group)
+    enviroment : str
+        Flag that choose which enviroment of Neomaril you are using. Test your deployment first before changing to production. Default is True
+
+    Raises
+    ------
+    TrainingError
+        When the training can't be acessed in the server
+    AuthenticationError
+        Unvalid credentials
     """
 
     def __init__(self, training_id:str, password:Optional[str]=None, group:str="datarisk", url:str='https://neomaril.staging.datarisk.net/') -> None:
-        """ Class to manage models being trained inside Neomaril
 
-        Args:
-                password (str): Password for authenticating with the client
-                training_id (str): Training id (hash) from the experiment you want to acess
-                group (str): Group the training is inserted. Default is 'datarisk' (public group)
-            url (str): URL for Neomaril server. Test your deployment first before changing to production. Default is https://neomaril.staging.datarisk.net/
-
-        Raises:
-                TrainingError: When the training can't be acessed in the server
-                AuthenticationError: Unvalid credentials
-        """
         super().__init__()
         load_dotenv()
         self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
@@ -215,21 +222,25 @@ class NeomarilTrainingExperiment(BaseNeomaril):
                                                 source_file:Optional[str]=None, requirements_file:Optional[str]=None,
                                                 extra_files:Optional[list]=None) -> str:
         
-        """Upload the files to the server
+        """
+        Upload the files to the server
 
-        Args:
-                model_name (str): The name of the model, in less than 32 characters
-                train_data (str): Path of the file with train data.
-                
-                If training_type is Custom
-                training_reference (str): The name of the training function inside the source file.
-                source_file (str): Path of the source file. The file must have a training function that accepts one parameter: model_path (absolute path of where the file is located)
-                requirements_file (str): Path of the requirements file. The packages versions must be fixed eg: pandas==1.0
-                extra_files (Optional[list], optional): A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file.
-                python_version (str, optional): Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'.
+        Arguments
+        ---------
+        run_name : str
+            The name of the model, in less than 32 characters
+        train_data : str
+            Path of the file with train data.
+        
+        If training_type is Custom
+        training_reference (str): The name of the training function inside the source file.
+        source_file (str): Path of the source file. The file must have a training function that accepts one parameter: model_path (absolute path of where the file is located)
+        requirements_file (str): Path of the requirements file. The packages versions must be fixed eg: pandas==1.0
+        extra_files (Optional[list], optional): A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file.
+        python_version (str, optional): Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'.
 
-                If training_type is AutoML
-                conf_dict (Union[str, dict]): Path to a JSON file with a the AutoML configuration. A dict can be send as well
+        If training_type is AutoML
+        conf_dict (Union[str, dict]): Path to a JSON file with a the AutoML configuration. A dict can be send as well
 
         Raises:
                 InputError: Some input parameters its invalid

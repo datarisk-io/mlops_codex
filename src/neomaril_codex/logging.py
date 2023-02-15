@@ -4,7 +4,21 @@ from typing import Union
 from neomaril_codex.exceptions import InputError
 
 class Logger:
-    """Neomaril custom logger for model scripts.
+    """
+    Neomaril custom logger for model scripts.
+
+    Attributes
+    -----------
+    model_type : str
+        Attribute that designates the type of the model being executed. Can be 'Sync' or 'Async'
+    
+    Raises
+    -----------
+    InputError
+        Invalid input for the logging functions
+  
+    Examples
+    --------
     The logger needs to be implemented inside the function being executed by Neomaril like this:
 
     .. code-block:: python
@@ -33,25 +47,6 @@ class Logger:
             df.to_csv(output, index=False)
 
             return output
-
-
-
-    Parameters:
-    -----------
-        model_type: str
-            Type of the model being executed. Can be 'Sync' or 'Async'    
-    
-    Raises:
-    -----------
-        InputError: Invalid input for the logging functions
-
-    Attributes:
-    -----------
-    model_type: str
-        Type of the model being executed.
-
-    Methods:
-    --------
     """
     
     def __init__(self, model_type:str) -> None:
@@ -60,14 +55,16 @@ class Logger:
         self.__data = ''
         
     def __log(self, level:str, message:str):
-        """Base logger function used by others.
+        """
+        Logger base method used by others.
 
-        Parameters:
+        Parameters
         -----------
-            level: str
-                Log level (must be one used when initiating the logger)
-            message: str
-                Message that will be logged"""
+        level : str
+            Log level (must be one used when initiating the logger)
+        message : str
+            Message that will be logged
+        """
         
         if level in self.__levels:
             log_message = f"[{level}]{message}[{level}]"
@@ -88,39 +85,44 @@ class Logger:
 
 
     def debug(self, message:str) -> None:
-        """Logs a DEBUG message
+        """
+        Logs a DEBUG message.
 
-        Parameters:
-        -----------
-            message: str
-                Message that will be logged"""
+        Parameters
+        ----------
+        message : str
+            Message that will be logged"""
         self.__log('DEBUG', message)
 
     def warning(self, message:str) -> None:
-        """Logs a WARNING message
+        """
+        Logs a WARNING message.
 
-        Parameters:
-        -----------
-            message: str
-                Message that will be logged"""
+        Parameters
+        ----------
+        message : str
+            Message that will be logged"""
         self.__log('WARNING', message)
 
     def error(self, message:str) -> None:
-        """Logs a ERROR message
+        """
+        Logs a ERROR message.
                 
-        Parameters:
-        -----------
-            message: str
-                Message that will be logged"""
+        Parameters
+        ----------
+        message : str
+            Message that will be logged
+        """
         self.__log('ERROR', message)
 
 
     def callback(self, output:Union[str,int,float,list,dict]) -> str:
-        """ Used to compile the logs with the response for Sync models only. Should be the return of function being executed.
+        """
+        Compile the logs with the response for Sync models only. Should be the return of function being executed.
         This output should be able to be parsed as a JSON, so if you are using a non-primitive type as your return, make sure it can be parsed by `json.dumps`.
 
-        Example:
-        --------
+        Example
+        -------
         .. code-block:: python
 
             def score(data, base_path):
@@ -134,10 +136,10 @@ class Logger:
                 
                 return logger.callback({"score": 1000 * (1-float(model.predict_proba(df)[0,1]))})
 
-        Parameters:
-        -----------
-            output: str
-                Output of the function being executed.
+        Parameters
+        ----------
+        output : str
+            Output of the function being executed.
         """
 
         if self.model_type == "Sync":

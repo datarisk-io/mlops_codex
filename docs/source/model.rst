@@ -10,8 +10,7 @@ neomaril\_codex.model.NeomarilModel
 
 .. autoclass:: neomaril_codex.model.NeomarilModel
    :members:
-   :undoc-members:
-   :show-inheritance:
+   :private-members: +__get_status
 
 
 neomaril\_codex.model.NeomarilModelClient
@@ -19,6 +18,5 @@ neomaril\_codex.model.NeomarilModelClient
 
 .. autoclass:: neomaril_codex.model.NeomarilModelClient
    :members:
-   :undoc-members:
-   :show-inheritance:
+   :private-members: +__host_model, __upload_model, __get_model_status
 
