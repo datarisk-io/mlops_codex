@@ -7,7 +7,7 @@ from typing import Union, Optional
 import requests
 import json
 from time import sleep
-from neomaril_codex._base import *
+from neomaril_codex.base import *
 from neomaril_codex.model import NeomarilModel
 from neomaril_codex.exceptions import *
 
@@ -258,7 +258,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             # self.environment = "Production"
             # self.base_url = self._production_url
 
-        try_login(self.__credentials, self.base_url)
+        _try_login(self.__credentials, self.base_url)
         
         url = f"{self.base_url}/training/describe/{self.group}/{self.training_id}"
         response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})

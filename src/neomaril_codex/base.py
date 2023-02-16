@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 
 from neomaril_codex.exceptions import *
 
-def try_login(password:str, base_url:str) -> bool:
-
+def _try_login(password:str, base_url:str) -> bool:
+	
     response = requests.get(f"{base_url}/health", headers={'Authorization': 'Bearer ' + password})
 
     server_status = response.status_code
@@ -63,7 +63,8 @@ class BaseNeomaril:
 
 
 class BaseNeomarilClient(BaseNeomaril):
-	"""Base class for others client related classes.
+	"""
+	Base class for others client related classes.
 	"""
 	def __init__(self, password:str='', environment:str='staging') -> None:
 		super().__init__()
@@ -85,18 +86,22 @@ class BaseNeomarilClient(BaseNeomaril):
 				# self.base_url = self._production_url
 				# logger.info("You are using the production environment, please use the test environment if you are still developing the model.")
 
-		self.client_version = try_login(self.__credentials, self.base_url)
+		self.client_version = _try_login(self.__credentials, self.base_url)
 		logger.info(f"Successfully connected to Neomaril")
 
-
 	def list_groups(self) -> list:
-		"""List existing groups
+		"""
+		List existing groups.
 
-		Raises:
-				ServerError: Unexpected server error
+		Raises
+		------
+		ServerError
+			Unexpected server error
 
-		Returns:
-				list: List with the groups that exists in the database
+		Returns
+		-------
+		list
+			List with the groups that exists in the database
 		"""
 
 		url = f"{self.base_url}/groups"
@@ -109,19 +114,26 @@ class BaseNeomarilClient(BaseNeomaril):
 		else:
 				raise ServerError('Unexpected server error: ', response.text)
 
-
 	def create_group(self, name:str, description:str) -> bool:
-		"""Create a group for multiple models of the same final client
+		"""
+		Create a group for multiple models of the same final client
 
-		Args:
-				name (str): Name of the group. Must be 32 characters long and with no special characters (some parsing will be made).
-				description (str): Short description of the group.
+		Arguments
+		---------
+		name : str
+			Name of the group. Must be 32 characters long and with no special characters (some parsing will be made)
+		description : str
+			Short description of the group
 
-		Raises:
-				ServerError: Unexpected server error
+		Raises
+		------
+		ServerError
+			Unexpected server error
 
-		Returns:
-				bool: Returns True if the group was successfully created and False if not.
+		Returns
+		-------
+		bool
+			Returns True if the group was successfully created and False if not
 		"""
 		data = {"name": name, "description": description}
 
@@ -139,17 +151,25 @@ class BaseNeomarilClient(BaseNeomaril):
 				raise ServerError('Unexpected server error: ', response.text)
 
 	def refresh_group_token(self, name:str, force:bool=False) -> bool:
-		"""Create a group for multiple models of the same final client
+		"""
+		Create a group for multiple models of the same final client.
 
-		Args:
-				name (str): Name of the group to have the token refreshed.
-				force (str): Force token expiration even if its still valid (this can make multiple models integrations stop working, so use with care).
+		Arguments
+		---------
+		name : str
+			Name of the group to have the token refreshed
+		force : str
+			Force token expiration even if its still valid (this can make multiple models integrations stop working, so use with care)
 
-		Raises:
-				ServerError: Unexpected server error
+		Raises
+		------
+		ServerError
+			Unexpected server error
 
-		Returns:
-				bool: Returns True if the group was successfully created and False if not.
+		Returns
+		-------
+		bool
+			Returns True if the group was successfully created and False if not.
 		"""
 
 		url = f"{self.base_url}/refresh/{name}"
@@ -163,7 +183,8 @@ class BaseNeomarilClient(BaseNeomaril):
 
 
 class NeomarilExecution(BaseNeomaril):
-	"""Base class for Neomaril async executions.
+	"""
+	Base class for Neomaril async executions.
 	"""
 
 	def __init__(self, parent_id:str, exec_type:str, group:Optional[str]=None, exec_id:Optional[str]=None, password:str=None, environment:str=None) -> None:
@@ -181,7 +202,7 @@ class NeomarilExecution(BaseNeomaril):
 				self.base_url = self._production_url
 				self.mlflow_url = 'https://mlflow.datarisk.net/'
 
-		try_login(self.__credentials, self.base_url)
+		_try_login(self.__credentials, self.base_url)
 
 		if exec_type == 'AsyncModel':
 				self.__url_path = 'model/async'
@@ -212,13 +233,18 @@ class NeomarilExecution(BaseNeomaril):
 		return f'NEOMARIL {self.exec_type }Execution :{self.exec_id} (Status: {self.status})"'
 
 	def get_status(self) -> dict:
-		"""Gets the status of the execution with the informed id
+		"""
+		Gets the status of the execution with the informed id.
 
-		Raises:
-				ExecutionError: Execution unavailable
+		Raises
+		------
+		ExecutionError
+			Execution unavailable
 
-		Returns:
-				dict: Returns the execution status.
+		Returns
+		-------
+		dict
+			Returns the execution status.
 		"""
 
 		url = f"{self.base_url}/{self.__url_path}/status/{self.exec_id}"
@@ -239,13 +265,23 @@ class NeomarilExecution(BaseNeomaril):
 		return result
 
 	def download_result(self, path:Optional[str]='./') -> dict:
-		"""Gets the output of the execution with the informed id
+		"""
+		Gets the output of the execution with the informed id
 
-		Raises:
-				ExecutionError: Execution unavailable
+		Arguments
+		---------
+		path : str
+			Path of the result file. Default value is './'
 
-		Returns:
-				dict: Returns the execution status.
+		Raises
+		------
+		ExecutionError
+			Execution unavailable
+
+		Returns
+		-------
+		dict
+			Returns the execution status.
 		"""
 		if self.status in ['Running', 'Requested']:
 			self.status = self.get_status()['Status']

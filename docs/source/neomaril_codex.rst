@@ -6,7 +6,12 @@ This page gives an overview of all objects, functions and methods present at the
 
 
 Modules
-----------
+~~~~~~~
+
+.. toctree::
+   :maxdepth: 5
+
+   base
 
 .. toctree::
    :maxdepth: 5

@@ -10,5 +10,6 @@ neomaril\_codex.logging.Logger
 ------------------------------
 
 .. autoclass:: neomaril_codex.logging.Logger
-   :members: debug, error, warning, callback
-   :private-members: +__log
+   :members:
+   :undoc-members:
+   :show-inheritance:
