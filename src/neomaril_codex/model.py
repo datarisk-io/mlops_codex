@@ -11,20 +11,20 @@ from neomaril_codex.exceptions import *
 
 class NeomarilModel(BaseNeomaril):
     """
-    Manage Models deployed inside Neomaril
+    Class to manage Models deployed inside Neomaril
 
     Attributes
     ----------
     password : str
         Password for authenticating with the client
     model_id: str
-        Model id (hash) from the model you want to acess
+        Model id (hash) from the model you want to access
     group : str
         Group the model is inserted. Default is 'datarisk' (public group)
     group_token : str
         Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions
-    enviroment : str
-        Flag that choose which enviroment of Neomaril you are using. Test your deployment first before changing to production.
+    url : str
+        URL for Neomaril server. Default is https://neomaril.staging.datarisk.net/, use it to test your deployment first before changing to production
 
     Raises
     ------
@@ -35,24 +35,12 @@ class NeomarilModel(BaseNeomaril):
 
     Examples
     --------
-    The logger needs to be implemented inside the function being executed by Neomaril like this:
+    ___decribe___
 
     """
 
     def __init__(self, model_id:str, password:Optional[str]=None, group:str="datarisk", group_token:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/') -> None:
-        """Class to manage Models deployed inside Neomaril
 
-        Args:
-            password (str): Password for authenticating with the client
-            model_id (str): Model id (hash) from the model you want to acess
-            group (str): Group the model is inserted. Default is 'datarisk' (public group)
-            group_token (str): Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions
-            url (str): URL for Neomaril server. Test your deployment first before changing to production. Default is https://neomaril.staging.datarisk.net/
-
-        Raises:
-            ModelError: When the model can't be acessed in the server
-            AuthenticationError: Unvalid credentials
-        """
         load_dotenv()
         logger.info('Loading .env')
 
@@ -162,7 +150,7 @@ class NeomarilModel(BaseNeomaril):
 
     def restart_model(self, wait_for_ready:bool=True):
         """
-        Restart a model deployment proccess health state. 
+        Restart a model deployment process health state. 
 
         Parameters
         -----------
@@ -277,6 +265,7 @@ class NeomarilModel(BaseNeomaril):
         group_token : str, optional
             Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions
         wait_complete: bool, optional
+            Boolean that informs if a model training is completed (True) or not (False). Default value is False
 
         Raises
         ------
@@ -430,14 +419,14 @@ class NeomarilModel(BaseNeomaril):
 
 class NeomarilModelClient(BaseNeomarilClient):
     """
-    Client for acessing Neomaril and manage models
+    Class for client to access Neomaril and manage models
 
     Attributes
     ----------
     password : str
         Password for authenticating with the client
-    enviroment : str
-        Flag that choose which enviroment of Neomaril you are using. Test your deployment first before changing to production. Default is staging
+    url : str
+        URL for Neomaril server. Default is https://neomaril.staging.datarisk.net/, use it to test your deployment first before changing to production
 
     Raises
     ------
@@ -445,18 +434,13 @@ class NeomarilModelClient(BaseNeomarilClient):
         Unvalid credentials
     ServerError
         Server unavailable
+
+    Examples
+    --------
+    ___decribe___
     """
     def __init__(self, password:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/') -> None:
-        """Client for acessing Neomaril and manage models
 
-        Args:
-                password (str): Password for authenticating with the client
-            url (str): URL for Neomaril server. Test your deployment first before changing to production. Default is https://neomaril.staging.datarisk.net/
-
-        Raises:
-                AuthenticationError: Unvalid credentials
-                ServerError: Server unavailable
-        """
         super().__init__(password=password, url=url)
         load_dotenv()
         self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
@@ -668,7 +652,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         extra_files : list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
         env : str, optional
-            Flag that choose which enviroment (dev, staging, production) of Neomaril you are using. Default is True
+            Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
         python_version : str, optional
             Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'
         operation : str
@@ -793,7 +777,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         extra_files : list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
         env : str, optional
-            Flag that choose which enviroment (dev, staging, production) of Neomaril you are using. Default is True
+            Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
         python_version : str, optional
             Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'
         operation : str
