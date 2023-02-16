@@ -5,7 +5,7 @@ from neomaril_codex.exceptions import InputError
 
 class Logger:
     """
-    Neomaril custom logger for model scripts.
+    Class to custom logger for model scripts.
 
     Attributes
     -----------

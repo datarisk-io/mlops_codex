@@ -1,4 +1,4 @@
-enviroment: staging
+environment: staging
 group: datarisk
 python_version: 3.9
 scoring:

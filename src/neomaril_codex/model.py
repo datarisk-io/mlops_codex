@@ -11,20 +11,20 @@ from neomaril_codex.exceptions import *
 
 class NeomarilModel(BaseNeomaril):
     """
-    Manage Models deployed inside Neomaril
+    Class to manage Models deployed inside Neomaril
 
     Attributes
     ----------
     password : str
         Password for authenticating with the client
     model_id: str
-        Model id (hash) from the model you want to acess
+        Model id (hash) from the model you want to access
     group : str
         Group the model is inserted. Default is 'datarisk' (public group)
     group_token : str
         Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions
-    enviroment : str
-        Flag that choose which enviroment of Neomaril you are using. Test your deployment first before changing to production.
+    environment : str
+        Flag that choose which environment of Neomaril you are using. Test your deployment first before changing to production. Default value is staging
 
     Raises
     ------
@@ -35,11 +35,11 @@ class NeomarilModel(BaseNeomaril):
 
     Examples
     --------
-    The logger needs to be implemented inside the function being executed by Neomaril like this:
+    ___decribe___
 
     """
 
-    def __init__(self, password:str, model_id:str, group:str="datarisk", group_token:Optional[str]=None, enviroment:str='staging') -> None:
+    def __init__(self, password:str, model_id:str, group:str="datarisk", group_token:Optional[str]=None, environment:str='staging') -> None:
         
         super().__init__()
         self.__credentials = password
@@ -47,11 +47,11 @@ class NeomarilModel(BaseNeomaril):
         self.group = group
         self.__token = group_token
 
-        if self.enviroment == "dev":
+        if self.environment == "dev":
             self.base_url = self._dev_url
-        elif self.enviroment == 'staging':
+        elif self.environment == 'staging':
             self.base_url = self._staging_url
-        elif self.enviroment == "production":
+        elif self.environment == "production":
             self.base_url = self._production_url
 
         try_login(self.__credentials, self.base_url)
@@ -75,7 +75,7 @@ class NeomarilModel(BaseNeomaril):
 
     def __repr__(self) -> str:
         return f"""NeomarilModel(name="{self.name}", group="{self.group}", 
-                                status="{self.status}", enviroment="{self.enviroment}"
+                                status="{self.status}", environment="{self.environment}"
                                 model_id="{self.model_id}",
                                 operation="{self.operation.title()}",
                                 schema={str(self.schema)}
@@ -152,7 +152,7 @@ class NeomarilModel(BaseNeomaril):
 
     def restart_model(self, wait_for_ready:bool=True):
         """
-        Restart a model deployment proccess health state. 
+        Restart a model deployment process health state. 
 
         Parameters
         -----------
@@ -267,6 +267,7 @@ class NeomarilModel(BaseNeomaril):
         group_token : str, optional
             Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions
         wait_complete: bool, optional
+            Boolean that informs if a model training is completed (True) or not (False). Default value is False
 
         Raises
         ------
@@ -304,7 +305,7 @@ class NeomarilModel(BaseNeomaril):
                         logger.info(message['Message'])
                         exec_id = message['ExecutionId']
                         run = NeomarilExecution(self.model_id, 'AsyncModel', exec_id=exec_id, password=self.__credentials, 
-                                                enviroment=self.enviroment, group=self.group)
+                                                environment=self.environment, group=self.group)
                         status = run.get_status()['Status']
                         if wait_complete:
                             print('Wating the training run.', end='')
@@ -349,7 +350,7 @@ class NeomarilModel(BaseNeomaril):
         """
         if self.operation == 'async':
             return NeomarilExecution(self.model_id, 'AsyncModel', exec_id, password=self.__credentials, 
-                                     enviroment=self.enviroment, group=self.group)
+                                     environment=self.environment, group=self.group)
         else:
             raise ModelError("Sync models don't have executions")
 
@@ -420,14 +421,14 @@ class NeomarilModel(BaseNeomaril):
 
 class NeomarilModelClient(BaseNeomarilClient):
     """
-    Client for acessing Neomaril and manage models
+    Class for client to access Neomaril and manage models
 
     Attributes
     ----------
     password : str
         Password for authenticating with the client
-    enviroment : str
-        Flag that choose which enviroment of Neomaril you are using. Test your deployment first before changing to production. Default is staging
+    environment : str
+        Flag that choose which environment of Neomaril you are using. Test your deployment first before changing to production. Default is staging
 
     Raises
     ------
@@ -435,19 +436,23 @@ class NeomarilModelClient(BaseNeomarilClient):
         Unvalid credentials
     ServerError
         Server unavailable
+
+    Examples
+    --------
+    ___decribe___
     """
-    def __init__(self, password:str, enviroment:str='staging') -> None:
+    def __init__(self, password:str, environment:str='staging') -> None:
         """
         Client for acessing Neomaril and manage models
         """
-        super().__init__(password, enviroment=enviroment)
+        super().__init__(password, environment=environment)
         self.__credentials = password
             
     def __repr__(self) -> str:
-            return f'NeomarilModelClient(enviroment="{self.enviroment}", version="{self.client_version}")'
+            return f'NeomarilModelClient(environment="{self.environment}", version="{self.client_version}")'
         
     def __str__(self):
-        return f"NEOMARIL {self.enviroment} Model client:{self.client_version}"
+        return f"NEOMARIL {self.environment} Model client:{self.client_version}"
         
     def __get_model_status(self, model_id:str, group:str) -> dict:
         """
@@ -529,7 +534,7 @@ class NeomarilModelClient(BaseNeomarilClient):
             raise ModelError(f'Model "{model_id}" deploy failed, so model is unavailable.')
         elif status == 'Deployed': 
             logger.info(f'Model {model_id} its deployed. Fetching model.')
-            return NeomarilModel(self.__credentials, model_id, group=group, enviroment=self.enviroment, group_token=group_token)
+            return NeomarilModel(self.__credentials, model_id, group=group, environment=self.environment, group_token=group_token)
         else:
             raise ServerError('Unknown model status: ',status)
     
@@ -650,7 +655,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         extra_files : list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
         env : str, optional
-            Flag that choose which enviroment (dev, staging, production) of Neomaril you are using. Default is True
+            Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
         python_version : str, optional
             Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'
         operation : str
@@ -775,7 +780,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         extra_files : list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
         env : str, optional
-            Flag that choose which enviroment (dev, staging, production) of Neomaril you are using. Default is True
+            Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
         python_version : str, optional
             Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'
         operation : str
@@ -842,4 +847,4 @@ class NeomarilModelClient(BaseNeomarilClient):
         NeomarilExecution
             The new execution
         """
-        return NeomarilExecution(model_id,'AsyncModel', exec_id, password=self.__credentials, enviroment=self.enviroment, group=group)
+        return NeomarilExecution(model_id,'AsyncModel', exec_id, password=self.__credentials, environment=self.environment, group=group)

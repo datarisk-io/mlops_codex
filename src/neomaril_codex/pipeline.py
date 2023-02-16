@@ -10,26 +10,95 @@ from neomaril_codex.training import *
 from neomaril_codex.model import *
 
 class NeomarilPipeline:
-    def __init__(self, password:str, group:str, enviroment:str='staging', python_version:float=3.9) -> None:
+    """
+    Class to construct and orchestrates the flow data of the models inside Neomaril.
+
+    Atributtes
+    ----------
+    password : str
+        Credentials to authorize the access
+    group: str
+        Group the model is inserted
+    environment : str
+        Flag that choose which environment of Neomaril you are using. Test your deployment first before changing to production. Default value is staging
+    python_version : str
+        Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.9'
+
+    Examples
+    --------
+    """
+    def __init__(self, password:str, group:str, environment:str='staging', python_version:float=3.9) -> None:
         self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
-        self.enviroment = os.getenv('NEOMARIL_ENVIROMENT') if os.getenv('NEOMARIL_ENVIROMENT') else enviroment
+        self.environment = os.getenv('NEOMARIL_ENVIROMENT') if os.getenv('NEOMARIL_ENVIROMENT') else environment
         self.group = group
         self.python_version = python_version
         self.train_config = None
         self.deploy_config = None
         self.monitoring_config = None
 
-    def register_train_config(self, **kwargs):
+    def register_train_config(self, **kwargs)-> dict:
+        """
+        Set the files for configure the training
+
+        Parameters
+        ----------
+        kwargs : list or dict
+            List or dictionary with the necessary files for training
+        """
         self.train_config = kwargs
 
-    def register_deploy_config(self, **kwargs):
+    def register_deploy_config(self, **kwargs) -> dict:
+        """
+        Set the files for configure the deploy
+
+        Parameters
+        ----------
+        kwargs : list or dict
+            List or dictionary with the necessary files for deploy
+        """
         self.deploy_config = kwargs
 
-    def register_monitoring_config(self, **kwargs):
+    def register_monitoring_config(self, **kwargs) -> dict:
+        """
+        Set the files for configure the monitoring
+
+        Parameters
+        ----------
+        kwargs : list or dict
+            List or dictionary with the necessary files for monitoring
+        
+        Example
+        -------
+        >>> pipeline.register_monitoring_config(directory = "./samples/monitoring", preprocess = "preprocess.py", preprocess_function = "score", shap_function = "score", config = "configuration.json", packages = "requirements.txt")
+        """
         self.monitoring_config = kwargs
 
     @staticmethod
     def from_config_file(path):
+        """
+        Load the configuration files for orchestrate the model
+
+        Parameters
+        ----------
+        path : str
+            Path of the configuration file, but it could be a dict
+        
+        Raises
+        ------
+        PipelineError
+            Undefined NEOMARIL_TOKEN
+
+        Returns
+        -------
+        NeomarilPipeline
+            The new pipeline 
+        
+        Example
+        -------
+        >>> pipeline = NeomarilPipeline.from_config_file('./samples/pipeline-just-model.yml')
+        >>> pipeline.register_monitoring_config(directory = "./samples/monitoring", preprocess = "preprocess.py", preprocess_function = "score", shap_function = "score", config = "configuration.json", packages = "requirements.txt")
+        >>> pipeline.start()
+        """
         with open(path, 'r') as stream:
             try:
                 conf=yaml.safe_load(stream)
@@ -40,9 +109,9 @@ class NeomarilPipeline:
 
         token = os.getenv("NEOMARIL_TOKEN")
         if not token:
-            raise PipelineError("When using a config file the enviroment variable NEOMARIL_TOKEN must be defined")
+            raise PipelineError("When using a config file the environment variable NEOMARIL_TOKEN must be defined")
 
-        pipeline = NeomarilPipeline(token, conf['group'], enviroment=conf['enviroment'], python_version=conf['python_version'])
+        pipeline = NeomarilPipeline(token, conf['group'], environment=conf['environment'], python_version=conf['python_version'])
 
         if 'training' in conf.keys():
             pipeline.register_train_config(**conf['training'])
@@ -55,9 +124,22 @@ class NeomarilPipeline:
               
         return pipeline
 
-    def run_training(self):
+    def run_training(self) -> tuple[str, str]:
+        """
+        Run the training process
+
+        Raises
+        ------
+        TrainingError
+            Training has failed
+
+        Returns
+        -------
+        tuple[str, str]
+            A tuple with the 'training_id' and the 'exec_id' 
+        """
         logger.info('Running training')
-        client = NeomarilTrainingClient(self.__credentials, enviroment=self.enviroment)
+        client = NeomarilTrainingClient(self.__credentials, environment=self.environment)
         client.create_group(self.group, self.group)
 
         conf = self.train_config
@@ -85,7 +167,25 @@ class NeomarilPipeline:
         else:
             raise TrainingError('Training failed: '+status['Message'])
 
-    def run_deploy(self, training_id:Optional[str]=None):
+    def run_deploy(self, training_id:Optional[str]=None) -> str:
+        """
+        Run the deploy process
+
+        Arguments
+        ----------
+        training_id : str, optional
+            The id for the training process that you want to deploy now
+
+        Raises
+        ------
+        ModelError
+            Deploy has failed
+
+        Returns
+        -------
+        str
+            The new Model id (hash) 
+        """
         conf = self.deploy_config
         PATH = conf['directory']
         extra_files = conf.get('extra')
@@ -93,7 +193,7 @@ class NeomarilPipeline:
         if training_id:
             logger.info('Deploying scorer from training')
             training_run = NeomarilTrainingExecution(training_id[0], self.group, training_id[1], password=self.__credentials, 
-                                                     enviroment=self.enviroment)
+                                                     environment=self.environment)
 
             model_name = conf.get('name', training_run.execution_data.get('ExperimentName', ''))
 
@@ -110,7 +210,7 @@ class NeomarilPipeline:
 
         else:
             logger.info('Deploying scorer')
-            client = NeomarilModelClient(password=self.__credentials, enviroment=self.enviroment)
+            client = NeomarilModelClient(password=self.__credentials, environment=self.environment)
             client.create_group(self.group, self.group)
             
             model = client.create_model(conf.get('name'), conf['score_function'], os.path.join(PATH, conf['source']), 
@@ -130,9 +230,31 @@ class NeomarilPipeline:
         else:
             raise ModelError("Model deployement failed: "+ model.get_logs(routine='Host')[0])
 
-
-
     def run_monitoring(self, training_exec_id:Optional[str]=None, model_id:Optional[str]=None):
+        """
+        Run the monitoring process
+
+        Arguments
+        ----------
+        training_exec_id : str, optional
+            The id for the training execution process that you want to monitore now
+        model_id : str, optional
+
+        Example
+        -------
+        >>> pipeline = NeomarilPipeline.from_config_file('./samples/pipeline-just-model.yml')
+        >>> pipeline.register_monitoring_config(directory = "./samples/monitoring", preprocess = "preprocess.py", preprocess_function = "score", shap_function = "score", config = "configuration.json", packages = "requirements.txt")
+        >>> pipeline.start()
+        >>> pipeline.run_monitoring()
+
+
+        or
+
+        >>> pipeline = NeomarilPipeline.from_config_file('./samples/pipeline-just-model.yml')
+        >>> pipeline.register_monitoring_config(directory = "./samples/monitoring", preprocess = "preprocess.py", preprocess_function = "score", shap_function = "score", config = "configuration.json", packages = "requirements.txt")
+        >>> pipeline.start()
+        >>> pipeline.run_monitoring('2', 'Mb29d61da4324a39a8bc2e0946f213b4959643916d354bf39940de2124f1e9d8')
+        """
         logger.info('Configuring monitoring')
 
         conf = self.monitoring_config
@@ -147,15 +269,28 @@ class NeomarilPipeline:
                 f.truncate()
 
         model = NeomarilModel(self.__credentials, model_id, group=self.group, group_token=os.getenv('NEOMARIL_GROUP_TOKEN'),
-                                enviroment=self.enviroment)
+                                environment=self.environment)
 
         model.register_monitoring(conf['preprocess_function'], conf['shap_function'], 
                                     configuration_file=os.path.join(PATH, conf['config']),
                                     preprocess_file=os.path.join(PATH, conf['preprocess']),
                                     requirements_file=(os.path.join(PATH, conf['packages']) if conf.get('packages') else None))
-                           
     
     def start(self):
+        """
+        Start thepipeine for the model orchestration
+
+        Raises
+        ------
+        PipelineError
+            Cannot start pipeline without configuration
+        
+        Example
+        -------
+        >>> pipeline = NeomarilPipeline.from_config_file('./samples/pipeline-just-model.yml')
+        >>> pipeline.register_monitoring_config(directory = "./samples/monitoring", preprocess = "preprocess.py", preprocess_function = "score", shap_function = "score", config = "configuration.json", packages = "requirements.txt")
+        >>> pipeline.start()
+        """
         if (not self.train_config) and (not self.deploy_config) and (not self.monitoring_config):
             raise PipelineError("Cannot start pipeline without configuration")
 

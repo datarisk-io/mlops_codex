@@ -14,24 +14,33 @@ from neomaril_codex.exceptions import *
 patt = re.compile(r'(\d+)')
 
 class NeomarilTrainingExecution(NeomarilExecution):
-    """ Class to manage trained models
+    """
+    Class to manage trained models.
+
+    Arguments
+    ---------
+    training_id : str
+        Training id (hash) from the experiment you want to access
+    group : str
+        Group the training is inserted. Default is 'datarisk' (public group)
+    exec_id : str
+        Executiong id for that especific training run
+    password : str
+        Password for authenticating with the client
+    environment : str
+        Enviroment of Neomaril you are using. 
+
+    Raises
+    ------
+    TrainingError
+        When the training can't be acessed in the server
+    AuthenticationError
+        Unvalid credentials
     """
 
-    def __init__(self, training_id:str, group:str, exec_id:str, password:str=None, enviroment:str=None) -> None:
-        """ Class to manage trained models
-
-        Args:
-                training_id (str): Training id (hash) from the experiment you want to acess
-                group (str): Group the training is inserted. Default is 'datarisk' (public group)
-                exec_id (str): Executiong id for that especific training run
-                password (str): Password for authenticating with the client
-                enviroment (str): Enviroment of Neomaril you are using. 
-    
-        Raises:
-                TrainingError: When the training can't be acessed in the server
-                AuthenticationError: Unvalid credentials
-        """
-        super().__init__(training_id, 'Training', exec_id=exec_id, password=password, enviroment=enviroment, group=group)
+    def __init__(self, training_id:str, group:str, exec_id:str, password:str=None, environment:str=None) -> None:
+        """ Class to manage trained models"""
+        super().__init__(training_id, 'Training', exec_id=exec_id, password=password, environment=environment, group=group)
         self.__credentials = password
 
         self.training_id = training_id
@@ -42,20 +51,37 @@ class NeomarilTrainingExecution(NeomarilExecution):
     def __upload_model(self, model_name:str, model_reference:Optional[str]=None, source_file:Optional[str]=None, 
                                          schema:Optional[Union[str, dict]]=None, extra_files:Optional[list]=None, 
                                          env:Optional[str]=None, operation:str='Sync', input_type:str=None) -> str:
-        """Upload the files to the server
+        """
+        Upload the files to the server
 
-        Args:
-                model_name (str): The name of the model, in less than 32 characters
-                model_reference (str): The name of the scoring function inside the source file.
-                source_file (str): Path of the source file. The file must have a scoring function that accepts two parameters: data (data for the request body of the model) and model_path (absolute path of where the file is located)
-                schema (Union[str, dict]): Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be send as well
-                extra_files (Optional[list], optional): A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file.
+        Arguments
+        ---------
+        model_name : str
+            The name of the model, in less than 32 characters
+        model_reference : str, optional
+            The name of the scoring function inside the source file
+        source_file : str, optional
+            Path of the source file. The file must have a scoring function that accepts two parameters: data (data for the request body of the model) and model_path (absolute path of where the file is located)
+        schema : Union[str, dict], optional
+            Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be send as well
+        extra_files list, optional
+            A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
+        env : str, optional
+            Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
+        operation : str
+            Defines wich kind operation is beeing executed (Sync or Async). Default value is Sync
+        input_type : str
+            The type of the input file that should be 'json', 'csv' or 'parquet'
 
-        Raises:
-                InputError: Some input parameters its invalid
+        Raises
+        ------
+        InputError
+            Some input parameters its invalid
 
-        Returns:
-                str: The new model id (hash)
+        Returns
+        -------
+        str
+            The new model id (hash)
         """
         
         url = f"{self.base_url}/training/promote/{self.group}/{self.training_id}/{self.exec_id}"
@@ -115,14 +141,20 @@ class NeomarilTrainingExecution(NeomarilExecution):
             raise InputError('Invalid parameters for model creation')
 
     def __host_model(self, operation:str, model_id:str) -> None:
-        """Builds the model execution environment
+        """
+        Builds the model execution environment
 
-        Args:
-                operation (str): The model operation type (Sync or Async)
-                model_id (str): The uploaded model id (hash)
+        Arguments
+        ----------
+        operation : str
+            The model operation type (Sync or Async)
+        model_id : str
+            The uploaded model id (hash)
 
-        Raises:
-                InputError: Some input parameters its invalid
+        Raises
+        ------
+        InputError
+            Some input parameters its invalid
         """
         
         url = f"{self.base_url}/model/{operation}/host/{self.group}/{model_id}"
@@ -138,7 +170,38 @@ class NeomarilTrainingExecution(NeomarilExecution):
     def promote_model(self, model_name:str, model_reference:Optional[str]=None, source_file:Optional[str]=None, 
                                          schema:Optional[Union[str, dict]]=None, extra_files:Optional[list]=None, 
                                          env:Optional[str]=None, operation:str='Sync', input_type:str=None)-> NeomarilModel:
+        """
+        Upload models trained inside Neomaril.
 
+        Arguments
+        ---------
+        model_name : str
+            The name of the model, in less than 32 characters
+        model_reference : str, optional
+            The name of the scoring function inside the source file
+        source_file : str, optional
+            Path of the source file. The file must have a scoring function that accepts two parameters: data (data for the request body of the model) and model_path (absolute path of where the file is located)
+        schema : Union[str, dict], optional
+            Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be send as well
+        extra_files list, optional
+            A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
+        env : str, optional
+            Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
+        operation : str
+            Defines wich kind operation is beeing executed (Sync or Async). Default value is Sync
+        input_type : str
+            The type of the input file that should be 'json', 'csv' or 'parquet'
+
+        Raises
+        ------
+        TrainingError
+            The training execution shouldn't be succeeded to be promoted
+
+        Returns
+        -------
+        NeomarilModel
+            The new training model
+        """
         if self.status in ['Running', 'Requested']:
             self.status = self.get_status()['Status']
         
@@ -152,8 +215,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
         if model_id:
             self.__host_model(operation.lower(), model_id)
 
-            return NeomarilModel(self.__credentials, model_id, group=self.group, enviroment=self.enviroment)
-
+            return NeomarilModel(self.__credentials, model_id, group=self.group, environment=self.environment)
         
 class NeomarilTrainingExperiment(BaseNeomaril):
     """
@@ -164,11 +226,11 @@ class NeomarilTrainingExperiment(BaseNeomaril):
     password : str
         Password for authenticating with the client
     training_id : str
-        Training id (hash) from the experiment you want to acess
+        Training id (hash) from the experiment you want to access
     group : str
         Group the training is inserted. Default is 'datarisk' (public group)
-    enviroment : str
-        Flag that choose which enviroment of Neomaril you are using. Test your deployment first before changing to production. Default is True
+    environment : str
+        Flag that choose which environment of Neomaril you are using. Test your deployment first before changing to production. Default is True
 
     Raises
     ------
@@ -178,23 +240,22 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         Unvalid credentials
     """
 
-    def __init__(self, password:str, training_id:str, group:str="datarisk", enviroment:str='staging') -> None:
-        """ Class to manage models being trained inside Neomaril
-        """
+    def __init__(self, password:str, training_id:str, group:str="datarisk", environment:str='staging') -> None:
+        """ Class to manage models being trained inside Neomaril"""
         super().__init__()
         self.__credentials = password
         self.training_id = training_id
-        self.enviroment = enviroment
+        self.environment = environment
         self.group = group
 
-        if self.enviroment == "dev":
+        if self.environment == "dev":
             self.base_url = self._dev_url
 
-        elif self.enviroment == "staging":
+        elif self.environment == "staging":
             self.base_url = self._staging_url
         else:
             raise NotImplementedError
-            # self.enviroment = "Production"
+            # self.environment = "Production"
             # self.base_url = self._production_url
 
         try_login(self.__credentials, self.base_url)
@@ -216,7 +277,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
     def __repr__(self) -> str:
             return f"""NeomarilTrainingExperiment(name="{self.experiment_name}", 
                                                         group="{self.group}", 
-                                                        enviroment="{self.enviroment}"
+                                                        environment="{self.environment}"
                                                         training_id="{self.training_id}",
                                                         training_type="{self.training_type}",
                                                         model_type={str(self.model_type)}
@@ -239,23 +300,29 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         run_name : str
             The name of the model, in less than 32 characters
         train_data : str
-            Path of the file with train data.
+            Path of the file with train data
+        training_reference : str, optional
+            The name of the training function inside the source file. Just used when training_type is Custom
+        python_version : str
+            Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'. Just used when training_type is Custom
+        conf_dict : Union[str, dict], optional
+            Path to a JSON file with a the AutoML configuration. A dict can be send as well. Just used when training_type is AutoML
+        source_file : str, optional
+            Path of the source file. The file must have a training function that accepts one parameter: model_path (absolute path of where the file is located). Just used when training_type is Custom
+        requirements_file : str, optional
+            Path of the requirements file. The packages versions must be fixed eg: pandas==1.0. Just used when training_type is Custom
+        extra_files : list, optional
+            A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file. Just used when training_type is Custom
         
-        If training_type is Custom
-        training_reference (str): The name of the training function inside the source file.
-        source_file (str): Path of the source file. The file must have a training function that accepts one parameter: model_path (absolute path of where the file is located)
-        requirements_file (str): Path of the requirements file. The packages versions must be fixed eg: pandas==1.0
-        extra_files (Optional[list], optional): A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file.
-        python_version (str, optional): Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'.
+        Raises
+        ------
+        InputError
+            Some input parameters its invalid
 
-        If training_type is AutoML
-        conf_dict (Union[str, dict]): Path to a JSON file with a the AutoML configuration. A dict can be send as well
-
-        Raises:
-                InputError: Some input parameters its invalid
-
-        Returns:
-                str: The new model id (hash)
+        Returns
+        -------
+        str
+            The new model id (hash)
         """
         
         url = f"{self.base_url}/training/upload/{self.group}/{self.training_id}"
@@ -307,13 +374,18 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             raise InputError('Bad input for training upload')
 
     def __execute_training(self, exec_id:str) -> None:
-        """Builds the model execution environment
+        """
+        Builds the model execution environment
 
-        Args:
-                exec_id (str): The uploaded training execution id (hash)
+        Arguments
+        ---------
+        exec_id : str
+            The uploaded training execution id (hash)
 
-        Raises:
-                InputError: Some input parameters its invalid
+        Raises
+        ------
+        InputError
+            Some input parameters its invalid
         """
         
         url = f"{self.base_url}/training/execute/{self.group}/{self.training_id}/{exec_id}"
@@ -328,27 +400,38 @@ class NeomarilTrainingExperiment(BaseNeomaril):
                                                 python_version:str='3.8', conf_dict:Optional[Union[str, dict]]=None,
                                                 source_file:Optional[str]=None, requirements_file:Optional[str]=None,
                                                 extra_files:Optional[list]=None, wait_complete:Optional[bool]=False) -> Union[dict, NeomarilExecution]:
-        """Runs a prediction from the current model.
+        """
+        Runs a prediction from the current model.
 
-        Args:
-                model_name (str): The name of the model, in less than 32 characters
-                train_data (str): Path of the file with train data.
-                
-                If training_type is Custom
-                training_reference (str): The name of the training function inside the source file.
-                source_file (str): Path of the source file. The file must have a training function that accepts one parameter: model_path (absolute path of where the file is located)
-                requirements_file (str): Path of the requirements file. The packages versions must be fixed eg: pandas==1.0
-                extra_files (Optional[list], optional): A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file.
-                python_version (str, optional): Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'.
+        Arguments
+        run_name : str
+            The name of the model, in less than 32 characters
+        train_data : str
+            Path of the file with train data.
+        training_reference : str, optional
+            The name of the training function inside the source file. Just used when training_type is Custom
+        python_version : str, optional
+            Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'. Just used when training_type is Custom
+        conf_dict : Union[str, dict]
+            Path to a JSON file with a the AutoML configuration. A dict can be send as well. Just used when training_type is AutoML
+        source_file : str, optional
+            Path of the source file. The file must have a training function that accepts one parameter: model_path (absolute path of where the file is located). Just used when training_type is Custom
+        requirements_file : str
+            Path of the requirements file. The packages versions must be fixed eg: pandas==1.0. Just used when training_type is Custom
+        extra_files : list, optional
+            A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file. Just used when training_type is Custom
+        wait_complete : bool, optional
+            Boolean that informs if a model training is completed (True) or not (False). Default value is False
+        
+        Raises
+        ------
+        InputError
+            Some input parameters its invalid
 
-                If training_type is AutoML
-                conf_dict (Union[str, dict]): Path to a JSON file with a the AutoML configuration. A dict can be send as well
-
-        Raises:
-                ModelError: Model is not available
-
-        Returns:
-                Union[dict, NeomarilExecution]: The return of the scoring function in the source file for Sync models or the execution class for Async models.
+        Returns
+        -------
+        Union[dict, NeomarilExecution]
+            The return of the scoring function in the source file for Sync models or the execution class for Async models.
         """
         if python_version not in ['3.7', '3.8', '3.9', '3.10']:
             raise InputError('Invalid python version. Avaliable versions are 3.7, 3.8, 3.9, 3.10')
@@ -366,7 +449,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
         if exec_id:
             self.__execute_training(exec_id)
-            run = NeomarilTrainingExecution(self.training_id, self.group, exec_id, password=self.__credentials, enviroment=self.enviroment)
+            run = NeomarilTrainingExecution(self.training_id, self.group, exec_id, password=self.__credentials, environment=self.environment)
             status = run.get_status()['Status']
             if wait_complete:
                 print('Wating the training run.', end='')
@@ -380,73 +463,104 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             return self.predict(data)
 
     def get_training_execution(self, exec_id:str) -> None:
-        """Get a execution instace.
-
-        Args:
-                exec_id (str): Execution id
-
-        Returns:
-                NeomarilExecution: The new execution
         """
-        return NeomarilTrainingExecution(self.training_id, self.group, exec_id, password=self.__credentials, enviroment=self.enviroment)
+        Get a execution instace.
+
+        Arguments
+        ---------
+        exec_id : str
+            Execution id
+
+        Returns
+        -------
+        NeomarilExecution
+            The new execution
+        """
+        return NeomarilTrainingExecution(self.training_id, self.group, exec_id, password=self.__credentials, environment=self.environment)
 
 class NeomarilTrainingClient(BaseNeomarilClient):
-    """Client for acessing Neomaril and manage models
-
     """
-    def __init__(self, password:str='', enviroment:str='staging') -> None:
-        """Client for acessing Neomaril and manage models
+    Class for client for acessing Neomaril and manage models
 
-        Args:
-                password (str): Password for authenticating with the client
-                enviroment (str): Flag that choose which enviroment of Neomaril you are using. Test your deployment first before changing to production. Default is True
+    Arguments
+    ---------
+    password : str
+        Password for authentication with the client
+    environment : str
+        Flag that choose which environment of Neomaril you are using. Test your deployment first before changing to production. Default is 'staging'
 
-        Raises:
-                AuthenticationError: Unvalid credentials
-                ServerError: Server unavailable
-        """
-        super().__init__(password, enviroment=enviroment)
+    Raises
+    ------
+    AuthenticationError
+        Unvalid credentials
+    ServerError
+        Server unavailable
+    """
+    def __init__(self, password:str='', environment:str='staging') -> None:
+        """Client for acessing Neomaril and manage models"""
+        super().__init__(password, environment=environment)
         self.__credentials = password
             
     def __repr__(self) -> str:
-            return f'NeomarilTrainingClient(enviroment="{self.enviroment}", version="{self.client_version}")'
+            return f'NeomarilTrainingClient(environment="{self.environment}", version="{self.client_version}")'
         
     def __str__(self):
-        return f"NEOMARIL {self.enviroment} Training client:{self.client_version}"
+        return f"NEOMARIL {self.environment} Training client:{self.client_version}"
         
     
     def get_training(self, training_id:str, group:str="datarisk") -> NeomarilTrainingExperiment:
-        """Acess a model using its id
+        """
+        Acess a model using its id
 
-        Args:
-            training_id (str): Training id (hash) that needs to be acessed
-            group (str): Group the model is inserted. Default is 'datarisk' (public group)
+        Arguments
+        ---------
+        training_id : str
+            Training id (hash) that needs to be acessed
+        group : str
+            Group the model is inserted. Default is 'datarisk' (public group)
 
-        Raises:
-            TrainingError: Model unavailable
-            ServerError: Unknown return from server
+        Raises
+        ------
+        TrainingError
+            Model unavailable
+        ServerError
+            Unknown return from server
 
-        Returns:
-            NeomarilTrainingExperiment: A NeomarilTrainingExperiment instance with the training hash from `training_id`
+        Returns
+        -------
+        NeomarilTrainingExperiment
+            A NeomarilTrainingExperiment instance with the training hash from `training_id`
         """
 
         return NeomarilTrainingExperiment(self.__credentials, training_id, group=group)
     
 
     def create_training_experiment(self, experiment_name:str, model_type:str, training_type:str, group:str='datarisk')-> NeomarilTrainingExperiment:
-        """Create a new training experiment on Neomaril.
+        """
+        Create a new training experiment on Neomaril.
 
-        Args:
-                experiment_name (str): The name of the experiment, in less than 32 characters
-                model_type (str): The name of the scoring function inside the source file.
-                training_type (str): Path of the source file. The file must have a scoring function that accepts two parameters: data (data for the request body of the model) and model_path (absolute path of where the file is located)
-                group (str): Group the model is inserted. Default to 'datarisk' (public group)
+        Arguments
+        ---------
+        experiment_name : str
+            The name of the experiment, in less than 32 characters
+        model_type : str
+            The name of the scoring function inside the source file.
+        training_type : str
+            Path of the source file. The file must have a scoring function that accepts two parameters: data (data for the request body of the model) and model_path (absolute path of where the file is located)
+        group : str
+            Group the model is inserted. Default to 'datarisk' (public group)
 
-        Raises:
-                InputError: Some input parameters its invalid
+        Raises
+        ------
+        InputError
+            Some input parameters its invalid
+        ServerError
+            Unknow internal server error
 
-        Returns:
-                NeomarilTrainingExperiment: 
+        Returns
+        -------
+        NeomarilTrainingExperiment
+            A NeomarilTrainingExperiment instance with the training hash from `training_id`
         """
         
         

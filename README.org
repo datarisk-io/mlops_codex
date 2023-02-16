@@ -20,7 +20,7 @@ Install pipenv
   pip install pipenv
 #+END_SRC
 
-Install the package enviroment
+Install the package environment
 #+BEGIN_SRC shell
   pipenv update --dev
   pipenv shell

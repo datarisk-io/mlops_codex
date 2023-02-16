@@ -65,25 +65,25 @@ class BaseNeomaril:
 class BaseNeomarilClient(BaseNeomaril):
 	"""Base class for others client related classes.
 	"""
-	def __init__(self, password:str='', enviroment:str='staging') -> None:
+	def __init__(self, password:str='', environment:str='staging') -> None:
 		super().__init__()
 		load_dotenv()
 
 		self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
-		self.enviroment = os.getenv('NEOMARIL_ENVIROMENT') if os.getenv('NEOMARIL_ENVIROMENT') else enviroment
+		self.environment = os.getenv('NEOMARIL_ENVIROMENT') if os.getenv('NEOMARIL_ENVIROMENT') else environment
 
-		if self.enviroment == 'dev':
+		if self.environment == 'dev':
 				self.base_url = self._dev_url
 
-		elif self.enviroment == 'staging':
+		elif self.environment == 'staging':
 				self.base_url = self._staging_url
-				logger.info("You are using the test enviroment that will have the data cleaned from time to time. If your model is ready to use change the enviroment to Production")
+				logger.info("You are using the test environment that will have the data cleaned from time to time. If your model is ready to use change the environment to Production")
 
-		elif self.enviroment == 'production':
+		elif self.environment == 'production':
 				raise NotImplementedError
-				# self.enviroment = "Production"
+				# self.environment = "Production"
 				# self.base_url = self._production_url
-				# logger.info("You are using the production enviroment, please use the test enviroment if you are still developing the model.")
+				# logger.info("You are using the production environment, please use the test environment if you are still developing the model.")
 
 		self.client_version = try_login(self.__credentials, self.base_url)
 		logger.info(f"Successfully connected to Neomaril")
@@ -166,15 +166,15 @@ class NeomarilExecution(BaseNeomaril):
 	"""Base class for Neomaril async executions.
 	"""
 
-	def __init__(self, parent_id:str, exec_type:str, group:Optional[str]=None, exec_id:Optional[str]=None, password:str=None, enviroment:str=None) -> None:
+	def __init__(self, parent_id:str, exec_type:str, group:Optional[str]=None, exec_id:Optional[str]=None, password:str=None, environment:str=None) -> None:
 		super().__init__()
-		self.enviroment = enviroment
+		self.environment = environment
 		self.exec_type = exec_type
 		self.exec_id = exec_id
 		self.status = 'Requested'
 		self.__credentials = password
 
-		if enviroment == "Staging":
+		if environment == "Staging":
 				self.base_url = self._staging_url
 				self.mlflow_url = 'https://mlflow.staging.datarisk.net/'
 		else:
