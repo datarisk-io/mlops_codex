@@ -10,7 +10,8 @@ neomaril\_codex.training.NeomarilTrainingExecution
 
 .. autoclass:: neomaril_codex.training.NeomarilTrainingExecution
    :members:
-   :private-members: +__upload_model, __host_model
+   :undoc-members:
+   :show-inheritance:
 
 
 neomaril\_codex.training.NeomarilTrainingExperiment
@@ -18,7 +19,8 @@ neomaril\_codex.training.NeomarilTrainingExperiment
 
 .. autoclass:: neomaril_codex.training.NeomarilTrainingExperiment
    :members:
-   :private-members: +__upload_training, __execute_training
+   :undoc-members:
+   :show-inheritance:
 
 
 neomaril\_codex.training.NeomarilTrainingClient
@@ -26,4 +28,6 @@ neomaril\_codex.training.NeomarilTrainingClient
 
 .. autoclass:: neomaril_codex.training.NeomarilTrainingClient
    :members:
+   :undoc-members:
+   :show-inheritance:
 

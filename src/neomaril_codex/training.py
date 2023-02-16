@@ -7,7 +7,7 @@ from typing import Union, Optional
 import requests
 import json
 from time import sleep
-from neomaril_codex._base import *
+from neomaril_codex.base import *
 from neomaril_codex.model import NeomarilModel
 from neomaril_codex.exceptions import *
 
@@ -252,7 +252,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         self.base_url = parse_url(self.base_url)
         self.group = group
 
-        try_login(self.__credentials, self.base_url)
+        _try_login(self.__credentials, self.base_url)
         
         url = f"{self.base_url}/training/describe/{self.group}/{self.training_id}"
         response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
@@ -481,7 +481,7 @@ class NeomarilTrainingClient(BaseNeomarilClient):
         Password for authentication with the client
 	url : str
 		URL to Neomaril Server. Default value is staging, use it to test your deployment first before changing to production
-        
+
     Raises
     ------
     AuthenticationError

@@ -6,7 +6,7 @@ from typing import Union, Optional
 from time import sleep
 import requests
 import json
-from neomaril_codex._base import *
+from neomaril_codex.base import *
 from neomaril_codex.exceptions import *
 
 class NeomarilModel(BaseNeomaril):
@@ -52,7 +52,7 @@ class NeomarilModel(BaseNeomaril):
         self.base_url = os.getenv('NEOMARIL_URL') if os.getenv('NEOMARIL_URL') else url
         self.base_url = parse_url(self.base_url)
 
-        try_login(self.__credentials, self.base_url)
+        _try_login(self.__credentials, self.base_url)
         
         url = f"{self.base_url}/model/describe/{self.group}/{self.model_id}"
         response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
@@ -134,7 +134,7 @@ class NeomarilModel(BaseNeomaril):
         """
         if self.operation == 'async':
             try:
-                try_login(self.__credentials, self.base_url)
+                _try_login(self.__credentials, self.base_url)
                 return 'OK'
             except Exception as e:
                 logger.error('Server error: '+e)
