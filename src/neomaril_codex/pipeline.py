@@ -19,8 +19,8 @@ class NeomarilPipeline:
         Credentials to authorize the access
     group: str
         Group the model is inserted
-    environment : str
-        Flag that choose which environment of Neomaril you are using. Test your deployment first before changing to production. Default value is staging
+	url : str
+		URL to Neomaril Server. Default value is staging, use it to test your deployment first before changing to production
     python_version : str
         Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.9'
         
@@ -312,4 +312,3 @@ class NeomarilPipeline:
 
         if self.monitoring_config:
             self.run_monitoring(training_exec_id=(training_id[1] if training_id else None), model_id=model_id)
-        

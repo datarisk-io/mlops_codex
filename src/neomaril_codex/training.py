@@ -61,7 +61,6 @@ class NeomarilTrainingExecution(NeomarilExecution):
     """
 
     def __init__(self, training_id:str, group:str, exec_id:str, password:Optional[str]=None, url:str=None) -> None:
-
         super().__init__(training_id, 'Training', exec_id=exec_id, password=password, url=url, group=group)
         load_dotenv()
         self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
@@ -289,7 +288,6 @@ class NeomarilTrainingExperiment(BaseNeomaril):
     """
 
     def __init__(self, training_id:str, password:Optional[str]=None, group:str="datarisk", url:str='https://neomaril.staging.datarisk.net/') -> None:
-
         super().__init__()
         load_dotenv()
         self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password

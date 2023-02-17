@@ -79,8 +79,8 @@ class BaseNeomarilClient(BaseNeomaril):
 	----------
 	password : str
 		Password for authenticating with the client
-	enviroment : str
-		Flag that choose which environment of Neomaril you are using. Test your deployment first before changing to production. Default value is staging
+	url : str
+		URL to Neomaril Server. Default value is staging, use it to test your deployment first before changing to production
 
 	Raises
 	------
@@ -246,8 +246,8 @@ class NeomarilExecution(BaseNeomaril):
 		Execution id
 	password: str
 		Password for authenticating with the client
-	environment : str
-		Flag that choose which environment of Neomaril you are using. Test your deployment first before changing to production. Default value is staging
+	url : str
+		URL to Neomaril Server. Default value is staging, use it to test your deployment first before changing to production
 
 	Raises
 	------
