@@ -35,8 +35,7 @@ class NeomarilModel(BaseNeomaril):
 
     Examples
     --------
-    ___decribe___
-
+    
     """
 
     def __init__(self, password:str, model_id:str, group:str="datarisk", group_token:Optional[str]=None, environment:str='staging') -> None:
@@ -439,7 +438,16 @@ class NeomarilModelClient(BaseNeomarilClient):
 
     Examples
     --------
-    ___decribe___
+    
+    .. code-block:: python
+        
+        from neomaril_codex.model import NeomarilModelClient
+
+        def create_model():
+            token='123'
+
+            client = NeomarilModelClient(token)
+            ...
     """
     def __init__(self, password:str, environment:str='staging') -> None:
         """
