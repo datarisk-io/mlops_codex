@@ -1,4 +1,4 @@
-enviroment: staging
+url: https://neomaril.staging.datarisk.net
 group: datarisk
 python_version: 3.9
 training:
