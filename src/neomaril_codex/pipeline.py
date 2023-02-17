@@ -23,9 +23,18 @@ class NeomarilPipeline:
         Flag that choose which environment of Neomaril you are using. Test your deployment first before changing to production. Default value is staging
     python_version : str
         Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.9'
-
+        
     Examples
-    --------
+    --------     
+
+    .. code-block:: python
+
+        from neomaril_codex.pipeline import NeomarilPipeline
+
+        def create_pipeline():
+            pipeline = NeomarilPipeline.from_config_file('./samples/pipeline.yml')
+            pipeline.register_monitoring_config(directory = "./samples/monitoring", preprocess = "preprocess.py", preprocess_function = "score", shap_function = "score", config = "configuration.json", packages = "requirements.txt")
+            pipeline.start()
     """
     def __init__(self, group:str, password:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/', python_version:float=3.9) -> None:
         self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
@@ -94,8 +103,8 @@ class NeomarilPipeline:
         NeomarilPipeline
             The new pipeline 
         
-        Example
-        -------
+        Examples
+        --------
         >>> pipeline = NeomarilPipeline.from_config_file('./samples/pipeline-just-model.yml')
         >>> pipeline.register_monitoring_config(directory = "./samples/monitoring", preprocess = "preprocess.py", preprocess_function = "score", shap_function = "score", config = "configuration.json", packages = "requirements.txt")
         >>> pipeline.start()

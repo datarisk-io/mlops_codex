@@ -91,7 +91,8 @@ class Logger:
         Parameters
         ----------
         message : str
-            Message that will be logged"""
+            Message that will be logged
+        """
         self.__log('DEBUG', message)
 
     def warning(self, message:str) -> None:
@@ -101,7 +102,8 @@ class Logger:
         Parameters
         ----------
         message : str
-            Message that will be logged"""
+            Message that will be logged
+        """
         self.__log('WARNING', message)
 
     def error(self, message:str) -> None:
