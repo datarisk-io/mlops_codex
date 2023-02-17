@@ -6,6 +6,14 @@ from dotenv import load_dotenv
 
 from neomaril_codex.exceptions import *
 
+def parse_url(url):
+    if url.endswith('/'):
+        url = url[:-1]
+
+    if not url.endswith('/api'):
+        url = (url+'/api')
+    return url
+
 def try_login(password:str, base_url:str) -> bool:
 
     response = requests.get(f"{base_url}/health", headers={'Authorization': 'Bearer ' + password})
@@ -26,9 +34,7 @@ class BaseNeomaril:
     """
 
     def __init__(self) -> None:
-        self._production_url = "http://neomaril.datarisk.net/api"
-        self._staging_url = "http://neomaril.staging.datarisk.net/api"
-        self._dev_url = "http://localhost:7070/api"
+        pass
 
 
     def _logs(self, url, creds, start:Optional[str]=None, end:Optional[str]=None, routine:Optional[str]=None, type:Optional[str]=None):
@@ -65,25 +71,19 @@ class BaseNeomaril:
 class BaseNeomarilClient(BaseNeomaril):
 	"""Base class for others client related classes.
 	"""
-	def __init__(self, password:str='', enviroment:str='staging') -> None:
+	def __init__(self, password:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/') -> None:
 		super().__init__()
 		load_dotenv()
+		logger.info('Loading .env')
 
 		self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
-		self.enviroment = os.getenv('NEOMARIL_ENVIROMENT') if os.getenv('NEOMARIL_ENVIROMENT') else enviroment
+		self.base_url = os.getenv('NEOMARIL_URL') if os.getenv('NEOMARIL_URL') else url
+		self.base_url = parse_url(self.base_url)
 
-		if self.enviroment == 'dev':
-				self.base_url = self._dev_url
+		if self.base_url == 'https://neomaril.staging.datarisk.net/':
+			logger.info("You are using the test enviroment that will have the data cleaned from time to time. If your model is ready to use change the enviroment to Production")
 
-		elif self.enviroment == 'staging':
-				self.base_url = self._staging_url
-				logger.info("You are using the test enviroment that will have the data cleaned from time to time. If your model is ready to use change the enviroment to Production")
 
-		elif self.enviroment == 'production':
-				raise NotImplementedError
-				# self.enviroment = "Production"
-				# self.base_url = self._production_url
-				# logger.info("You are using the production enviroment, please use the test enviroment if you are still developing the model.")
 
 		self.client_version = try_login(self.__credentials, self.base_url)
 		logger.info(f"Successfully connected to Neomaril")
@@ -166,26 +166,20 @@ class NeomarilExecution(BaseNeomaril):
 	"""Base class for Neomaril async executions.
 	"""
 
-	def __init__(self, parent_id:str, exec_type:str, group:Optional[str]=None, exec_id:Optional[str]=None, password:str=None, enviroment:str=None) -> None:
+	def __init__(self, parent_id:str, exec_type:str, group:Optional[str]=None, exec_id:Optional[str]=None, password:Optional[str]=None, url:str=None) -> None:
 		super().__init__()
-		self.enviroment = enviroment
+		self.base_url = os.getenv('NEOMARIL_URL') if os.getenv('NEOMARIL_URL') else url
+		self.base_url = parse_url(self.base_url)
 		self.exec_type = exec_type
 		self.exec_id = exec_id
 		self.status = 'Requested'
-		self.__credentials = password
-
-		if enviroment == "Staging":
-				self.base_url = self._staging_url
-				self.mlflow_url = 'https://mlflow.staging.datarisk.net/'
-		else:
-				self.base_url = self._production_url
-				self.mlflow_url = 'https://mlflow.datarisk.net/'
+		load_dotenv()
+		self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
 
 		try_login(self.__credentials, self.base_url)
 
 		if exec_type == 'AsyncModel':
 				self.__url_path = 'model/async'
-				del self.mlflow_url
 		elif exec_type == 'Training':
 				self.__url_path = 'training'
 		else:
@@ -231,10 +225,6 @@ class NeomarilExecution(BaseNeomaril):
 
 		self.status = result['Status']
 		self.execution_data['Status'] = result['Status']
-
-		if self.status == 'Succeeded':
-				if self.exec_type == 'Training':
-						logger.info(f'You can check the run info in {self.mlflow_url} ')
 
 		return result
 

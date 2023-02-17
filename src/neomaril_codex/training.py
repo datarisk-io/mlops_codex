@@ -17,7 +17,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
     """ Class to manage trained models
     """
 
-    def __init__(self, training_id:str, group:str, exec_id:str, password:str=None, enviroment:str=None) -> None:
+    def __init__(self, training_id:str, group:str, exec_id:str, password:Optional[str]=None, url:str=None) -> None:
         """ Class to manage trained models
 
         Args:
@@ -25,14 +25,15 @@ class NeomarilTrainingExecution(NeomarilExecution):
                 group (str): Group the training is inserted. Default is 'datarisk' (public group)
                 exec_id (str): Executiong id for that especific training run
                 password (str): Password for authenticating with the client
-                enviroment (str): Enviroment of Neomaril you are using. 
+                url (str): Neomaril Server URL.  
     
         Raises:
                 TrainingError: When the training can't be acessed in the server
                 AuthenticationError: Unvalid credentials
         """
-        super().__init__(training_id, 'Training', exec_id=exec_id, password=password, enviroment=enviroment, group=group)
-        self.__credentials = password
+        super().__init__(training_id, 'Training', exec_id=exec_id, password=password, url=url, group=group)
+        load_dotenv()
+        self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
 
         self.training_id = training_id
         self.group = group
@@ -152,7 +153,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
         if model_id:
             self.__host_model(operation.lower(), model_id)
 
-            return NeomarilModel(self.__credentials, model_id, group=self.group, enviroment=self.enviroment)
+            return NeomarilModel(model_id, password=self.__credentials, group=self.group, url=self.base_url)
 
         
 class NeomarilTrainingExperiment(BaseNeomaril):
@@ -160,34 +161,26 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
     """
 
-    def __init__(self, password:str, training_id:str, group:str="datarisk", enviroment:str='staging') -> None:
+    def __init__(self, training_id:str, password:Optional[str]=None, group:str="datarisk", url:str='https://neomaril.staging.datarisk.net/') -> None:
         """ Class to manage models being trained inside Neomaril
 
         Args:
                 password (str): Password for authenticating with the client
                 training_id (str): Training id (hash) from the experiment you want to acess
                 group (str): Group the training is inserted. Default is 'datarisk' (public group)
-                enviroment (str): Flag that choose which enviroment of Neomaril you are using. Test your deployment first before changing to production. Default is True
+            url (str): URL for Neomaril server. Test your deployment first before changing to production. Default is https://neomaril.staging.datarisk.net/
 
         Raises:
                 TrainingError: When the training can't be acessed in the server
                 AuthenticationError: Unvalid credentials
         """
         super().__init__()
-        self.__credentials = password
+        load_dotenv()
+        self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
         self.training_id = training_id
-        self.enviroment = enviroment
+        self.base_url = os.getenv('NEOMARIL_URL') if os.getenv('NEOMARIL_URL') else url
+        self.base_url = parse_url(self.base_url)
         self.group = group
-
-        if self.enviroment == "dev":
-            self.base_url = self._dev_url
-
-        elif self.enviroment == "staging":
-            self.base_url = self._staging_url
-        else:
-            raise NotImplementedError
-            # self.enviroment = "Production"
-            # self.base_url = self._production_url
 
         try_login(self.__credentials, self.base_url)
         
@@ -208,7 +201,6 @@ class NeomarilTrainingExperiment(BaseNeomaril):
     def __repr__(self) -> str:
             return f"""NeomarilTrainingExperiment(name="{self.experiment_name}", 
                                                         group="{self.group}", 
-                                                        enviroment="{self.enviroment}"
                                                         training_id="{self.training_id}",
                                                         training_type="{self.training_type}",
                                                         model_type={str(self.model_type)}
@@ -354,7 +346,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
         if exec_id:
             self.__execute_training(exec_id)
-            run = NeomarilTrainingExecution(self.training_id, self.group, exec_id, password=self.__credentials, enviroment=self.enviroment)
+            run = NeomarilTrainingExecution(self.training_id, self.group, exec_id, password=self.__credentials, url=self.base_url)
             status = run.get_status()['Status']
             if wait_complete:
                 print('Wating the training run.', end='')
@@ -376,31 +368,36 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         Returns:
                 NeomarilExecution: The new execution
         """
-        return NeomarilTrainingExecution(self.training_id, self.group, exec_id, password=self.__credentials, enviroment=self.enviroment)
+        return NeomarilTrainingExecution(self.training_id, self.group, exec_id, password=self.__credentials, url=self.base_url)
 
 class NeomarilTrainingClient(BaseNeomarilClient):
     """Client for acessing Neomaril and manage models
 
     """
-    def __init__(self, password:str='', enviroment:str='staging') -> None:
+    def __init__(self, password:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/') -> None:
         """Client for acessing Neomaril and manage models
 
         Args:
                 password (str): Password for authenticating with the client
-                enviroment (str): Flag that choose which enviroment of Neomaril you are using. Test your deployment first before changing to production. Default is True
+            url (str): URL for Neomaril server. Test your deployment first before changing to production. Default is https://neomaril.staging.datarisk.net/
 
         Raises:
                 AuthenticationError: Unvalid credentials
                 ServerError: Server unavailable
         """
-        super().__init__(password, enviroment=enviroment)
-        self.__credentials = password
+        load_dotenv()
+
+        self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
+        self.base_url = os.getenv('NEOMARIL_URL') if os.getenv('NEOMARIL_URL') else url
+        self.base_url = parse_url(self.base_url)
+
+        super().__init__(password=self.__credentials, url=self.base_url)
             
     def __repr__(self) -> str:
-            return f'NeomarilTrainingClient(enviroment="{self.enviroment}", version="{self.client_version}")'
+            return f'NeomarilTrainingClient(url="{self.base_url}", version="{self.client_version}")'
         
     def __str__(self):
-        return f"NEOMARIL {self.enviroment} Training client:{self.client_version}"
+        return f"NEOMARIL {self.base_url} Training client:{self.client_version}"
         
     
     def get_training(self, training_id:str, group:str="datarisk") -> NeomarilTrainingExperiment:
@@ -418,7 +415,7 @@ class NeomarilTrainingClient(BaseNeomarilClient):
             NeomarilTrainingExperiment: A NeomarilTrainingExperiment instance with the training hash from `training_id`
         """
 
-        return NeomarilTrainingExperiment(self.__credentials, training_id, group=group)
+        return NeomarilTrainingExperiment(training_id, password=self.__credentials, group=group)
     
 
     def create_training_experiment(self, experiment_name:str, model_type:str, training_type:str, group:str='datarisk')-> NeomarilTrainingExperiment:
@@ -473,4 +470,4 @@ class NeomarilTrainingClient(BaseNeomarilClient):
             raise ServerError('')
 
         
-        return NeomarilTrainingExperiment(self.__credentials, training_id, group=group)  
+        return NeomarilTrainingExperiment(training_id, password=self.__credentials, group=group)  

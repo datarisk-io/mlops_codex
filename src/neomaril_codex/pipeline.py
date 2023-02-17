@@ -10,9 +10,10 @@ from neomaril_codex.training import *
 from neomaril_codex.model import *
 
 class NeomarilPipeline:
-    def __init__(self, password:str, group:str, enviroment:str='staging', python_version:float=3.9) -> None:
+    def __init__(self, group:str, password:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/', python_version:float=3.9) -> None:
         self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
-        self.enviroment = os.getenv('NEOMARIL_ENVIROMENT') if os.getenv('NEOMARIL_ENVIROMENT') else enviroment
+        self.base_url = os.getenv('NEOMARIL_URL') if os.getenv('NEOMARIL_URL') else url
+        self.base_url = parse_url(self.base_url)
         self.group = group
         self.python_version = python_version
         self.train_config = None
@@ -37,12 +38,13 @@ class NeomarilPipeline:
                 print(exc)
 
         load_dotenv()
+        logger.info('Loading .env')
 
         token = os.getenv("NEOMARIL_TOKEN")
         if not token:
             raise PipelineError("When using a config file the enviroment variable NEOMARIL_TOKEN must be defined")
 
-        pipeline = NeomarilPipeline(token, conf['group'], enviroment=conf['enviroment'], python_version=conf['python_version'])
+        pipeline = NeomarilPipeline(conf['group'], password=token, url=conf['url'], python_version=conf['python_version'])
 
         if 'training' in conf.keys():
             pipeline.register_train_config(**conf['training'])
@@ -57,7 +59,7 @@ class NeomarilPipeline:
 
     def run_training(self):
         logger.info('Running training')
-        client = NeomarilTrainingClient(self.__credentials, enviroment=self.enviroment)
+        client = NeomarilTrainingClient(password=self.__credentials, url=self.base_url)
         client.create_group(self.group, self.group)
 
         conf = self.train_config
@@ -93,7 +95,7 @@ class NeomarilPipeline:
         if training_id:
             logger.info('Deploying scorer from training')
             training_run = NeomarilTrainingExecution(training_id[0], self.group, training_id[1], password=self.__credentials, 
-                                                     enviroment=self.enviroment)
+                                                     url=self.base_url)
 
             model_name = conf.get('name', training_run.execution_data.get('ExperimentName', ''))
 
@@ -110,7 +112,7 @@ class NeomarilPipeline:
 
         else:
             logger.info('Deploying scorer')
-            client = NeomarilModelClient(password=self.__credentials, enviroment=self.enviroment)
+            client = NeomarilModelClient(password=self.__credentials, url=self.base_url)
             client.create_group(self.group, self.group)
             
             model = client.create_model(conf.get('name'), conf['score_function'], os.path.join(PATH, conf['source']), 
@@ -146,8 +148,8 @@ class NeomarilPipeline:
                 json.dump(conf_dict, f)
                 f.truncate()
 
-        model = NeomarilModel(self.__credentials, model_id, group=self.group, group_token=os.getenv('NEOMARIL_GROUP_TOKEN'),
-                                enviroment=self.enviroment)
+        model = NeomarilModel(model_id, password=self.__credentials, group=self.group, group_token=os.getenv('NEOMARIL_GROUP_TOKEN'),
+                                url=self.base_url)
 
         model.register_monitoring(conf['preprocess_function'], conf['shap_function'], 
                                     configuration_file=os.path.join(PATH, conf['config']),
