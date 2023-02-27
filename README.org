@@ -10,7 +10,7 @@ Package for interacting with [[https://github.com/datarisk-io/neomaril][Neomaril
   pip install neomaril-codex
 #+END_SRC
 
-[[https://github.com/datarisk-io/mlops-neomaril-codex/tree/master/notebooks][Examples]]
+[[https://github.com/datarisk-io/mlops-neomaril-codex/tree/master/notebooks][Example]]
 
 
 ** For developers

@@ -33,9 +33,27 @@ class NeomarilModel(BaseNeomaril):
     AuthenticationError
         Unvalid credentials
 
-    Examples
+    Example
     --------
-    
+    Getting a model, testint its healthy and putting it to run the prediction
+
+    .. code-block:: python
+        
+        from neomaril_codex.model import NeomarilModelClient
+        from neomaril_codex.model import NeomarilModel
+
+        client = NeomarilModelClient('123456')
+
+        model = client.get_model(model_id='M9c3af308c754ee7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4',
+                                 group='ex_group')
+        
+        if model.health() = 'OK':
+            model.wait_ready()
+            model.predict(model.schema)
+        else:
+            model.restart_model(False)
+            model.wait_ready()
+            model.predict(model.schema)
     """
 
     def __init__(self, password:str, model_id:str, group:str="datarisk", group_token:Optional[str]=None, environment:str='staging') -> None:
@@ -126,12 +144,13 @@ class NeomarilModel(BaseNeomaril):
         Returns
         -------
         str
-            OK - if the it is possible toget the health state
+            OK - if the it is possible to get the health state
             NOK - if an exception occurs
         
         Example
         -------
         >>> model.health()
+         'OK'
         """
         if self.operation == 'async':
             try:
@@ -202,7 +221,14 @@ class NeomarilModel(BaseNeomaril):
         
         Example
         -------
-        >>> model.get_logs(routine='Run')
+        >>> model.get_logs(start='2023-01-31', end='2023-02-24', routine='Run', type='Error')
+         {'Results': 
+            [{'ModelHash': 'M9c3af308c754ee7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4',
+                'RegisteredAt': '2023-01-31T16:06:45.5955220Z',
+                'OutputType': 'Error',
+                'OutputData': '',
+                'Routine': 'Run'}]
+         }
         """
         url = f"{self.base_url}/model/logs/{self.model_id}"
         return self._logs(url, self.__credentials, start=start, end=end, routine=routine, type=type)
@@ -221,6 +247,10 @@ class NeomarilModel(BaseNeomaril):
         -------
         str
             If model is at status=Deployed deletes the model and return a json with his information. If it isn't Deployed it returns the message that the model is under another state
+
+        Example
+        -------
+        >>> model.delete()
         """
         if self.__model_ready:
             req = requests.delete(f"{self.base_url}/model/delete/{self.group}/{self.model_id}", headers={'Authorization': 'Bearer ' + self.__credentials})
@@ -248,6 +278,10 @@ class NeomarilModel(BaseNeomaril):
         ---------
         group_token : str
             Token for executing the model (show when creating a group)
+        
+        Example
+        -------
+        >>> model.set_token('6cb64889a45a45ea8749881e30c136df')
         """
 
         self.__token = group_token
@@ -298,7 +332,6 @@ class NeomarilModel(BaseNeomaril):
                     req = requests.post(url, files=[("input", (data.split('/')[-1], open(data, "r")))],
                                                     headers={'Authorization': 'Bearer ' + group_token})
 
-
                     if req.status_code == 202:
                         message = req.json()
                         logger.info(message['Message'])
@@ -346,6 +379,10 @@ class NeomarilModel(BaseNeomaril):
         ------
         ModelError
             If the user tries to get a execution from a Sync model 
+
+        Example
+        -------
+        >>> model.get_model_execution('1')
         """
         if self.operation == 'async':
             return NeomarilExecution(self.model_id, 'AsyncModel', exec_id, password=self.__credentials, 
@@ -436,19 +473,96 @@ class NeomarilModelClient(BaseNeomarilClient):
     ServerError
         Server unavailable
 
-    Examples
+    Example
     --------
+    Example 1: Creation and managing a Synchronous Model
+
+    .. code-block:: python
+        
+        from neomaril_codex.model import NeomarilModelClient
+        from neomaril_codex.model import NeomarilModel
+    
+        def new_sync_model(client, group, data_path):
+            model = client.create_model('Model Example Sync',
+                                'score', 
+                                data_path+'app.py', 
+                                data_path+'model.pkl', 
+                                data_path+'requirements.txt',
+                                data_path+'schema.json', 
+                                group=group,
+                                operation="Sync" 
+                                )
+                                
+            model.register_monitoring('parse',
+                            'get_shap',
+                            configuration_file=data_path+'configuration.json',
+                            preprocess_file=data_path+'preprocess.py',
+                            requirements_file=data_path+'requirements.txt'
+                            )
+            
+            return model.model_id
+
+        client = NeomarilModelClient('123456')
+        client.create_group('ex_group', 'Group for example purpose')
+
+        data_path = './samples/syncModel/'
+
+        model_id = new_sync_model(client, 'ex_group', data_path)
+
+        model_list = client.search_models()
+        print(model_list)
+
+        model = client.get_model(model_id, 'ex_group')
+
+        print(model.health())
+
+        model.wait_ready()
+        model.predict(model.schema)
+
+        print(model.get_logs(routine='Run'))
+
+    Example 2: creation and deployment of a Asynchronous Model
     
     .. code-block:: python
         
         from neomaril_codex.model import NeomarilModelClient
+        from neomaril_codex.model import NeomarilModel
+        
+        def new_async_model(client, group, data_path):
+            model = client.create_model('Teste notebook Async',
+                            'score',
+                            data_path+'app.py',
+                            data_path+'model.pkl',
+                            data_path+'requirements.txt',
+                            group=group,
+                            python_version='3.9',
+                            operation="Async",
+                            input_type='csv'
+                            )
+            
+            return model.model_id
+        
+        def run_model(client, model_id, data_path):
+            model = client.get_model(model_id, 'ex_group')
 
-        def create_model():
-            token='123'
+            execution = model.predict(data_path+'input.csv')
+            
+            return execution
+        
+        client = NeomarilModelClient('123456')
+        client.create_group('ex_group', 'Group for example purpose')
 
-            client = NeomarilModelClient(token)
-            ...
+        data_path = './samples/asyncModel/'
+
+        model_id = new_async_model(client, 'ex_group', data_path)
+
+        execution = run_model(client, model_id, data_path)
+        
+        execution.get_status()
+
+        execution.download_result()
     """
+
     def __init__(self, password:str, environment:str='staging') -> None:
         """
         Client for acessing Neomaril and manage models
@@ -517,7 +631,11 @@ class NeomarilModelClient(BaseNeomarilClient):
         -------
         NeomarilModel
             A NeomarilModel instance with the model hash from `model_id`
-        """
+        
+        Example
+        -------
+        >>> model.get_model(model_id='M9c3af308c754ee7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4', group='ex_group')
+        """        
         try:
             response = self.__get_model_status(model_id, group)
         except KeyError:
@@ -571,6 +689,9 @@ class NeomarilModelClient(BaseNeomarilClient):
         -------
         list
             List with the models data, it can works like a filter depending on the arguments values
+        Example
+        -------
+        >>> model.search_models(group='ex_group', only_deployed=True)
         """
         url = f"{self.base_url}/model/search"
 
@@ -633,6 +754,13 @@ class NeomarilModelClient(BaseNeomarilClient):
         Example
         -------
         >>> model.get_logs(routine='Run')
+         {'Results': 
+            [{'ModelHash': 'B4c3af308c3e452e7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4',
+                'RegisteredAt': '2023-02-03T16:06:45.5955220Z',
+                'OutputType': 'Ok',
+                'OutputData': '',
+                'Routine': 'Run'}]
+         }
         """
         url = f"{self.base_url}/model/logs/{model_id}"
         return self._logs(url, self.__credentials, start=start, end=end, routine=routine, type=type)
@@ -807,6 +935,10 @@ class NeomarilModelClient(BaseNeomarilClient):
         -------
         Union[NeomarilModel, str]
             Returns the new model, if wait_for_ready=True runs the deploy process synchronously. If its False, returns nothing after sending all the data to server and runs the deploy asynchronously
+        
+        Example
+        -------
+        >>> model = client.create_model('Model Example Sync', 'score',  './samples/syncModel/app.py', './samples/syncModel/'model.pkl', './samples/syncModel/requirements.txt','./samples/syncModel/schema.json', group=group, operation="Sync")
         """
         
         if python_version not in ['3.7', '3.8', '3.9', '3.10']:
@@ -854,5 +986,9 @@ class NeomarilModelClient(BaseNeomarilClient):
         -------
         NeomarilExecution
             The new execution
+        
+        Example
+        -------
+        >>> model.get_model_execution( model_id='M9c3af308c754ee7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4', exec_id = '1')
         """
         return NeomarilExecution(model_id,'AsyncModel', exec_id, password=self.__credentials, environment=self.environment, group=group)

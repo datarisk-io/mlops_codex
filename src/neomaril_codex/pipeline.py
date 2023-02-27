@@ -24,7 +24,7 @@ class NeomarilPipeline:
     python_version : str
         Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.9'
         
-    Examples
+    Example
     --------     
 
     .. code-block:: python
@@ -102,7 +102,7 @@ class NeomarilPipeline:
         NeomarilPipeline
             The new pipeline 
         
-        Examples
+        Example
         --------
         >>> pipeline = NeomarilPipeline.from_config_file('./samples/pipeline-just-model.yml')
         >>> pipeline.register_monitoring_config(directory = "./samples/monitoring", preprocess = "preprocess.py", preprocess_function = "score", shap_function = "score", config = "configuration.json", packages = "requirements.txt")

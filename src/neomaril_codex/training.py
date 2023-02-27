@@ -36,6 +36,28 @@ class NeomarilTrainingExecution(NeomarilExecution):
         When the training can't be acessed in the server
     AuthenticationError
         Unvalid credentials
+    
+    Example
+    -------
+
+    .. code-block:: python
+        
+        from neomaril_codex.training import NeomarilTrainingClient
+        from neomaril_codex.base import NeomarilExecution
+
+        client = NeomarilTrainingClient('123456')
+        client.create_group('ex_group', 'Group for example purpose')
+        training = client.create_training_experiment('Training example', 'Classification',  'Custom', 'ex_group')
+        print(client.get_training(training.training_id, 'ex_group').training_data)
+
+        data_path = './samples/train/'
+
+        run = training.run_training('First test', data_path+'dados.csv', training_reference='train_model', python_version='3.9', requirements_file=data_path+'requirements.txt', wait_complete=True)
+        
+        print(run.get_training_execution(run.exec_id))
+        print(run.download_result())
+
+        run.promote('Teste notebook promoted custom', 'score', data_path+'app.py', data_path+'schema.json',  'csv')
     """
 
     def __init__(self, training_id:str, group:str, exec_id:str, password:str=None, environment:str=None) -> None:
@@ -170,7 +192,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
     def promote_model(self, model_name:str, model_reference:Optional[str]=None, source_file:Optional[str]=None, 
                                          schema:Optional[Union[str, dict]]=None, extra_files:Optional[list]=None, 
                                          env:Optional[str]=None, operation:str='Sync', input_type:str=None)-> NeomarilModel:
-        """
+        """        
         Upload models trained inside Neomaril.
 
         Arguments
@@ -201,6 +223,10 @@ class NeomarilTrainingExecution(NeomarilExecution):
         -------
         NeomarilModel
             The new training model
+        
+        Example
+        -------
+        >>> training = run.promote_model('Teste notebook promoted custom', 'score', './samples/train/app.py', './samples/train/schema.json',  'csv')
         """
         if self.status in ['Running', 'Requested']:
             self.status = self.get_status()['Status']
@@ -238,6 +264,26 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         When the training can't be acessed in the server
     AuthenticationError
         Unvalid credentials
+    
+    Example
+    -------
+
+    .. code-block:: python
+
+        from neomaril_codex.training import NeomarilTrainingClient
+        from neomaril_codex.base import NeomarilExecution
+
+        client = NeomarilTrainingClient('123456')
+        client.create_group('ex_group', 'Group for example purpose')
+        training = client.create_training_experiment('Training example', 'Classification',  'Custom', 'ex_group')
+        print(client.get_training(training.training_id, 'ex_group').training_data)
+
+        data_path = './samples/train/'
+
+        run = run = training.run_training('First test', data_path+'dados.csv', training_reference='train_model', python_version='3.9', requirements_file=data_path+'requirements.txt', wait_complete=True)
+        
+        print(run.get_training_execution(run.exec_id))
+        print(run.download_result())
     """
 
     def __init__(self, password:str, training_id:str, group:str="datarisk", environment:str='staging') -> None:
@@ -285,7 +331,6 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
     def __str__(self):
         return f'NEOMARIL training experiment "{self.experiment_name} (Group: {self.group}, Id: {self.training_id})"'
-    
     
     def __upload_training(self, run_name:str, train_data:str, training_reference:Optional[str]=None, 
                                                 python_version:str='3.8', conf_dict:Optional[Union[str, dict]]=None,
@@ -397,13 +442,14 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             raise InputError('Invalid parameters for training execution')
 
     def run_training(self, run_name:str, train_data:str, training_reference:Optional[str]=None, 
-                                                python_version:str='3.8', conf_dict:Optional[Union[str, dict]]=None,
-                                                source_file:Optional[str]=None, requirements_file:Optional[str]=None,
-                                                extra_files:Optional[list]=None, wait_complete:Optional[bool]=False) -> Union[dict, NeomarilExecution]:
+                     python_version:str='3.8', conf_dict:Optional[Union[str, dict]]=None,
+                     source_file:Optional[str]=None, requirements_file:Optional[str]=None,
+                     extra_files:Optional[list]=None, wait_complete:Optional[bool]=False) -> Union[dict, NeomarilExecution]:
         """
         Runs a prediction from the current model.
 
         Arguments
+        ---------
         run_name : str
             The name of the model, in less than 32 characters
         train_data : str
@@ -432,6 +478,10 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         -------
         Union[dict, NeomarilExecution]
             The return of the scoring function in the source file for Sync models or the execution class for Async models.
+        
+        Example
+        -------
+        >>> execution = run = training.run_training('First test', data_path+'dados.csv', training_reference='train_model', python_version='3.9', requirements_file=data_path+'requirements.txt', wait_complete=True)
         """
         if python_version not in ['3.7', '3.8', '3.9', '3.10']:
             raise InputError('Invalid python version. Avaliable versions are 3.7, 3.8, 3.9, 3.10')
@@ -480,7 +530,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
 class NeomarilTrainingClient(BaseNeomarilClient):
     """
-    Class for client for acessing Neomaril and manage models
+    Class for client to access Neomaril training models
 
     Arguments
     ---------
@@ -495,7 +545,20 @@ class NeomarilTrainingClient(BaseNeomarilClient):
         Unvalid credentials
     ServerError
         Server unavailable
-    """
+    
+    Example
+    -------
+    .. code-block:: python
+        
+        from neomaril_codex.training import NeomarilTrainingClient
+
+        client = NeomarilTrainingClient('123456')
+        client.create_group('ex_group', 'Group for example purpose')
+        training = client.create_training_experiment('Training example', 'Classification',  'Custom', 'ex_group')
+        print(client.get_training(training.training_id, 'ex_group').training_data)
+
+    """   
+
     def __init__(self, password:str='', environment:str='staging') -> None:
         """Client for acessing Neomaril and manage models"""
         super().__init__(password, environment=environment)
@@ -530,10 +593,13 @@ class NeomarilTrainingClient(BaseNeomarilClient):
         -------
         NeomarilTrainingExperiment
             A NeomarilTrainingExperiment instance with the training hash from `training_id`
+
+        Example
+        -------
+        >>> training = get_training('Tfb3274827a24dc39d5b78603f348aee8d3dbfe791574dc4a6681a7e2a6622fa')
         """
 
         return NeomarilTrainingExperiment(self.__credentials, training_id, group=group)
-    
 
     def create_training_experiment(self, experiment_name:str, model_type:str, training_type:str, group:str='datarisk')-> NeomarilTrainingExperiment:
         """
@@ -561,8 +627,11 @@ class NeomarilTrainingClient(BaseNeomarilClient):
         -------
         NeomarilTrainingExperiment
             A NeomarilTrainingExperiment instance with the training hash from `training_id`
-        """
         
+        Example
+        -------
+        >>> training = client.create_training_experiment('Training example', 'Classification',  'Custom', 'ex_group')
+        """       
         
         if group:
             group = group.lower().strip().replace(" ", "_").replace(".", "_").replace("-", "_")

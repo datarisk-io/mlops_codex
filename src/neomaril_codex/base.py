@@ -22,14 +22,14 @@ def _try_login(password:str, base_url:str) -> bool:
       raise ServerError('Neomaril server unavailable at the moment.')
 
 class BaseNeomaril:
-    """Base class for others Neomaril related classes.
+    """
+	Super base class to initialize other variables and URLs for other Neomaril classes.
     """
 
     def __init__(self) -> None:
         self._production_url = "http://neomaril.datarisk.net/api"
         self._staging_url = "http://neomaril.staging.datarisk.net/api"
         self._dev_url = "http://localhost:7070/api"
-
 
     def _logs(self, url, creds, start:Optional[str]=None, end:Optional[str]=None, routine:Optional[str]=None, type:Optional[str]=None):
        
@@ -64,8 +64,40 @@ class BaseNeomaril:
 
 class BaseNeomarilClient(BaseNeomaril):
 	"""
-	Base class for others client related classes.
+	Base class for Neomaril client side related classes. This is the class that contains some methods related to Client models administration.
+	Mainly related to initialize environment and its variables, but also to generate groups.
+	A group is a way to organize models clustering for different users and also to increase security.
+	Each group has a unique token that should be used to run the models that belongs to that.
+
+	Attributes
+	----------
+	password : str
+		Password for authenticating with the client
+	enviroment : str
+		Flag that choose which environment of Neomaril you are using. Test your deployment first before changing to production. Default value is staging
+
+	Raises
+	------
+	NotImplementedError
+		When the environment is production, becase itis not implemented yet	
+	
+	Example
+	-------
+	In this example you can see how to create a group and after consult the list of groups that already exists.
+
+	.. code-block:: python
+        
+		from neomaril_codex.base import BaseNeomarilClient
+
+		def start_group(password):
+			client = BaseNeomarilClient(password)
+			isCreated = client.create_group('ex_group', 'Group for example purpose')
+
+			print(client.list_groups())
+
+			return isCreated
 	"""
+
 	def __init__(self, password:str='', environment:str='staging') -> None:
 		super().__init__()
 		load_dotenv()
@@ -91,7 +123,7 @@ class BaseNeomarilClient(BaseNeomaril):
 
 	def list_groups(self) -> list:
 		"""
-		List existing groups.
+		List all existing groups.
 
 		Raises
 		------
@@ -116,7 +148,8 @@ class BaseNeomarilClient(BaseNeomaril):
 
 	def create_group(self, name:str, description:str) -> bool:
 		"""
-		Create a group for multiple models of the same final client
+		Create a group for multiple models of the same final client at the end if it returns TRUE, a message with the token for that group will be returned as a INFO message.
+		You should keep this token information to be able to run the model of that group afterwards.
 
 		Arguments
 		---------
@@ -152,7 +185,9 @@ class BaseNeomarilClient(BaseNeomaril):
 
 	def refresh_group_token(self, name:str, force:bool=False) -> bool:
 		"""
-		Create a group for multiple models of the same final client.
+		Refresh the group token. If the the token its still valid it wont be changed, unless you use parameter force = True.
+		At the end a message with the token for that group will be returned as a INFO message.
+		You should keep this new token information to be able to run the model of that group afterwards.
 
 		Arguments
 		---------
@@ -170,6 +205,20 @@ class BaseNeomarilClient(BaseNeomaril):
 		-------
 		bool
 			Returns True if the group was successfully created and False if not.
+
+		Example
+		--------
+		Supose that you lost the token to access your group, you can create a new one forcing it with this method as at the example below.
+
+		.. code-block:: python
+			
+			from neomaril_codex.base import BaseNeomarilClient
+
+			def update_group_token(model_client, group_name):
+				model_client.refresh_group_token('ex_group', True)
+				print(client.list_groups())
+
+				return isCreated
 		"""
 
 		url = f"{self.base_url}/refresh/{name}"
@@ -180,12 +229,61 @@ class BaseNeomarilClient(BaseNeomaril):
 				return response.json()['Message']
 		else:
 				raise ServerError('Unexpected server error: ', response.text)
-
+		
 
 class NeomarilExecution(BaseNeomaril):
 	"""
-	Base class for Neomaril async executions.
-	"""
+	Base class for Neomaril asynchronous model executions. With this class you can visualize the status of an execution and download the results after and execution has finished.
+
+	Attributes
+	----------
+	parend_id : str
+		Model id (hash) from the model you want to access
+	exec_type : str
+		Flag that contains which type of execution you use. It can be 'AsyncModel' or 'Training'
+	group : str, optional
+		Group the model is inserted
+	exec_id : str, optional
+		Execution id
+	password: str
+		Password for authenticating with the client
+	environment : str
+		Flag that choose which environment of Neomaril you are using. Test your deployment first before changing to production. Default value is staging
+
+	Raises
+	------
+	InputError
+		Invalid execution type
+	ModelError
+		If the exection id was not found or wasn't possible to retrive it
+	
+	Example
+	-------
+	In this example you can see how to get the status of an existing execution and download its results
+
+	.. code-block:: python
+        
+		from neomaril_codex.base import NeomarilExecution
+		from neomaril_codex.model import NeomarilModelClient
+
+		def get_execution_status(password, data_path):
+			client = BaseNeomarilClient(password)
+			model = client.create_model('Example notebook Async',
+								'score',
+								data_path+'app.py',
+								data_path+'model.pkl', 
+								data_path+'requirements.txt',
+								python_version='3.9',
+								operation="Async",
+								input_type='csv'
+								)
+
+			execution = model.predict(data_path+'input.csv')
+
+			execution.get_status()
+
+			execution.download_result()	
+	"""	
 
 	def __init__(self, parent_id:str, exec_type:str, group:Optional[str]=None, exec_id:Optional[str]=None, password:str=None, environment:str=None) -> None:
 		super().__init__()
@@ -234,7 +332,7 @@ class NeomarilExecution(BaseNeomaril):
 
 	def get_status(self) -> dict:
 		"""
-		Gets the status of the execution with the informed id.
+		Gets the status of the related execution.
 
 		Raises
 		------
@@ -266,7 +364,7 @@ class NeomarilExecution(BaseNeomaril):
 
 	def download_result(self, path:Optional[str]='./') -> dict:
 		"""
-		Gets the output of the execution with the informed id
+		Gets the output of the execution.
 
 		Arguments
 		---------
@@ -281,7 +379,7 @@ class NeomarilExecution(BaseNeomaril):
 		Returns
 		-------
 		dict
-			Returns the execution status.
+			Returns the path for the result file.
 		"""
 		if self.status in ['Running', 'Requested']:
 			self.status = self.get_status()['Status']
