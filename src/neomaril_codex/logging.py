@@ -17,7 +17,7 @@ class Logger:
     InputError
         Invalid input for the logging functions
   
-    Examples
+    Example
     --------
     The logger needs to be implemented inside the function being executed by Neomaril like this:
 

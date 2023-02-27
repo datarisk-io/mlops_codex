@@ -45,13 +45,13 @@ All classes and functions exposed in neomaril_codex.* namespace are public.
    neomaril_codex
 
 
-Examples
+Example
 --------
 
 Several notebooks gives examples of how to use Neomaril-Codex to manage, deploy and other package functionalities.
 You can find it at:
 
-`Examples <https://github.com/datarisk-io/mlops-neomaril-codex/tree/master/notebooks>`_
+`Example <https://github.com/datarisk-io/mlops-neomaril-codex/tree/master/notebooks>`_
 
 
 
