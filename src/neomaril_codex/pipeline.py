@@ -31,10 +31,10 @@ class NeomarilPipeline:
 
         from neomaril_codex.pipeline import NeomarilPipeline
 
-        def create_pipeline():
-            pipeline = NeomarilPipeline.from_config_file('./samples/pipeline.yml')
-            pipeline.register_monitoring_config(directory = "./samples/monitoring", preprocess = "preprocess.py", preprocess_function = "score", shap_function = "score", config = "configuration.json", packages = "requirements.txt")
-            pipeline.start()
+        pipeline = NeomarilPipeline.from_config_file('./samples/pipeline.yml')
+        pipeline.register_monitoring_config(directory = "./samples/monitoring", preprocess = "preprocess.py", preprocess_function = "score", shap_function = "score", config = "configuration.json", packages = "requirements.txt")
+        pipeline.start()
+        pipeline.run_monitoring('2', 'Mb29d61da4324a39a8bc2e0946f213b4959643916d354bf39940de2124f1e9d8')
     """
     def __init__(self, group:str, password:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/', python_version:float=3.9) -> None:
         self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
@@ -148,6 +148,10 @@ class NeomarilPipeline:
         -------
         tuple[str, str]
             A tuple with the 'training_id' and the 'exec_id' 
+        
+        Example
+        -------
+        >>> pipeline.run_training()
         """
         logger.info('Running training')
         client = NeomarilTrainingClient(password=self.__credentials, url=self.base_url)
@@ -196,6 +200,10 @@ class NeomarilPipeline:
         -------
         str
             The new Model id (hash) 
+        
+        Example
+        -------
+        >>> pipeline.run_deploy('Mb29d61da4324a39a8bc2e0946f213b4959643916d354bf39940de2124f1e9d8')
         """
         conf = self.deploy_config
         PATH = conf['directory']
@@ -253,17 +261,6 @@ class NeomarilPipeline:
 
         Example
         -------
-        >>> pipeline = NeomarilPipeline.from_config_file('./samples/pipeline-just-model.yml')
-        >>> pipeline.register_monitoring_config(directory = "./samples/monitoring", preprocess = "preprocess.py", preprocess_function = "score", shap_function = "score", config = "configuration.json", packages = "requirements.txt")
-        >>> pipeline.start()
-        >>> pipeline.run_monitoring()
-
-
-        or
-
-        >>> pipeline = NeomarilPipeline.from_config_file('./samples/pipeline-just-model.yml')
-        >>> pipeline.register_monitoring_config(directory = "./samples/monitoring", preprocess = "preprocess.py", preprocess_function = "score", shap_function = "score", config = "configuration.json", packages = "requirements.txt")
-        >>> pipeline.start()
         >>> pipeline.run_monitoring('2', 'Mb29d61da4324a39a8bc2e0946f213b4959643916d354bf39940de2124f1e9d8')
         """
         logger.info('Configuring monitoring')
@@ -289,7 +286,7 @@ class NeomarilPipeline:
     
     def start(self):
         """
-        Start thepipeine for the model orchestration
+        Start the pipeline for the model orchestration
 
         Raises
         ------
@@ -298,9 +295,7 @@ class NeomarilPipeline:
         
         Example
         -------
-        >>> pipeline = NeomarilPipeline.from_config_file('./samples/pipeline-just-model.yml')
-        >>> pipeline.register_monitoring_config(directory = "./samples/monitoring", preprocess = "preprocess.py", preprocess_function = "score", shap_function = "score", config = "configuration.json", packages = "requirements.txt")
-        >>> pipeline.start()
+        >>> pipeline = NeomarilPipeline.from_config_file('./samples/pipeline.yml').start()
         """
         if (not self.train_config) and (not self.deploy_config) and (not self.monitoring_config):
             raise PipelineError("Cannot start pipeline without configuration")
