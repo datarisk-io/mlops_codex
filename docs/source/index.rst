@@ -6,27 +6,53 @@
 Neomaril-Codex
 ==============
 
-Package for interacting with Neomaril, a tool for deploying ML models.
+Its a Package for interacting with Neomaril.
+Neomaril is an API for Machine Learning (ML) models management, allowing the users to train, deploy and monitor those models.
+The users will need to host its Python scripts and notebooks to Neomaril-Codex to use the Neomaril API.
 
-
-Getting started
----------------
 
 Installation
+---------------
+
+The package is available on PyPI and can thus be installed with:
 
 .. code:: python
 
    pip install neomaril-codex
 
 
-API Reference
--------------
+Development Version
+-------------------
+
+If you want to track the development version of the package, you can install it from the git repo:
+
+.. code:: python
+
+   pip install git+https://github.com/datarisk-io/mlops-neomaril-codex.git@master
+
+
+Package Reference
+-----------------
+
+Gives an overview of all objects, functions and methods.
+All classes and functions exposed in neomaril_codex.* namespace are public.
+
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 4
    :caption: Docs:
 
-   modules
+   neomaril_codex
+
+
+Example
+--------
+
+Several notebooks gives examples of how to use Neomaril-Codex to manage, deploy and other package functionalities.
+You can find it at:
+
+`Example <https://github.com/datarisk-io/mlops-neomaril-codex/tree/master/notebooks>`_
+
 
 
 Maintainers

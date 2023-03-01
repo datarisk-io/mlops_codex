@@ -1,9 +1,9 @@
-neomaril\_codex Exceptions module
+Exceptions module
 =================================
 
-Module contents
 
----------------
+Module that has all classes to deal with exceptions during the use of the package.
+
 
 neomaril\_codex.exceptions
 --------------------------

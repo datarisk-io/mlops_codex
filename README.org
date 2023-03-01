@@ -3,6 +3,16 @@
 * About
 Package for interacting with [[https://github.com/datarisk-io/neomaril][Neomaril]], a tool for deploying ML models.
 
+* Getting started
+
+** Intalation
+#+BEGIN_SRC shell
+  pip install neomaril-codex
+#+END_SRC
+
+[[https://github.com/datarisk-io/mlops-neomaril-codex/tree/master/notebooks][Example]]
+
+
 ** For developers
 
 Install pipenv
@@ -10,7 +20,7 @@ Install pipenv
   pip install pipenv
 #+END_SRC
 
-Install the package enviroment
+Install the package environment
 #+BEGIN_SRC shell
   pipenv update --dev
   pipenv shell

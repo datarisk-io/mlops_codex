@@ -1,45 +1,40 @@
 neomaril\_codex package
 =======================
 
-Submodules
-----------
+The neomaril-codex is a package developed by Datarisk to help people who works with ML to train, deploy, monitor and manage their models.
+This page gives an overview of all objects, functions and methods present at the package.
 
-neomaril\_codex.model module
-----------------------------
+
+Modules
+~~~~~~~
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 5
+
+   base
+
+.. toctree::
+   :maxdepth: 5
 
    model
 
-neomaril\_codex.training module
--------------------------------
-
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 5
 
    training
-
-neomaril\_codex.pipeline module
--------------------------------
 
 .. toctree::
    :maxdepth: 4
 
    pipeline
 
-neomaril\_codex.logging module
-------------------------------
-
 .. toctree::
    :maxdepth: 4
 
    logging
 
-neomaril\_codex.exceptions module
----------------------------------
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 5
 
    exceptions

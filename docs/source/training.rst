@@ -1,14 +1,32 @@
-neomaril\_codex Training module
+Training module
 ===============================
 
-Module contents
----------------
+
+Module with the classes that alows to manage your trainining experiments.
 
 
-neomaril\_codex.training
-------------------------
+neomaril\_codex.training.NeomarilTrainingExecution
+--------------------------------------------------
 
-.. automodule:: neomaril_codex.training
+.. autoclass:: neomaril_codex.training.NeomarilTrainingExecution
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+neomaril\_codex.training.NeomarilTrainingExperiment
+---------------------------------------------------
+
+.. autoclass:: neomaril_codex.training.NeomarilTrainingExperiment
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+neomaril\_codex.training.NeomarilTrainingClient
+--------------------------------------------------
+
+.. autoclass:: neomaril_codex.training.NeomarilTrainingClient
    :members:
    :undoc-members:
    :show-inheritance:

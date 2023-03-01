@@ -6,41 +6,72 @@ from typing import Union, Optional
 from time import sleep
 import requests
 import json
-from neomaril_codex._base import *
+from neomaril_codex.base import *
 from neomaril_codex.exceptions import *
 
 class NeomarilModel(BaseNeomaril):
-    """ Class to manage Models deployed inside Neomaril
+    """
+    Class to manage Models deployed inside Neomaril
+
+    Attributes
+    ----------
+    password : str
+        Password for authenticating with the client
+    model_id: str
+        Model id (hash) from the model you want to access
+    group : str
+        Group the model is inserted. Default is 'datarisk' (public group)
+    group_token : str
+        Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions
+    environment : str
+        Flag that choose which environment of Neomaril you are using. Test your deployment first before changing to production. Default value is staging
+
+    Raises
+    ------
+    ModelError
+        When the model can't be acessed in the server
+    AuthenticationError
+        Unvalid credentials
+
+    Example
+    --------
+    Getting a model, testint its healthy and putting it to run the prediction
+
+    .. code-block:: python
+        
+        from neomaril_codex.model import NeomarilModelClient
+        from neomaril_codex.model import NeomarilModel
+
+        client = NeomarilModelClient('123456')
+
+        model = client.get_model(model_id='M9c3af308c754ee7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4',
+                                 group='ex_group')
+        
+        if model.health() = 'OK':
+            model.wait_ready()
+            model.predict(model.schema)
+        else:
+            model.restart_model(False)
+            model.wait_ready()
+            model.predict(model.schema)
     """
 
-    def __init__(self, password:str, model_id:str, group:str="datarisk", group_token:Optional[str]=None, enviroment:str='staging') -> None:
-        """Class to manage Models deployed inside Neomaril
-
-        Args:
-            password (str): Password for authenticating with the client
-            model_id (str): Model id (hash) from the model you want to acess
-            group (str): Group the model is inserted. Default is 'datarisk' (public group)
-            group_token (str): Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions
-            enviroment (str): Flag that choose which enviroment of Neomaril you are using. Test your deployment first before changing to production. Default is True
-
-        Raises:
-            ModelError: When the model can't be acessed in the server
-            AuthenticationError: Unvalid credentials
-        """
+    def __init__(self, password:str, model_id:str, group:str="datarisk", group_token:Optional[str]=None, environment:str='staging') -> None:
+        
         super().__init__()
         self.__credentials = password
         self.model_id = model_id
         self.group = group
         self.__token = group_token
 
-        if self.enviroment == "dev":
+        if self.environment == "dev":
             self.base_url = self._dev_url
-        elif self.enviroment == 'staging':
+        elif self.environment == 'staging':
             self.base_url = self._staging_url
-        elif self.enviroment == "production":
+        elif self.environment == "production":
             self.base_url = self._production_url
 
-        try_login(self.__credentials, self.base_url)
+        _try_login(self.__credentials, self.base_url)
         
         url = f"{self.base_url}/model/describe/{self.group}/{self.model_id}"
         response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
@@ -61,7 +92,7 @@ class NeomarilModel(BaseNeomaril):
 
     def __repr__(self) -> str:
         return f"""NeomarilModel(name="{self.name}", group="{self.group}", 
-                                status="{self.status}", enviroment="{self.enviroment}"
+                                status="{self.status}", environment="{self.environment}"
                                 model_id="{self.model_id}",
                                 operation="{self.operation.title()}",
                                 schema={str(self.schema)}
@@ -71,6 +102,20 @@ class NeomarilModel(BaseNeomaril):
         return f'NEOMARIL model "{self.name} (Group: {self.group}, Id: {self.model_id})"'
 
     def __get_status(self):
+        """
+        Gets the status of the model.
+
+		Raises
+        -------
+		ModelError
+            Execution unavailable
+
+		Returns
+        -------
+		str
+            The model status
+
+		"""
         url = f"{self.base_url}/model/status/{self.group}/{self.model_id}"
         response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
         if response.status_code < 300:
@@ -79,17 +124,37 @@ class NeomarilModel(BaseNeomaril):
             raise ModelError(response.text)
 
     def wait_ready(self):
+        """
+        Waits the model to be with status 'Ready'
+        
+        Example
+        -------
+        >>> model.wait_ready()
+        """
         if self.status in ['Ready', 'Building']:
             self.status = self.__get_status()
             while self.status == 'Building':
                 sleep(30)
                 self.status = self.__get_status()
 
+    def health(self) -> str:
+        """
+        Get the model deployment process health state.
 
-    def health(self):
+        Returns
+        -------
+        str
+            OK - if the it is possible to get the health state
+            NOK - if an exception occurs
+        
+        Example
+        -------
+        >>> model.health()
+         'OK'
+        """
         if self.operation == 'async':
             try:
-                try_login(self.__credentials, self.base_url)
+                _try_login(self.__credentials, self.base_url)
                 return 'OK'
             except Exception as e:
                 logger.error('Server error: '+e)
@@ -103,8 +168,19 @@ class NeomarilModel(BaseNeomaril):
                 logger.error('Server error: '+response.text)
                 return 'NOK'
 
-
     def restart_model(self, wait_for_ready:bool=True):
+        """
+        Restart a model deployment process health state. 
+
+        Parameters
+        -----------
+        wait_for_ready : bool
+            If the model is being deployed, wait for it to be ready instead of failing the request. Defaults to True
+
+        Example
+        -------
+        >>> model.restart_model()
+        """
         if (self.operation == "sync") and (self.status == "Deployed"):
             url = f"{self.base_url.replace('7070', '7071')}/model/sync/restart/{self.group}/{self.model_id}"
             response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
@@ -118,20 +194,63 @@ class NeomarilModel(BaseNeomaril):
                         self.status = self.__get_status()
                         print('.', end='', flush=True)
 
-
     def get_logs(self, start:Optional[str]=None, end:Optional[str]=None, routine:Optional[str]=None, type:Optional[str]=None):
+        """
+        Get the logs 
+
+        Parameters
+        -----------
+        start : str, optional
+            Date to start filter. At the format aaaa-mm-dd
+        end : str, optional
+            Date to end filter. At the format aaaa-mm-dd
+        routine : str, optional
+            Type of routine beeing executed, can assume values Host or Run
+        type : str, optional
+            Defines the type of the logs that are going to be filtered, can assume the vaues Ok, Error, Debug or Warning
+
+        Raises
+        ------
+        ServerError    
+            Unexpected server error
+
+        Returns
+        -------
+        json
+            Logs list
+        
+        Example
+        -------
+        >>> model.get_logs(start='2023-01-31', end='2023-02-24', routine='Run', type='Error')
+         {'Results': 
+            [{'ModelHash': 'M9c3af308c754ee7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4',
+                'RegisteredAt': '2023-01-31T16:06:45.5955220Z',
+                'OutputType': 'Error',
+                'OutputData': '',
+                'Routine': 'Run'}]
+         }
+        """
         url = f"{self.base_url}/model/logs/{self.model_id}"
         return self._logs(url, self.__credentials, start=start, end=end, routine=routine, type=type)
     
     def delete(self):
-        """Deletes the current model.
+        """
+        Deletes the current model.
         IMPORTANT! For now this is irreversible, if you want to use the model again later you will need to upload again (and it will have a new ID).
 
-        Raises:
-            ServerError: _description_
+        Raises
+        ------
+        ServerError
+            Model deleting failed
 
-        Returns:
-            _type_: _description_
+        Returns
+        -------
+        str
+            If model is at status=Deployed deletes the model and return a json with his information. If it isn't Deployed it returns the message that the model is under another state
+
+        Example
+        -------
+        >>> model.delete()
         """
         if self.__model_ready:
             req = requests.delete(f"{self.base_url}/model/delete/{self.group}/{self.model_id}", headers={'Authorization': 'Bearer ' + self.__credentials})
@@ -152,30 +271,46 @@ class NeomarilModel(BaseNeomaril):
             return 'Model is '+self.status
   
     def set_token(self, group_token:str) -> None:
-        """Saves the group token for this model instance.
+        """
+        Saves the group token for this model instance.
 
-        Args:
-            group_token (str): Token for executing the model (show when creating a group)
-
+        Arguments
+        ---------
+        group_token : str
+            Token for executing the model (show when creating a group)
+        
+        Example
+        -------
+        >>> model.set_token('6cb64889a45a45ea8749881e30c136df')
         """
 
         self.__token = group_token
         logger.info(f"Token for group {self.group} added.")
 
     def predict(self, data:Union[dict, str], group_token:Optional[str]=None, wait_complete:Optional[bool]=False) -> Union[dict, NeomarilExecution]:
-        """Runs a prediction from the current model.
+        """
+        Runs a prediction from the current model.
 
-        Args:
-            data (dict, str): The same data that is used in the source file. 
+        Arguments
+        ---------
+        data : Union[dict, str]
+            The same data that is used in the source file. 
             If Sync is a dict, the keys that are needed inside this dict are the ones in the `schema` atribute.
             If Async is a string with the file path with the same filename used in the source file. 
-            group_token (str): Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions
+        group_token : str, optional
+            Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions
+        wait_complete: bool, optional
+            Boolean that informs if a model training is completed (True) or not (False). Default value is False
 
-        Raises:
-            ModelError: Model is not available
+        Raises
+        ------
+        ModelError
+            Model is not available
 
-        Returns:
-            Union[dict, NeomarilExecution]: The return of the scoring function in the source file for Sync models or the execution class for Async models.
+        Returns
+        -------
+        Union[dict, NeomarilExecution]
+            The return of the scoring function in the source file for Sync models or the execution class for Async models.
         """
         if self.__model_ready:
             if (group_token is not None) | (self.__token is not None):
@@ -197,13 +332,12 @@ class NeomarilModel(BaseNeomaril):
                     req = requests.post(url, files=[("input", (data.split('/')[-1], open(data, "r")))],
                                                     headers={'Authorization': 'Bearer ' + group_token})
 
-
                     if req.status_code == 202:
                         message = req.json()
                         logger.info(message['Message'])
                         exec_id = message['ExecutionId']
                         run = NeomarilExecution(self.model_id, 'AsyncModel', exec_id=exec_id, password=self.__credentials, 
-                                                enviroment=self.enviroment, group=self.group)
+                                                environment=self.environment, group=self.group)
                         status = run.get_status()['Status']
                         if wait_complete:
                             print('Wating the training run.', end='')
@@ -233,24 +367,62 @@ class NeomarilModel(BaseNeomaril):
         return self.predict(data)
 
     def get_model_execution(self, exec_id:str) -> None:
-        """Get a execution instace for that model.
+        """
+        Get a execution instace for that model.
 
-        Args:
-            exec_id (str): Execution id
+        Arguments
+        ---------
+        exec_id : str
+            Execution id
 
-        Raises:
-        ModelError: if the user tries to get a execution from a Sync model 
+        Raises
+        ------
+        ModelError
+            If the user tries to get a execution from a Sync model 
 
+        Example
+        -------
+        >>> model.get_model_execution('1')
         """
         if self.operation == 'async':
             return NeomarilExecution(self.model_id, 'AsyncModel', exec_id, password=self.__credentials, 
-                                     enviroment=self.enviroment, group=self.group)
+                                     environment=self.environment, group=self.group)
         else:
             raise ModelError("Sync models don't have executions")
 
     def register_monitoring(self, preprocess_reference:str, shap_reference:str, configuration_file:str, preprocess_file:Optional[str]=None,
-                            requirements_file:Optional[str]=None) -> None:
+                            requirements_file:Optional[str]=None) -> str:
+        """
+        Register the model monitoring configuration at the database
 
+        Arguments
+        ---------
+        preprocess_reference : str
+            Name of the preprocess reference
+        shap_reference : str
+            Name of the preprocess function
+        configuration_file : str
+            Path of the configuration file, but it could be a dict
+        preprocess_file : str, optional
+            Path of the preprocess script
+        requirements_file : str
+            Path of the requirements file
+
+
+        Raises
+        ------
+        InputError
+            Invalid parameters for model creation
+        
+        Returns
+        -------
+        str
+            Model id (hash)
+
+        Example
+        -------
+        >>> model.register_monitoring('parse', 'get_shap', configuration_file=PATH+'configuration.json', preprocess_file=PATH+'preprocess.py', requirements_file=PATH+'requirements.txt')
+        """
         url = f"{self.base_url}/monitoring/register/{self.group}/{self.model_id}"
     
         upload_data = [
@@ -284,41 +456,146 @@ class NeomarilModel(BaseNeomaril):
             raise InputError('Invalid parameters for model creation')
 
 class NeomarilModelClient(BaseNeomarilClient):
-    """Client for acessing Neomaril and manage models
-
     """
-    def __init__(self, password:str, enviroment:str='staging') -> None:
-        """Client for acessing Neomaril and manage models
+    Class for client to access Neomaril and manage models
 
-        Args:
-                password (str): Password for authenticating with the client
-                enviroment (str): Flag that choose which enviroment of Neomaril you are using. Test your deployment first before changing to production. Default is True
+    Attributes
+    ----------
+    password : str
+        Password for authenticating with the client
+    environment : str
+        Flag that choose which environment of Neomaril you are using. Test your deployment first before changing to production. Default is staging
 
-        Raises:
-                AuthenticationError: Unvalid credentials
-                ServerError: Server unavailable
+    Raises
+    ------
+    AuthenticationError
+        Unvalid credentials
+    ServerError
+        Server unavailable
+
+    Example
+    --------
+    Example 1: Creation and managing a Synchronous Model
+
+    .. code-block:: python
+        
+        from neomaril_codex.model import NeomarilModelClient
+        from neomaril_codex.model import NeomarilModel
+    
+        def new_sync_model(client, group, data_path):
+            model = client.create_model('Model Example Sync',
+                                'score', 
+                                data_path+'app.py', 
+                                data_path+'model.pkl', 
+                                data_path+'requirements.txt',
+                                data_path+'schema.json', 
+                                group=group,
+                                operation="Sync" 
+                                )
+                                
+            model.register_monitoring('parse',
+                            'get_shap',
+                            configuration_file=data_path+'configuration.json',
+                            preprocess_file=data_path+'preprocess.py',
+                            requirements_file=data_path+'requirements.txt'
+                            )
+            
+            return model.model_id
+
+        client = NeomarilModelClient('123456')
+        client.create_group('ex_group', 'Group for example purpose')
+
+        data_path = './samples/syncModel/'
+
+        model_id = new_sync_model(client, 'ex_group', data_path)
+
+        model_list = client.search_models()
+        print(model_list)
+
+        model = client.get_model(model_id, 'ex_group')
+
+        print(model.health())
+
+        model.wait_ready()
+        model.predict(model.schema)
+
+        print(model.get_logs(routine='Run'))
+
+    Example 2: creation and deployment of a Asynchronous Model
+    
+    .. code-block:: python
+        
+        from neomaril_codex.model import NeomarilModelClient
+        from neomaril_codex.model import NeomarilModel
+        
+        def new_async_model(client, group, data_path):
+            model = client.create_model('Teste notebook Async',
+                            'score',
+                            data_path+'app.py',
+                            data_path+'model.pkl',
+                            data_path+'requirements.txt',
+                            group=group,
+                            python_version='3.9',
+                            operation="Async",
+                            input_type='csv'
+                            )
+            
+            return model.model_id
+        
+        def run_model(client, model_id, data_path):
+            model = client.get_model(model_id, 'ex_group')
+
+            execution = model.predict(data_path+'input.csv')
+            
+            return execution
+        
+        client = NeomarilModelClient('123456')
+        client.create_group('ex_group', 'Group for example purpose')
+
+        data_path = './samples/asyncModel/'
+
+        model_id = new_async_model(client, 'ex_group', data_path)
+
+        execution = run_model(client, model_id, data_path)
+        
+        execution.get_status()
+
+        execution.download_result()
+    """
+
+    def __init__(self, password:str, environment:str='staging') -> None:
         """
-        super().__init__(password, enviroment=enviroment)
+        Client for acessing Neomaril and manage models
+        """
+        super().__init__(password, environment=environment)
         self.__credentials = password
             
     def __repr__(self) -> str:
-            return f'NeomarilModelClient(enviroment="{self.enviroment}", version="{self.client_version}")'
+            return f'NeomarilModelClient(environment="{self.environment}", version="{self.client_version}")'
         
     def __str__(self):
-        return f"NEOMARIL {self.enviroment} Model client:{self.client_version}"
+        return f"NEOMARIL {self.environment} Model client:{self.client_version}"
         
     def __get_model_status(self, model_id:str, group:str) -> dict:
-        """Gets the status of the model with the hash equal to `model_id`
+        """
+        Gets the status of the model with the hash equal to `model_id`
 
-        Args:
-                group (str): Group the model is inserted
-                model_id (str): Model id (hash) from the model being searched
+        Parameters
+        ----------
+        group : str
+            Group the model is inserted
+        model_id : str
+            Model id (hash) from the model being searched
 
-        Raises:
-                ModelError: Model unavailable
+        Raises
+        ------
+        ModelError
+            Model unavailable
 
-        Returns:
-                dict: Returns the model status and a message if the status is 'Failed'.
+        Returns
+        -------
+        dict
+            The model status and a message if the status is 'Failed'
         """
 
         url = f"{self.base_url}/model/status/{group}/{model_id}"
@@ -329,21 +606,36 @@ class NeomarilModelClient(BaseNeomarilClient):
         return response.json()
     
     def get_model(self, model_id:str, group:str="datarisk", group_token:Optional[str]=None, wait_for_ready:bool=True) -> NeomarilModel:
-        """Acess a model using its id
-
-        Args:
-                model_id (str): Model id (hash) that needs to be acessed
-                group (str): Group the model is inserted. Default is 'datarisk' (public group)
-                group_token (str): Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions
-                wait_for_ready (bool, optional): If the model is being deployed, wait for it to be ready instead of failing the request. Defaults to True.
-
-        Raises:
-                ModelError: Model unavailable
-                ServerError: Unknown return from server
-
-        Returns:
-                NeomarilModel: A NeomarilModel instance with the model hash from `model_id`
         """
+        Acess a model using its id
+
+        Arguments
+        ---------
+        model_id : str
+            Model id (hash) that needs to be acessed
+        group : str
+            Group the model is inserted. Default is 'datarisk' (public group)
+        group_token : str, optional
+            Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions
+        wait_for_ready : bool
+            If the model is being deployed, wait for it to be ready instead of failing the request. Defaults to True
+
+        Raises
+        ------
+        ModelError
+            Model unavailable
+        ServerError
+            Unknown return from server
+
+        Returns
+        -------
+        NeomarilModel
+            A NeomarilModel instance with the model hash from `model_id`
+        
+        Example
+        -------
+        >>> model.get_model(model_id='M9c3af308c754ee7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4', group='ex_group')
+        """        
         try:
             response = self.__get_model_status(model_id, group)
         except KeyError:
@@ -368,25 +660,38 @@ class NeomarilModelClient(BaseNeomarilClient):
             raise ModelError(f'Model "{model_id}" deploy failed, so model is unavailable.')
         elif status == 'Deployed': 
             logger.info(f'Model {model_id} its deployed. Fetching model.')
-            return NeomarilModel(self.__credentials, model_id, group=group, enviroment=self.enviroment, group_token=group_token)
+            return NeomarilModel(self.__credentials, model_id, group=group, environment=self.environment, group_token=group_token)
         else:
             raise ServerError('Unknown model status: ',status)
     
     def search_models(self, name:Optional[str]=None, state:Optional[str]=None, 
                                         group:Optional[str]=None, only_deployed:bool=False) -> list:
-        """Search for models using the name of the model
+        """
+        Search for models using the name of the model
 
-        Args:
-                name (Optional[str]): Text that its expected to be on the model name. It runs similar to a LIKE query on SQL.
-                group (Optional[str]): Text that its expected to be on the group name. It runs similar to a LIKE query on SQL.
-                state (Optional[str]): Text that its expected to be on the state. It runs similar to a LIKE query on SQL.
-                only_deployed (bool, optional): If its True, filter only models ready to be used (status == "Deployed"). Defaults to False.
+        Arguments
+        ---------
+        name : str, optional
+            Text that its expected to be on the model name. It runs similar to a LIKE query on SQL
+        state : str, optional
+            Text that its expected to be on the state. It runs similar to a LIKE query on SQL
+        group : str, optional
+            Text that its expected to be on the group name. It runs similar to a LIKE query on SQL
+        only_deployed : bool, optional
+            If its True, filter only models ready to be used (status == "Deployed"). Defaults to False
 
-        Raises:
-                ServerError: Unexpected server error
+        Raises
+        ------
+        ServerError
+            Unexpected server error
 
-        Returns:
-                list: List with the models data that name matches the query
+        Returns
+        -------
+        list
+            List with the models data, it can works like a filter depending on the arguments values
+        Example
+        -------
+        >>> model.search_models(group='ex_group', only_deployed=True)
         """
         url = f"{self.base_url}/model/search"
 
@@ -420,6 +725,43 @@ class NeomarilModelClient(BaseNeomarilClient):
             raise ServerError('Unexpected server error: ', response.text)
 
     def get_logs(self, model_id, start:Optional[str]=None, end:Optional[str]=None, routine:Optional[str]=None, type:Optional[str]=None):
+        """
+        Get the logs 
+
+        Parameters
+        ----------
+        model_id : str
+            Model id (hash)
+        start : str, optional
+            Date to start filter. At the format aaaa-mm-dd
+        end : str, optional
+            Date to end filter. At the format aaaa-mm-dd
+        routine : str, optional
+            Type of routine beeing executed, can assume values Host or Run
+        type : str, optional
+            Defines the type of the logs that are going to be filtered, can assume the vaues Ok, Error, Debug or Warning
+
+        Raises
+        ------
+        ServerError    
+            Unexpected server error
+
+        Returns
+        -------
+        json
+            Logs list
+        
+        Example
+        -------
+        >>> model.get_logs(routine='Run')
+         {'Results': 
+            [{'ModelHash': 'B4c3af308c3e452e7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4',
+                'RegisteredAt': '2023-02-03T16:06:45.5955220Z',
+                'OutputType': 'Ok',
+                'OutputData': '',
+                'Routine': 'Run'}]
+         }
+        """
         url = f"{self.base_url}/model/logs/{model_id}"
         return self._logs(url, self.__credentials, start=start, end=end, routine=routine, type=type)
             
@@ -427,24 +769,45 @@ class NeomarilModelClient(BaseNeomarilClient):
                             model_file:str, requirements_file:str, schema:Optional[Union[str, dict]]=None, 
                             group:Optional[str]=None, extra_files:Optional[list]=None, env:Optional[str]=None, 
                             python_version:str='3.8', operation:str='Sync', input_type:str=None) -> str:
-        """Upload the files to the server
+        """
+        Upload the files to the server
 
-        Args:
-                group (Optional[str], optional): Group the model is inserted. If None the server uses 'datarisk' (public group)
-                model_name (str): The name of the model, in less than 32 characters
-                model_reference (str): The name of the scoring function inside the source file.
-                source_file (str): Path of the source file. The file must have a scoring function that accepts two parameters: data (data for the request body of the model) and model_path (absolute path of where the file is located)
-                model_file (str): Path of the model pkl file.
-                requirements_file (str): Path of the requirements file. The packages versions must be fixed eg: pandas==1.0
-                schema (Union[str, dict]): Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be send as well
-                extra_files (Optional[list], optional): A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file.
-                python_version (str, optional): Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'.
+        Arguments
+        ---------
+        model_name : str
+            The name of the model, in less than 32 characters
+        model_reference : str
+            The name of the scoring function inside the source file
+        source_file : str
+            Path of the source file. The file must have a scoring function that accepts two parameters: data (data for the request body of the model) and model_path (absolute path of where the file is located)
+        model_file : str
+            Path of the model pkl file
+        requirements_file : str
+            Path of the requirements file. The packages versions must be fixed eg: pandas==1.0
+        schema : Union[str, dict], optional
+            Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be send as well
+        group : str, optional
+            Group the model is inserted. If None the server uses 'datarisk' (public group)
+        extra_files : list, optional
+            A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
+        env : str, optional
+            Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
+        python_version : str, optional
+            Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'
+        operation : str
+            Defines wich kind operation is beeing executed (Sync or Async). Default value is Sync
+        input_type : str
+            The type of the input file that should be 'json', 'csv' or 'parquet'
 
-        Raises:
-                InputError: Some input parameters its invalid
+        Raises
+        ------
+        InputError
+            Some input parameters its invalid
 
-        Returns:
-                str: The new model id (hash)
+        Returns
+        -------
+        str
+            The new model id (hash)
         """
         
         url = f"{self.base_url}/model/upload/{group}"
@@ -497,15 +860,22 @@ class NeomarilModelClient(BaseNeomarilClient):
             raise InputError('Invalid parameters for model creation')
 
     def __host_model(self, operation:str, model_id:str, group:str) -> None:
-        """Builds the model execution environment
+        """
+        Builds the model execution environment
 
-        Args:
-                operation (str): The model operation type (Sync or Async)
-                model_id (str): The uploaded model id (hash)
-                group (str): Group the model is inserted. Default is 'datarisk' (public group)
+        Arguments
+        ---------
+        operation : str
+            The model operation type (Sync or Async)
+        model_id : str
+            The uploaded model id (hash)
+        group : str
+            Group the model is inserted. Default is 'datarisk' (public group)
 
-        Raises:
-                InputError: Some input parameters its invalid
+        Raises
+        ------
+        InputError
+            Some input parameters its invalid
         """
         
         url = f"{self.base_url}/model/{operation}/host/{group}/{model_id}"
@@ -524,26 +894,51 @@ class NeomarilModelClient(BaseNeomarilClient):
                                      group:str=None, extra_files:Optional[list]=None, env:Optional[str]=None,
                                      python_version:str='3.8', operation='Sync', input_type:str='json|csv|parquet', 
                                      wait_for_ready:bool=True)-> Union[NeomarilModel, str]:
-        """Deploy a new model to Neomaril.
+        """
+        Deploy a new model to Neomaril.
 
-        Args:
-                model_name (str): The name of the model, in less than 32 characters
-                model_reference (str): The name of the scoring function inside the source file.
-                source_file (str): Path of the source file. The file must have a scoring function that accepts two parameters: data (data for the request body of the model) and model_path (absolute path of where the file is located)
-                model_file (str): Path of the model pkl file.
-                requirements_file (str): Path of the requirements file. The packages versions must be fixed eg: pandas==1.0
-                schema (Union[str, dict]): Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be send as well. Mandatory for Sync models
-                group (str): Group the model is inserted. Default to 'datarisk' (public group)
-                extra_files (Optional[list], optional): A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file.
-                source_type (str, optional): The type of the source file. Avaliable values are PythonNotebook (expect a .ipynb file) and PythonScript (expect a .py file). Defaults to 'PythonNotebook'.
-                python_version (str, optional): Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'.
-                wait_for_ready (bool, optional):Wait for model to be ready and returns a NeomarilModel instace with the new model. Defaults to True.
+        Arguments
+        ---------
+        model_name : str
+            The name of the model, in less than 32 characters
+        model_reference : str
+            The name of the scoring function inside the source file
+        source_file : str
+            Path of the source file. The file must have a scoring function that accepts two parameters: data (data for the request body of the model) and model_path (absolute path of where the file is located)
+        model_file : str
+            Path of the model pkl file
+        requirements_file : str
+            Path of the requirements file. The packages versions must be fixed eg: pandas==1.0
+        schema : Union[str, dict]
+            Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be send as well. Mandatory for Sync models
+        group : str
+            Group the model is inserted. Default to 'datarisk' (public group)
+        extra_files : list, optional
+            A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
+        env : str, optional
+            Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
+        python_version : str, optional
+            Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'
+        operation : str
+            Defines wich kind operation is beeing executed (Sync or Async). Default value is Sync
+        input_type : str
+            The type of the input file that should be 'json', 'csv' or 'parquet'
+        wait_for_ready : bool, optional
+            Wait for model to be ready and returns a NeomarilModel instace with the new model. Defaults to True
 
-        Raises:
-                InputError: Some input parameters its invalid
+        Raises
+        ------
+        InputError
+            Some input parameters its invalid
 
-        Returns:
-                Union[NeomarilModel, str]: If wait_for_ready=True runs the deploy process synchronously and returns the new model. If its False, returns nothing after sending all the data to server and runs the deploy asynchronously.
+        Returns
+        -------
+        Union[NeomarilModel, str]
+            Returns the new model, if wait_for_ready=True runs the deploy process synchronously. If its False, returns nothing after sending all the data to server and runs the deploy asynchronously
+        
+        Example
+        -------
+        >>> model = client.create_model('Model Example Sync', 'score',  './samples/syncModel/app.py', './samples/syncModel/'model.pkl', './samples/syncModel/requirements.txt','./samples/syncModel/schema.json', group=group, operation="Sync")
         """
         
         if python_version not in ['3.7', '3.8', '3.9', '3.10']:
@@ -574,13 +969,26 @@ class NeomarilModelClient(BaseNeomarilClient):
         else:
             return "Model deployment in progress"
 
-    def get_model_execution(self, model_id:str, exec_id:str, group:Optional[str]=None) -> None:
-        """Get a execution instace.
-
-        Args:
-                exec_id (str): Execution id
-
-        Returns:
-                NeomarilExecution: The new execution
+    def get_model_execution(self, model_id:str, exec_id:str, group:Optional[str]=None) -> NeomarilExecution:
         """
-        return NeomarilExecution(model_id,'AsyncModel', exec_id, password=self.__credentials, enviroment=self.enviroment, group=group)
+        Get a execution instace.
+
+        Arguments
+        ---------
+        model_id : str
+            Model id (hash)
+        exec_id : str
+            Execution id
+        group : str, optional
+            Group name, default value is None
+
+        Returns
+        -------
+        NeomarilExecution
+            The new execution
+        
+        Example
+        -------
+        >>> model.get_model_execution( model_id='M9c3af308c754ee7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4', exec_id = '1')
+        """
+        return NeomarilExecution(model_id,'AsyncModel', exec_id, password=self.__credentials, environment=self.environment, group=group)

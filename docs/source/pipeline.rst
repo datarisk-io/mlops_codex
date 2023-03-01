@@ -1,14 +1,14 @@
-neomaril\_codex Pipeline module
+Pipeline module
 ===============================
 
-Module contents
----------------
+
+This module alows you to configure your model pipeline.
 
 
-neomaril\_codex.pipeline
-------------------------
+neomaril\_codex.pipeline.NeomarilPipeline
+-----------------------------------------
 
-.. automodule:: neomaril_codex.pipeline
+.. autoclass:: neomaril_codex.pipeline.NeomarilPipeline
    :members:
    :undoc-members:
    :show-inheritance:
