@@ -17,10 +17,7 @@ def train_model(base_path):
 
     results = pd.DataFrame({"pred": pipe.predict(X), "proba": pipe.predict_proba(X)[:,1]})
     
-    return {"X_train": X, "y_train": y, "model_output": results, "pipeline": pipe, "metrics": {"auc_cv": auc.mean(), "f1_score_cv": f_score.mean()}}
-
-
-
+    return {"X_train": X, "y_train": y, "model_output": results, "pipeline": pipe, "metrics": {"auc": auc.mean(), "f1_score": f_score.mean()}}
 
 
 
