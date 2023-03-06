@@ -3,11 +3,14 @@ import pandas as pd
 
 
 def score(data_path, model_path):
+    
     model = load(model_path+"/model.pkl")
 
-    df = pd.read_csv(data_path+'/input.csv')
+    X = pd.read_csv(data_path+'/input.csv')
+    df = X.copy()
 
-    df['score'] = 1000 * (1-model.predict_proba(df)[:,1])
+    df['proba'] = model.predict_proba(X)[:,1]
+    df['pred'] = model.predict(X)
 
     output = data_path+'/output.csv'
 

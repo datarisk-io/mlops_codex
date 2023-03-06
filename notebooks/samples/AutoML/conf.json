@@ -1,0 +1,15 @@
+{
+    "train_data": {
+        "file_type": "csv",
+        "sep": ",",
+        "file_name": "dados.csv"
+    }, 
+    "model_flow": "classification", 
+    "target": "target", 
+    "iterations": 100, 
+    "metric": "ks", 
+    "split_type": "random", 
+    "stages": {
+        "models": ["catboost"]
+        }
+}

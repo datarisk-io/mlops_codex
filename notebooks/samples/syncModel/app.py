@@ -8,4 +8,4 @@ def score(data, base_path):
 
     df = pd.DataFrame(data=json.loads(data), index=[0])
     
-    return {"score": 1000 * (1-float(model.predict_proba(df)[0,1]))}
+    return {"pred": int(model.predict(df)), "proba": float(model.predict_proba(df)[0,1])}

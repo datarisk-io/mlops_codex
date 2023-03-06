@@ -1,4 +1,4 @@
-environment: staging
+url: https://neomaril.staging.datarisk.net
 group: datarisk
 python_version: 3.9
 training:
@@ -12,7 +12,7 @@ training:
     packages: requirements.txt
     data: dados.csv
     extra:
-scoring:
+deploy:
     name: Teste
     operation: Sync
     directory: ./samples/syncModel

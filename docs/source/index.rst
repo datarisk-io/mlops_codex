@@ -54,6 +54,9 @@ You can find it at:
 `Example <https://github.com/datarisk-io/mlops-neomaril-codex/tree/master/notebooks>`_
 
 
+`Examples <https://github.com/datarisk-io/mlops-neomaril-codex/tree/master/notebooks>`_
+
+
 
 Maintainers
 -----------
