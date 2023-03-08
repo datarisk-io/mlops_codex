@@ -9,6 +9,7 @@ import json
 from time import sleep
 from neomaril_codex.base import *
 from neomaril_codex.model import NeomarilModel
+from neomaril_codex.utils import *
 from neomaril_codex.exceptions import *
 
 patt = re.compile(r'(\d+)')
@@ -296,7 +297,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         self.base_url = parse_url(self.base_url)
         self.group = group
 
-        _try_login(self.__credentials, self.base_url)
+        try_login(self.__credentials, self.base_url)
         
         url = f"{self.base_url}/training/describe/{self.group}/{self.training_id}"
         response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
@@ -525,10 +526,10 @@ class NeomarilTrainingClient(BaseNeomarilClient):
 
     Arguments
     ---------
-    password : str
-        Password for authentication with the client
+	password : str
+		Password for authenticating with the client. You can also use the env variable NEOMARIL_TOKEN to set this
 	url : str
-		URL to Neomaril Server. Default value is staging, use it to test your deployment first before changing to production
+		URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
 
     Raises
     ------

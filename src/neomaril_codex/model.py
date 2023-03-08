@@ -7,6 +7,7 @@ from time import sleep
 import requests
 import json
 from neomaril_codex.base import *
+from neomaril_codex.utils import *
 from neomaril_codex.exceptions import *
 
 class NeomarilModel(BaseNeomaril):
@@ -15,16 +16,16 @@ class NeomarilModel(BaseNeomaril):
 
     Attributes
     ----------
-    password : str
-        Password for authenticating with the client
+	password : str
+		Password for authenticating with the client. You can also use the env variable NEOMARIL_TOKEN to set this
     model_id: str
         Model id (hash) from the model you want to access
     group : str
         Group the model is inserted. Default is 'datarisk' (public group)
     group_token : str
-        Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions
-    url : str
-        URL for Neomaril server. Default is https://neomaril.staging.datarisk.net/, use it to test your deployment first before changing to production
+        Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable NEOMARIL_GROUP_TOKEN
+	url : str
+		URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
 
     Raises
     ------
@@ -69,7 +70,7 @@ class NeomarilModel(BaseNeomaril):
         self.base_url = os.getenv('NEOMARIL_URL') if os.getenv('NEOMARIL_URL') else url
         self.base_url = parse_url(self.base_url)
 
-        _try_login(self.__credentials, self.base_url)
+        try_login(self.__credentials, self.base_url)
         
         url = f"{self.base_url}/model/describe/{self.group}/{self.model_id}"
         response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
@@ -152,7 +153,7 @@ class NeomarilModel(BaseNeomaril):
         """
         if self.operation == 'async':
             try:
-                _try_login(self.__credentials, self.base_url)
+                try_login(self.__credentials, self.base_url)
                 return 'OK'
             except Exception as e:
                 logger.error('Server error: '+e)
@@ -275,7 +276,7 @@ class NeomarilModel(BaseNeomaril):
         Arguments
         ---------
         group_token : str
-            Token for executing the model (show when creating a group)
+            Token for executing the model (show when creating a group). You can set this using the NEOMARIL_GROUP_TOKEN env variable
         
         Example
         -------
@@ -296,7 +297,7 @@ class NeomarilModel(BaseNeomaril):
             If Sync is a dict, the keys that are needed inside this dict are the ones in the `schema` atribute.
             If Async is a string with the file path with the same filename used in the source file. 
         group_token : str, optional
-            Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions
+            Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable NEOMARIL_GROUP_TOKEN
         wait_complete: bool, optional
             Boolean that informs if a model training is completed (True) or not (False). Default value is False
 
@@ -459,10 +460,10 @@ class NeomarilModelClient(BaseNeomarilClient):
 
     Attributes
     ----------
-    password : str
-        Password for authenticating with the client
-    url : str
-        URL for Neomaril server. Default is https://neomaril.staging.datarisk.net/, use it to test your deployment first before changing to production
+	password : str
+		Password for authenticating with the client. You can also use the env variable NEOMARIL_TOKEN to set this
+	url : str
+		URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
 
     Raises
     ------
@@ -612,7 +613,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         group : str
             Group the model is inserted. Default is 'datarisk' (public group)
         group_token : str, optional
-            Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions
+            Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable NEOMARIL_GROUP_TOKEN
         wait_for_ready : bool
             If the model is being deployed, wait for it to be ready instead of failing the request. Defaults to True
 

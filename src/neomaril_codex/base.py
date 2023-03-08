@@ -4,30 +4,8 @@ from typing import Optional
 from loguru import logger
 from dotenv import load_dotenv
 
+from neomaril_codex.utils import *
 from neomaril_codex.exceptions import *
-
-def parse_url(url):
-    if url.endswith('/'):
-        url = url[:-1]
-
-    if not url.endswith('/api'):
-        url = (url+'/api')
-    return url
-
-def _try_login(password:str, base_url:str) -> bool:
-
-    response = requests.get(f"{base_url}/health", headers={'Authorization': 'Bearer ' + password})
-
-    server_status = response.status_code
-
-    if server_status == 200:
-      return response.json()['Version']
-
-    elif server_status == 401:
-      raise AuthenticationError('Invalid credentials.')
-
-    elif server_status >= 500:
-      raise ServerError('Neomaril server unavailable at the moment.')
 
 class BaseNeomaril:
     """
@@ -78,9 +56,9 @@ class BaseNeomarilClient(BaseNeomaril):
 	Attributes
 	----------
 	password : str
-		Password for authenticating with the client
+		Password for authenticating with the client. You can also use the env variable NEOMARIL_TOKEN to set this
 	url : str
-		URL to Neomaril Server. Default value is staging, use it to test your deployment first before changing to production
+		URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
 
 	Raises
 	------
@@ -117,7 +95,7 @@ class BaseNeomarilClient(BaseNeomaril):
 
 
 
-		self.client_version = _try_login(self.__credentials, self.base_url)
+		self.client_version = try_login(self.__credentials, self.base_url)
 		logger.info(f"Successfully connected to Neomaril")
 
 	def list_groups(self) -> list:
@@ -244,10 +222,10 @@ class NeomarilExecution(BaseNeomaril):
 		Group the model is inserted
 	exec_id : str, optional
 		Execution id
-	password: str
-		Password for authenticating with the client
+	password : str
+		Password for authenticating with the client. You can also use the env variable NEOMARIL_TOKEN to set this
 	url : str
-		URL to Neomaril Server. Default value is staging, use it to test your deployment first before changing to production
+		URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
 
 	Raises
 	------
@@ -294,7 +272,7 @@ class NeomarilExecution(BaseNeomaril):
 		load_dotenv()
 		self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
 
-		_try_login(self.__credentials, self.base_url)
+		try_login(self.__credentials, self.base_url)
 
 		if exec_type == 'AsyncModel':
 				self.__url_path = 'model/async'

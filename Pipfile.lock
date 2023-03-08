@@ -553,11 +553,11 @@
         },
         "jupyter-server": {
             "hashes": [
-                "sha256:29d6657bfb160b0e39b9030d67f33f918a188f2eba28065314a933b327fef872",
-                "sha256:b15078954120886d580e19d1746e2b62a3dc7bd082cb4716115c25fcd7061b00"
+                "sha256:cc22792281bfb0131a728414f28ae74883b44ad6d009971aa975cae9bcc650de",
+                "sha256:f31f0ba2c3c44f07143bfa03fb07dd0253f857eb63f0c26f2fea955f04a49765"
             ],
             "markers": "python_version >= '3.8'",
-            "version": "==2.3.0"
+            "version": "==2.4.0"
         },
         "jupyter-server-terminals": {
             "hashes": [
