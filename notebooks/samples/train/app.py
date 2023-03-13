@@ -16,8 +16,7 @@ def train_model(base_path):
     pipe.fit(X, y)
 
     results = pd.DataFrame({"pred": pipe.predict(X), "proba": pipe.predict_proba(X)[:,1]})
+    results.proba.hist().get_figure().savefig(base_path+'/probas.png', format='png')
     
-    return {"X_train": X, "y_train": y, "model_output": results, "pipeline": pipe, "metrics": {"auc": auc.mean(), "f1_score": f_score.mean()}}
-
-
-
+    return {"X_train": X, "y_train": y, "model_output": results, "pipeline": pipe, 'extras': [base_path+'/probas.png'],
+            "metrics": {"auc": auc.mean(), "f1_score": f_score.mean()}}
