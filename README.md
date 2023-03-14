@@ -12,7 +12,7 @@ Package for interacting with Neomaril, a tool for deploying ML models.
 
 ### How to use
 
-Check the [documentation]([https://datarisk-io.github.io/mlops-neomaril-codex) page for more information
+Check the [documentation](https://datarisk-io.github.io/mlops-neomaril-codex) page for more information
 There also some [examples](https://github.com/datarisk-io/mlops-neomaril-codex/tree/master/notebooks) notebooks.
 
 ### For developers
