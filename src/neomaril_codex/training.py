@@ -365,7 +365,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         url = f"{self.base_url}/training/upload/{self.group}/{self.training_id}"
 
         upload_data = [
-                ("train_data", (train_data.split('/')[-1], open(train_data, "r")))
+                ("train_data", (train_data.split('/')[-1], open(train_data, "rb")))
             ]
 
         if self.training_type == 'Custom':
@@ -604,7 +604,7 @@ class NeomarilTrainingClient(BaseNeomarilClient):
         >>> training = get_training('Tfb3274827a24dc39d5b78603f348aee8d3dbfe791574dc4a6681a7e2a6622fa')
         """
 
-        return NeomarilTrainingExperiment(training_id, password=self.__credentials, group=group)
+        return NeomarilTrainingExperiment(training_id, password=self.__credentials, group=group, url=self.base_url)
     
 
     def create_training_experiment(self, experiment_name:str, model_type:str, training_type:str, group:str='datarisk')-> NeomarilTrainingExperiment:
@@ -674,4 +674,4 @@ class NeomarilTrainingClient(BaseNeomarilClient):
             raise ServerError('')
 
         
-        return NeomarilTrainingExperiment(training_id, password=self.__credentials, group=group)  
+        return NeomarilTrainingExperiment(training_id, password=self.__credentials, group=group, url=self.base_url)  

@@ -328,7 +328,7 @@ class NeomarilModel(BaseNeomaril):
 
                 elif self.operation == 'async':
 
-                    req = requests.post(url, files=[("input", (data.split('/')[-1], open(data, "r")))],
+                    req = requests.post(url, files=[("input", (data.split('/')[-1], open(data, "rb")))],
                                                     headers={'Authorization': 'Bearer ' + group_token})
 
                     if req.status_code == 202:
