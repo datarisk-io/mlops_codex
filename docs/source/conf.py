@@ -30,7 +30,9 @@ release = '0.1'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [ 'sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx.ext.napoleon', 'm2r2']
+extensions = [ 'sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx.ext.napoleon', 'm2r2', 'sphinx.ext.autosectionlabel',]
+autosectionlabel_prefix_document = True
+autosectionlabel_maxdepth=3
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -68,8 +70,8 @@ html_theme_options = {
     "collapse_navigation": True,
     "navigation_depth": 2,
     "logo": {
-      "image_light": "_static/logo.png",
-      "image_dark": "_static/logo.png",
+      "image_light": "logo.png",
+      "image_dark": "logo.png",
    }
 }
 

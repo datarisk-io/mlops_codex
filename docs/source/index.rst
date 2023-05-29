@@ -21,14 +21,19 @@ The package is available on PyPI and can thus be installed with:
    pip install neomaril-codex
 
 
-Development Version
--------------------
+Getting started
+---------------
 
-If you want to track the development version of the package, you can install it from the git repo:
+Check our guide on how to use Neomaril Codex to manage models 
 
-.. code:: python
+.. toctree::
+   :maxdepth: 2
+   
+   starters
 
-   pip install git+https://github.com/datarisk-io/mlops-neomaril-codex.git@master
+
+Beside that several `notebooks <https://github.com/datarisk-io/mlops-neomaril-codex/tree/master/notebooks>`_ gives examples of how to use Neomaril-Codex to manage, deploy and other package functionalities.
+You can find it at:
 
 
 Package Reference
@@ -45,18 +50,14 @@ All classes and functions exposed in neomaril_codex.* namespace are public.
    neomaril_codex
 
 
-Example
---------
+Development Version
+-------------------
 
-Several notebooks gives examples of how to use Neomaril-Codex to manage, deploy and other package functionalities.
-You can find it at:
+If you want to track the development version of the package, you can install it from the git repo:
 
-`Example <https://github.com/datarisk-io/mlops-neomaril-codex/tree/master/notebooks>`_
+.. code:: python
 
-
-`Examples <https://github.com/datarisk-io/mlops-neomaril-codex/tree/master/notebooks>`_
-
-
+   pip install git+https://github.com/datarisk-io/mlops-neomaril-codex.git@master
 
 Maintainers
 -----------
