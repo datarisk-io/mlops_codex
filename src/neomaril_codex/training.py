@@ -3,7 +3,7 @@
 
 import io
 import re
-from typing import Union, Optional
+from typing import Union, Optional, List
 import requests
 import json
 from time import sleep
@@ -296,8 +296,8 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         Group the training is inserted. Default is 'datarisk' (public group)
     environment : str
         Flag that choose which environment of Neomaril you are using. Test your deployment first before changing to production. Default is True
-    finished_executions : List[int]
-        Ids for the successful executions in that training
+    executions : List[int]
+        Ids for the executions in that training
 
 
     Raises
@@ -352,7 +352,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         self.model_type = self.training_data['ModelType']
         self.training_type = self.training_data['TrainingType']
         self.experiment_name = self.training_data['ExperimentName']
-        self.finished_executions = self.training_data['FinishedExecutions']
+        self.executions = self.training_data['Executions']
 
     def __repr__(self) -> str:
             return f"""NeomarilTrainingExperiment(name="{self.experiment_name}", 
@@ -473,6 +473,19 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         else:
             logger.error(response.text)
             raise InputError('Invalid parameters for training execution')
+        
+    def __refresh_execution_list(self):
+        url = f"{self.base_url}/training/describe/{self.group}/{self.training_id}"
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
+    
+        if response.status_code == 404:
+            raise ModelError(f'Experiment "{self.training_id}" not found.')
+            
+        elif response.status_code >= 500:
+            raise ModelError(f'Unable to retrive experiment "{self.training_id}"')
+    
+        self.training_data = response.json()['Description']
+        self.executions = self.training_data['Executions']
 
     def run_training(self, run_name:str, train_data:str, training_reference:Optional[str]=None, 
                      python_version:str='3.8', conf_dict:Optional[Union[str, dict]]=None,
@@ -532,6 +545,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
         if exec_id:
             self.__execute_training(exec_id)
+            self.__refresh_execution_list()
             run = NeomarilTrainingExecution(self.training_id, self.group, exec_id, password=self.__credentials, url=self.base_url)
             status = run.get_status()['Status']
             if wait_complete:
@@ -545,29 +559,45 @@ class NeomarilTrainingExperiment(BaseNeomaril):
     def __call__(self, data: dict) -> dict:
             return self.predict(data)
 
-    def get_training_execution(self, exec_id:Optional[str]=None) -> None:
+    def get_training_execution(self, exec_id:Optional[str]=None) -> NeomarilTrainingExecution:
         """
         Get a execution instace.
 
         Arguments
         ---------
         exec_id : str, optional
-            Execution id. If not informed we get the last successful execution.
+            Execution id. If not informed we get the last execution.
 
         Returns
         -------
         NeomarilExecution
-            The new execution
+            The choosen execution
         """
         if not exec_id:
-            logger.info("Execution id not informed. Getting last successful execution")
-            exec_id = max(self.finished_executions)
+            self.__refresh_execution_list()
+            logger.info("Execution id not informed. Getting last execution")
+            exec_id = max(self.executions)
         try:
             int(exec_id)
         except:
             InputError("Unvalid execution Id informed or this training dont have a successful execution yet.")
 
-        return NeomarilTrainingExecution(self.training_id, self.group, exec_id, password=self.__credentials, url=self.base_url)
+        exec = NeomarilTrainingExecution(self.training_id, self.group, exec_id, password=self.__credentials, url=self.base_url)
+        exec.get_status()
+        
+        return exec
+
+    def get_all_training_executions(self) -> List[NeomarilTrainingExecution]:
+        """
+        Get all executions from that experiment.
+
+        Returns
+        -------
+        List[NeomarilExecution]
+            All executions from that training
+        """
+        self.__refresh_execution_list()
+        return [self.get_training_execution(e) for e in self.executions]
 
 class NeomarilTrainingClient(BaseNeomarilClient):
     """
