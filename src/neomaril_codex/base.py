@@ -149,16 +149,16 @@ class BaseNeomarilClient(BaseNeomaril):
 
 		url = f"{self.base_url}/groups"
 		response = requests.post(url, data=data,
-														 headers={'Authorization': 'Bearer ' + self.__credentials})
+								headers={'Authorization': 'Bearer ' + self.__credentials})
 
 		if response.status_code == 201:
-				logger.info(response.json()['Message'])
-				return True
-		elif response.status_code == 400:
-				logger.error("Group already exist, nothing was changed.")
-				return False
+			logger.info(response.json()['Message'])
+			return True
+		elif response.status_code < 500:
+			logger.error("Group already exist, nothing was changed.")
+			return False
 		else:
-				raise ServerError('Unexpected server error: ', response.text)
+			raise ServerError('Unexpected server error: ', response.text)
 
 	def refresh_group_token(self, name:str, force:bool=False) -> bool:
 		"""
@@ -262,15 +262,17 @@ class NeomarilExecution(BaseNeomaril):
 			execution.download_result()	
 	"""	
 
-	def __init__(self, parent_id:str, exec_type:str, group:Optional[str]=None, exec_id:Optional[str]=None, password:Optional[str]=None, url:str=None) -> None:
+	def __init__(self, parent_id:str, exec_type:str, group:Optional[str]=None, exec_id:Optional[str]=None, password:Optional[str]=None, url:str=None, group_token:Optional[str]=None) -> None:
 		super().__init__()
 		self.base_url = os.getenv('NEOMARIL_URL') if os.getenv('NEOMARIL_URL') else url
 		self.base_url = parse_url(self.base_url)
 		self.exec_type = exec_type
 		self.exec_id = exec_id
 		self.status = 'Requested'
+		self.group = group
 		load_dotenv()
 		self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
+		self.__token = os.getenv('NEOMARIL_GROUP_TOKEN') if os.getenv('NEOMARIL_GROUP_TOKEN') else group_token
 
 		try_login(self.__credentials, self.base_url)
 
@@ -316,8 +318,9 @@ class NeomarilExecution(BaseNeomaril):
 			Returns the execution status.
 		"""
 
-		url = f"{self.base_url}/{self.__url_path}/status/{self.exec_id}"
-		response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
+		url = f"{self.base_url}/{self.__url_path}/status/{self.group}/{self.exec_id}"
+
+		response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__token})
 		if response.status_code not in [200, 410]:
 				logger.error(response.text)
 				raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
@@ -325,7 +328,7 @@ class NeomarilExecution(BaseNeomaril):
 		result = response.json()
 
 		self.status = result['Status']
-		self.execution_data['Status'] = result['Status']
+		self.execution_data['ExecutionState'] = result['Status']
 
 		return result
 
@@ -350,10 +353,15 @@ class NeomarilExecution(BaseNeomaril):
 		"""
 		if self.status in ['Running', 'Requested']:
 			self.status = self.get_status()['Status']
+		
+		if self.exec_type == 'AsyncModel':
+			token = self.__token
+		elif self.exec_type == 'Training':
+			token = self.__credentials
 
 		if self.status == 'Succeeded':
-				url = f"{self.base_url}/{self.__url_path}/result/{self.exec_id}"
-				response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
+				url = f"{self.base_url}/{self.__url_path}/result/{self.group}/{self.exec_id}"
+				response = requests.get(url, headers={'Authorization': 'Bearer ' + token})
 				if response.status_code not in [200, 410]:
 						logger.error(response.text)
 						raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
@@ -367,6 +375,6 @@ class NeomarilExecution(BaseNeomaril):
 
 				logger.info(f'Output saved in {path+filename}')
 		elif self.status == 'Failed':
-				raise ExecutionError("Execution failed")
+			raise ExecutionError("Execution failed")
 		else:
-				logger.info(f'Execution not ready. Status is {self.status}')
+			logger.info(f'Execution not ready. Status is {self.status}')
