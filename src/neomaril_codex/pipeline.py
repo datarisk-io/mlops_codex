@@ -121,8 +121,10 @@ class NeomarilPipeline:
         token = os.getenv("NEOMARIL_TOKEN")
         if not token:
             raise PipelineError("When using a config file the environment variable NEOMARIL_TOKEN must be defined")
+        
+        url = os.getenv('NEOMARIL_URL', conf.get('url'))
 
-        pipeline = NeomarilPipeline(conf['group'], password=token, url=conf['url'], python_version=conf['python_version'])
+        pipeline = NeomarilPipeline(conf['group'], password=token, url=url, python_version=conf['python_version'])
 
         if 'training' in conf.keys():
             pipeline.register_train_config(**conf['training'])
