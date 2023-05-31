@@ -62,11 +62,11 @@ In the custom training experiment you can do whatever you want, test multiple al
 The important thing is the return of the function, where we get information about the final model of this version so we can log it. The return must be a dictionary with the following keys:
 
 - `X_train`: The dataframe tha will be used to fit the model.
-- `y_train`: The target dataframe/array that will be used to fit the model.
-- `model_output`: A dataframe with outputs of the model. This can be the predicted values/probabilities, classes or any other useful information. This information needs to be in the output of the future deployed model to be used in the monitoring
-- `pipeline`: The final fitted model instance. Ideally it should be a `Scikit-Learn Pipeline Class <https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html>`_, but any other algorithm class that has the *get_params* method implemented works.
+- `y_train`: The target dataframe/array/series that will be used to fit the model.
+- `model_output`: A dataframe/array/series with outputs of the model. This can be the predicted values/probabilities, classes or any other useful information. This information needs to be in the output of the future deployed model to be used in the monitoring
+- `pipeline`: The final fitted model instance. Ideally it should be a `Scikit-Learn Pipeline Class <https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html>`_, but any other algorithm class that has the *get_params* method implemented works. This will be saved as `model.pkl` with `cloudpickle <https://github.com/cloudpipe/cloudpickle> _` or with the `save_model` method if the algorithm class has that.
 - `extra`: A optional list of filenames for extra files that are generated in the training. This can be plots, validation datasets, etc. They need to be saved in the same path that is provided as the function parameter.
-- `metrics`: A dictionary with each key as a metric. You can use any name for the metric key and save as many as you want.
+- `metrics`: A dictionary with each key as a metric. You can use any name for the metric key and save as many as you want, but the value must be numeric. Eg: `{"auc_train": 0.7, "auc_test": 0;65}`
 
 Besides that we also need the information for the enviroment (python version and package requirements). 
 
