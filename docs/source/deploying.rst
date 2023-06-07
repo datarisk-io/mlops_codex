@@ -28,7 +28,7 @@ The return of the function should be a dictionary that can be parsed to a JSON, 
 
 Keep in mind that some data types (like numpy `int64` and `float64` values) cannot normally be parsed to JSON, so your code should handle that before returning the response to Neomaril. 
 
-**Async model:** This is for batch scoring. We send files with usually a lot o records at once. Since this might take a while depeding on the file size, we run this assyncronously.
+**Async model:** This is for batch scoring. We send files with usually a lot o records at once. Since this might take a while depeding on the file size, we run this asynchronously.
 The entrypoint function should look like this:
 
 .. code:: python
@@ -49,8 +49,8 @@ The entrypoint function should look like this:
 
         return output
 
-The first parameter is now also a path for the data. We have different path parameter because each async model execution is saved in a different place. And the files uploaded when deploying the model are kept the same everytime.
-If you want to keep your code more dinamic (and dont want to enforce a file name pattern) you can use the `inputFileName` env variable, that will be same as the filename uploaded for that execution.
+The first parameter is now also a path for the data. We have different path parameter because each async model execution is saved in a different place. And the files uploaded when deploying the model are kept the same every time.
+If you want to keep your code more dynamic (and don't want to enforce a file name pattern) you can use the `inputFileName` env variable, that will be same as the filename uploaded for that execution.
 You must save the result in the same path you got the input file. And the return of that function should be this full path.
 
 
@@ -59,7 +59,7 @@ Deploying your model
 
 With all files ready we can deploy the model in two ways.
 
-- Using the :py:meth:`neomaril_codex.training.NeomarilTrainingExecution.promote_model` to promote a succeeded training exectution.
+- Using the :py:meth:`neomaril_codex.training.NeomarilTrainingExecution.promote_model` to promote a succeeded training execution.
 
 .. code:: python
 
@@ -100,7 +100,7 @@ With all files ready we can deploy the model in two ways.
 
 
 
-As you can see deploying a model already trained in Neomaril requires less information (the AutoML models requrire only 2 parameters).
+As you can see deploying a model already trained in Neomaril requires less information (the AutoML models require only 2 parameters).
 
 Those methods return a :py:class:`neomaril_codex.model.NeomarilModel`. You can use the *wait_for_ready* parameter on the deployment method or call the :py:meth:`neomaril_codex.model.NeomarilModel.wait_ready` to make sure the :py:class:`neomaril_codex.model.NeomarilModel` instance is ready to use.
 We will install the model depedencies (if you are promoting a training we will use the same as the training execution), and run some tests. For the sync models we require a sample JSON of the expected schema for the API.
@@ -126,7 +126,7 @@ Sync models return a dictionary and async models return a :py:class:`neomaril_co
 To use the models you need a `group token`, that is generated when creating the group (check :ref:`connecting_to_neomaril:creating a group`). You can add this token in the NEOMARIL_GROUP_TOKEN env variable, use the :py:meth:`neomaril_codex.model.NeomarilModel.set_token` method or add in each :py:meth:`neomaril_codex.model.NeomarilModel.predict` call.
 
 
-Most of the time you might need to used your model outside a python enviroment, sharing it through a REST API.
+Most of the time you might need to used your model outside a python environment, sharing it through a REST API.
 You can call the :py:attr:`neomaril_codex.model.NeomarilModel.docs` attribute to share a OpenAPI Swagger page, or use the :py:meth:`neomaril_codex.model.NeomarilModel.generate_predict_code` method to create a sample request code to your model. 
 
 
@@ -136,7 +136,7 @@ Monitoring your model
 Model monitoring means keeping track with how the model is being used in production so we can update the model if it start making bad predictions.
 
 For now Neomaril only does indirect monitoring, that means following the input of the model in production and checking if is close to the data presented to the model in training.
-So when configurating the monitoring we need to know which training generated that model and what features are relevant to monitoring the model.
+So when configure the monitoring we need to know which training generated that model and what features are relevant to monitoring the model.
 
 Besides we need to know how to handle the features and the model. 
 

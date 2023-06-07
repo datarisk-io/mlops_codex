@@ -1,7 +1,7 @@
 Training your model
 ===================
 
-Training your model in Neomaril helps by logging everything in a model registry, while also saving time by runnig experiments in parallel.
+Training your model in Neomaril helps by logging everything in a model registry, while also saving time by running experiments in parallel.
 
 Also, the training module is connected to the deploying and monitoring module, so using the training in Neomaril saves time in the next steps.
 
@@ -11,7 +11,7 @@ Training types
 
 First we need to create a training experiment. We aggregate multiple train runs into one training experiment. Each train run can eventually became a deployed model or not.
 
-**Custom:** Is when the user will define the whole training code and define the training enviroment.
+**Custom:** Is when the user will define the whole training code and define the training environment.
 
 **AutoML:** Is when the training is pre defined using the AutoML module. The required files are the training data and some configuration parameters for the package.
 
@@ -61,14 +61,14 @@ The only parameter on the function is the path for the data file. This way we ca
 In the custom training experiment you can do whatever you want, test multiple algorithms, optimize hyperparameters, validate on multiple segments of the data.
 The important thing is the return of the function, where we get information about the final model of this version so we can log it. The return must be a dictionary with the following keys:
 
-- `X_train`: The dataframe tha will be used to fit the model.
+- `X_train`: The dataframe that will be used to fit the model.
 - `y_train`: The target dataframe/array/series that will be used to fit the model.
 - `model_output`: A dataframe/array/series with outputs of the model. This can be the predicted values/probabilities, classes or any other useful information. This information needs to be in the output of the future deployed model to be used in the monitoring
 - `pipeline`: The final fitted model instance. Ideally it should be a `Scikit-Learn Pipeline Class <https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html>`_, but any other algorithm class that has the *get_params* method implemented works. This will be saved as `model.pkl` with `cloudpickle <https://github.com/cloudpipe/cloudpickle> _` or with the `save_model` method if the algorithm class has that.
 - `extra`: A optional list of filenames for extra files that are generated in the training. This can be plots, validation datasets, etc. They need to be saved in the same path that is provided as the function parameter.
 - `metrics`: A dictionary with each key as a metric. You can use any name for the metric key and save as many as you want, but the value must be numeric. Eg: `{"auc_train": 0.7, "auc_test": 0;65}`
 
-Besides that we also need the information for the enviroment (python version and package requirements). 
+Besides that we also need the information for the environment (python version and package requirements). 
 
 Then we can call the :py:meth:`neomaril_codex.training.NeomarilTrainingExperiment.run_training` method.
 
@@ -109,11 +109,11 @@ For the AutoML we just need the data and the configuration parameters. You can c
 
 
 
-Checking the exectuion results
+Checking the execution results
 ------------------------------
 
 The return of the :py:meth:`neomaril_codex.training.NeomarilTrainingExperiment.run_training` is a :py:class:`neomaril_codex.training.NeomarilTrainingExecution` instace
-With this class we can follow the assyncronous execution of that experiment version and check information on it. 
+With this class we can follow the asynchronous execution of that experiment version and check information on it. 
 
 .. code:: python
 

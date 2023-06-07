@@ -212,7 +212,7 @@ class NeomarilModel(BaseNeomaril):
         routine : str, optional
             Type of routine beeing executed, can assume values Host or Run
         type : str, optional
-            Defines the type of the logs that are going to be filtered, can assume the vaues Ok, Error, Debug or Warning
+            Defines the type of the logs that are going to be filtered, can assume the values Ok, Error, Debug or Warning
 
         Raises
         ------
@@ -381,17 +381,17 @@ class NeomarilModel(BaseNeomaril):
         Arguments
         ---------
         language : str
-            The gerenated code language. Suported languages are 'curl', 'python' or 'javascript'
+            The generated code language. Supported languages are 'curl', 'python' or 'javascript'
 
         Raises
         ------
         InputError
-            Unsuported language
+            Unsupported language
 
         Returns
         -------
         str
-            The gerenated code.
+            The generated code.
         """
         if language not in ['curl', 'python', 'javascript']:
             raise InputError("Suported languages are curl, python or javascript")
@@ -864,9 +864,9 @@ class NeomarilModelClient(BaseNeomarilClient):
         end : str, optional
             Date to end filter. At the format aaaa-mm-dd
         routine : str, optional
-            Type of routine being executed, can assume values 'Host' (for deployment logs) or 'Run' (for exectuion logs)
+            Type of routine being executed, can assume values 'Host' (for deployment logs) or 'Run' (for execution logs)
         type : str, optional
-            Defines the type of the logs that are going to be filtered, can assume the vaues 'Ok', 'Error', 'Debug' or 'Warning'
+            Defines the type of the logs that are going to be filtered, can assume the values 'Ok', 'Error', 'Debug' or 'Warning'
 
         Raises
         ------
