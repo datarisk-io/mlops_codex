@@ -124,7 +124,7 @@ class NeomarilModel(BaseNeomaril):
         url = f"{self.base_url}/model/status/{self.group}/{self.model_id}"
         response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
         if response.status_code < 300:
-            return response.json()['Status']
+            return response.json()
         else:
             raise ModelError(response.text)
 
@@ -137,10 +137,10 @@ class NeomarilModel(BaseNeomaril):
         >>> model.wait_ready()
         """
         if self.status in ['Ready', 'Building']:
-            self.status = self.__get_status()
+            self.status = self.__get_status()['Status']
             while self.status == 'Building':
                 sleep(30)
-                self.status = self.__get_status()
+                self.status = self.__get_status()['Status']
 
     def health(self) -> str:
         """
@@ -191,12 +191,12 @@ class NeomarilModel(BaseNeomaril):
             response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
             if response.status_code < 300:
                 logger.info("Model is restarting")
-                self.status = self.__get_status()
+                self.status = self.__get_status()['Status']
                 if wait_for_ready:
                     print('Wating for deploy to be ready.', end='')
                     while self.status == 'Building':
                         sleep(30)
-                        self.status = self.__get_status()
+                        self.status = self.__get_status()['Status']
                         print('.', end='', flush=True)
 
     def get_logs(self, start:Optional[str]=None, end:Optional[str]=None, routine:Optional[str]=None, type:Optional[str]=None):
@@ -345,14 +345,18 @@ class NeomarilModel(BaseNeomaril):
                         exec_id = message['ExecutionId']
                         run = NeomarilExecution(self.model_id, 'AsyncModel', exec_id=exec_id, password=self.__credentials, 
                                                 url=self.base_url, group=self.group, group_token=group_token)
-                        status = run.get_status()['Status']
+                        response = run.get_status()
+                        status = response['Status']
                         if wait_complete:
                             print('Wating the training run.', end='')
                             while status in ['Running', 'Requested']:
                                 sleep(30)
                                 print('.', end='', flush=True)
-                                status = run.get_status()['Status']
-                        return run
+                                response = run.get_status()
+                                status = response['Status']
+                        if status == 'Failed':
+                            logger.error(response['Message'])
+                            raise ExecutionError("Training execution failed")
                     else:
                         raise ServerError(req.text)
                 
@@ -768,11 +772,13 @@ class NeomarilModelClient(BaseNeomarilClient):
             if wait_for_ready:
                 print('Wating for deploy to be ready.', end='')
                 while status == 'Building':
-                    status = self.__get_model_status(model_id, group)['Status']
+                    response = self.__get_model_status(model_id, group)
+                    status = response['Status']
                     print('.', end='', flush=True)
                     sleep(10)
             else:
-                raise ModelError(f'Model "{model_id}" not ready yet')
+                logger.info("Returning model, but model is not ready.")
+                NeomarilModel(model_id, password=self.__credentials, group=group, url=self.base_url, group_token=group_token)
             
         if status in ['Disabled', 'Ready']:
             raise ModelError(f'Model "{model_id}" unavailable (disabled or deploy process is incomplete)')
@@ -1085,10 +1091,8 @@ class NeomarilModelClient(BaseNeomarilClient):
                 
         self.__host_model(operation.lower(), model_id, group)
         
-        if wait_for_ready:
-            return self.get_model(model_id, group)
-        else:
-            return "Model deployment in progress"
+        return self.get_model(model_id, group, wait_for_ready=wait_for_ready)
+   
 
     def get_model_execution(self, model_id:str, exec_id:str, group:Optional[str]=None) -> NeomarilExecution:
         """

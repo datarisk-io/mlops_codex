@@ -547,14 +547,20 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             self.__execute_training(exec_id)
             self.__refresh_execution_list()
             run = NeomarilTrainingExecution(self.training_id, self.group, exec_id, password=self.__credentials, url=self.base_url)
-            status = run.get_status()['Status']
+            response = run.get_status()
+            status = response['Status']
             if wait_complete:
                 print('Wating the training run.', end='')
                 while status in ['Running', 'Requested']:
                     sleep(30)
                     print('.', end='', flush=True)
-                    status = run.get_status()['Status']
-            return run
+                    response = run.get_status()
+                    status = response['Status']
+            if status == 'Failed':
+                logger.error(response['Message'])
+                raise ExecutionError("Training execution failed")
+            else:
+                return run
 
     def __call__(self, data: dict) -> dict:
             return self.predict(data)
