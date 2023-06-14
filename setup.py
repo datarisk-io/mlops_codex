@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 MODULE_NAME = 'neomaril-codex'
 MODULE_NAME_IMPORT = 'neomaril_codex'
 REPO_NAME = 'mlops-neomaril-codex'
-MODULE_VERSION='1.0.1rc1'
+MODULE_VERSION='1.0.3'
 
 def requirements_from_pip(filename='requirements.txt'):
     with open(filename, 'r') as pip:
@@ -14,8 +14,10 @@ def requirements_from_pip(filename='requirements.txt'):
 
 setup(name=MODULE_NAME,
       description="Python tools for interact with Neomaril",
-      url='https://github.com/datarisk-io/{:s}'.format(REPO_NAME),
+      url='https://datarisk-io.github.io/mlops-neomaril-codex/',
       author="Datarisk",
+      long_description=open('README.md').read(),
+      long_description_content_type='text/markdown',
       package_dir={'': 'src'},
       packages=find_packages('src'),
       version=MODULE_VERSION,

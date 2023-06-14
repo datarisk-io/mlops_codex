@@ -1,7 +1,6 @@
-url: https://neomaril.staging.datarisk.net
 group: datarisk
 python_version: 3.9
-scoring:
+deploy:
     name: Teste
     operation: Async
     directory: ./samples/asyncModel

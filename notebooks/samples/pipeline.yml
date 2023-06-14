@@ -1,4 +1,3 @@
-url: https://neomaril.staging.datarisk.net
 group: datarisk
 python_version: 3.9
 training:
@@ -25,7 +24,7 @@ deploy:
     env:
 monitoring:
     directory: ./samples/monitoring
-    preprocess: preprocess.py
+    preprocess: preprocess_sync.py
     preprocess_function: score
     shap_function: score
     config: configuration.json

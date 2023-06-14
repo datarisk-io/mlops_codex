@@ -3,7 +3,7 @@
 
 import io
 import re
-from typing import Union, Optional
+from typing import Union, Optional, List
 import requests
 import json
 from time import sleep
@@ -18,8 +18,8 @@ class NeomarilTrainingExecution(NeomarilExecution):
     """
     Class to manage trained models.
 
-    Arguments
-    ---------
+    Attributes
+    ----------
     training_id : str
         Training id (hash) from the experiment you want to access
     group : str
@@ -30,6 +30,8 @@ class NeomarilTrainingExecution(NeomarilExecution):
         Password for authenticating with the client
     environment : str
         Enviroment of Neomaril you are using. 
+    run_data : dict
+        Metadata from the execution. 
 
     Raises
     ------
@@ -58,7 +60,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
         print(run.get_training_execution(run.exec_id))
         print(run.download_result())
 
-        run.promote('Teste notebook promoted custom', 'score', data_path+'app.py', data_path+'schema.json',  'csv')
+        run.promote_model('Teste notebook promoted custom', 'score', data_path+'app.py', data_path+'schema.json',  'csv')
     """
 
     def __init__(self, training_id:str, group:str, exec_id:str, password:Optional[str]=None, url:str=None) -> None:
@@ -70,6 +72,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
         self.group = group
     
         self.training_type = self.execution_data['TrainingType']
+        self.run_data = self.execution_data['RunData']
 
     def __upload_model(self, model_name:str, model_reference:Optional[str]=None, source_file:Optional[str]=None, 
                                          schema:Optional[Union[str, dict]]=None, extra_files:Optional[list]=None, 
@@ -116,7 +119,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
             form_data['model_reference'] = model_reference
             form_data['input_type'] = input_type
         
-            file_extesions = {'py': 'script.py', 'ipynb': "notebook.ipynb"}
+            file_extesions = {'py': 'app.py', 'ipynb': "notebook.ipynb"}
         
 
             upload_data = [
@@ -162,6 +165,40 @@ class NeomarilTrainingExecution(NeomarilExecution):
         else:
             logger.error('Upload error: ' + response.text)
             raise InputError('Invalid parameters for model creation')
+        
+    def get_status(self) -> dict:
+        """
+		Gets the status of the related execution.
+
+		Raises
+		------
+		ExecutionError
+			Execution unavailable
+
+		Returns
+		-------
+		dict
+			Returns the execution status.
+		"""
+
+        url = f"{self.base_url}/training/status/{self.group}/{self.exec_id}"
+
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
+        if response.status_code not in [200, 410]:
+            logger.error(response.text)
+            raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
+
+        result = response.json()
+
+        self.status = result['Status']
+        self.execution_data['ExecutionState'] = result['Status']
+        if self.status == 'Succeeded':
+            url = f"{self.base_url}/training/describe/{self.group}/{self.training_id}/{self.exec_id}"
+            response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
+            self.execution_data = response.json()['Description']
+            self.run_data = self.execution_data['RunData']
+            del self.run_data['tags']
+        return result
 
     def __host_model(self, operation:str, model_id:str) -> None:
         """
@@ -249,8 +286,8 @@ class NeomarilTrainingExperiment(BaseNeomaril):
     """
     Class to manage models being trained inside Neomaril
 
-    Arguments
-    ---------
+    Attributes
+    ----------
     password : str
         Password for authenticating with the client
     training_id : str
@@ -259,6 +296,9 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         Group the training is inserted. Default is 'datarisk' (public group)
     environment : str
         Flag that choose which environment of Neomaril you are using. Test your deployment first before changing to production. Default is True
+    executions : List[int]
+        Ids for the executions in that training
+
 
     Raises
     ------
@@ -312,6 +352,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         self.model_type = self.training_data['ModelType']
         self.training_type = self.training_data['TrainingType']
         self.experiment_name = self.training_data['ExperimentName']
+        self.executions = self.training_data['Executions']
 
     def __repr__(self) -> str:
             return f"""NeomarilTrainingExperiment(name="{self.experiment_name}", 
@@ -432,6 +473,19 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         else:
             logger.error(response.text)
             raise InputError('Invalid parameters for training execution')
+        
+    def __refresh_execution_list(self):
+        url = f"{self.base_url}/training/describe/{self.group}/{self.training_id}"
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
+    
+        if response.status_code == 404:
+            raise ModelError(f'Experiment "{self.training_id}" not found.')
+            
+        elif response.status_code >= 500:
+            raise ModelError(f'Unable to retrive experiment "{self.training_id}"')
+    
+        self.training_data = response.json()['Description']
+        self.executions = self.training_data['Executions']
 
     def run_training(self, run_name:str, train_data:str, training_reference:Optional[str]=None, 
                      python_version:str='3.8', conf_dict:Optional[Union[str, dict]]=None,
@@ -491,41 +545,72 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
         if exec_id:
             self.__execute_training(exec_id)
+            self.__refresh_execution_list()
             run = NeomarilTrainingExecution(self.training_id, self.group, exec_id, password=self.__credentials, url=self.base_url)
-            status = run.get_status()['Status']
+            response = run.get_status()
+            status = response['Status']
             if wait_complete:
                 print('Wating the training run.', end='')
                 while status in ['Running', 'Requested']:
                     sleep(30)
                     print('.', end='', flush=True)
-                    status = run.get_status()['Status']
-            return run
+                    response = run.get_status()
+                    status = response['Status']
+            if status == 'Failed':
+                logger.error(response['Message'])
+                raise ExecutionError("Training execution failed")
+            else:
+                return run
 
     def __call__(self, data: dict) -> dict:
             return self.predict(data)
 
-    def get_training_execution(self, exec_id:str) -> None:
+    def get_training_execution(self, exec_id:Optional[str]=None) -> NeomarilTrainingExecution:
         """
         Get a execution instace.
 
         Arguments
         ---------
-        exec_id : str
-            Execution id
+        exec_id : str, optional
+            Execution id. If not informed we get the last execution.
 
         Returns
         -------
         NeomarilExecution
-            The new execution
+            The choosen execution
         """
-        return NeomarilTrainingExecution(self.training_id, self.group, exec_id, password=self.__credentials, url=self.base_url)
+        if not exec_id:
+            self.__refresh_execution_list()
+            logger.info("Execution id not informed. Getting last execution")
+            exec_id = max(self.executions)
+        try:
+            int(exec_id)
+        except:
+            InputError("Unvalid execution Id informed or this training dont have a successful execution yet.")
+
+        exec = NeomarilTrainingExecution(self.training_id, self.group, exec_id, password=self.__credentials, url=self.base_url)
+        exec.get_status()
+        
+        return exec
+
+    def get_all_training_executions(self) -> List[NeomarilTrainingExecution]:
+        """
+        Get all executions from that experiment.
+
+        Returns
+        -------
+        List[NeomarilExecution]
+            All executions from that training
+        """
+        self.__refresh_execution_list()
+        return [self.get_training_execution(e) for e in self.executions]
 
 class NeomarilTrainingClient(BaseNeomarilClient):
     """
     Class for client for acessing Neomaril and manage models
 
-    Arguments
-    ---------
+    Attributes
+    ----------
 	password : str
 		Password for authenticating with the client. You can also use the env variable NEOMARIL_TOKEN to set this
 	url : str
@@ -665,10 +750,10 @@ class NeomarilTrainingClient(BaseNeomarilClient):
         response = requests.post(url, data=data,
                                                          headers={'Authorization': 'Bearer ' + self.__credentials})
 
-        if response.status_code == 200:
-            message = response.json()['Message']
-            logger.info(message)
-            training_id = message.replace('New Training inserted with hash ', '').replace('.', '')
+        if response.status_code < 300:
+            response_data = response.json()
+            logger.info(response_data['Message'])
+            training_id = response_data['TrainingHash']
         else:
             logger.error(response.text)
             raise ServerError('')
