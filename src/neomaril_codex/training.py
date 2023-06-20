@@ -197,7 +197,10 @@ class NeomarilTrainingExecution(NeomarilExecution):
             response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
             self.execution_data = response.json()['Description']
             self.run_data = self.execution_data['RunData']
-            del self.run_data['tags']
+            try:
+                del self.run_data['tags']
+            except:
+                pass
         return result
 
     def __host_model(self, operation:str, model_id:str) -> None:
