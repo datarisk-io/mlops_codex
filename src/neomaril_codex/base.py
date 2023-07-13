@@ -152,9 +152,10 @@ class BaseNeomarilClient(BaseNeomaril):
 								headers={'Authorization': 'Bearer ' + self.__credentials})
 
 		if response.status_code == 201:
-			logger.info(response.json()['Message'])
-			return True
+			logger.info(f"Group '{name}' inserted. Use the token for scoring. Carefully save it as we won't show it again.")
+			return response.json()['Token']
 		elif response.status_code < 500:
+			logger.error(response.text)
 			logger.error("Group already exist, nothing was changed.")
 			return False
 		else:
@@ -203,7 +204,8 @@ class BaseNeomarilClient(BaseNeomaril):
 														 headers={'Authorization': 'Bearer ' + self.__credentials})
 
 		if response.status_code == 201:
-				return response.json()['Message']
+				logger.info(f"Group '{name}' was refreshed")
+				return response.json()['Token']
 		else:
 				raise ServerError('Unexpected server error: ', response.text)
 		
