@@ -343,8 +343,8 @@ class NeomarilModel(BaseNeomaril):
                         message = req.json()
                         logger.info(message['Message'])
                         exec_id = message['ExecutionId']
-                        run = NeomarilExecution(self.model_id, 'AsyncModel', exec_id=exec_id, password=self.__credentials, 
-                                                url=self.base_url, group=self.group, group_token=group_token)
+                        run = NeomarilExecution(self.model_id, 'AsyncModel', group=self.group, exec_id=exec_id, password=self.__credentials, 
+                                                url=self.base_url, group_token=group_token)
                         response = run.get_status()
                         status = response['Status']
                         if wait_complete:
@@ -357,6 +357,7 @@ class NeomarilModel(BaseNeomaril):
                         if status == 'Failed':
                             logger.error(response['Message'])
                             raise ExecutionError("Training execution failed")
+                        return run
                     else:
                         raise ServerError(req.text)
                 
@@ -402,7 +403,7 @@ class NeomarilModel(BaseNeomaril):
             if language == 'curl':
                 return f"""curl --request POST \\
                     --url {base_url}/model/sync/run/{self.group}/{self.model_id} \\
-                    --header 'Authorization: Bearer {self.__token}' \\
+                    --header 'Authorization: Bearer TOKEN' \\
                     --header 'Content-Type: application/json' \\
                     --data '{payload}'
                 """
@@ -415,7 +416,7 @@ class NeomarilModel(BaseNeomaril):
                     payload = {payload}
                     headers = {{
                         "Content-Type": "application/json",
-                        "Authorization": "Bearer {self.__token}"
+                        "Authorization": "Bearer TOKEN"
                     }}
 
                     response = requests.request("POST", url, json=payload, headers=headers)
@@ -426,7 +427,7 @@ class NeomarilModel(BaseNeomaril):
                 return f"""
                     const options = {{
                     method: 'POST',
-                    headers: {{'Content-Type': 'application/json', Authorization: 'Bearer {self.__token}'}},
+                    headers: {{'Content-Type': 'application/json', Authorization: 'Bearer TOKEN'}},
                     body: '{payload}'
                     }};
 
@@ -441,7 +442,7 @@ class NeomarilModel(BaseNeomaril):
                 return f"""
                     curl --request POST \
                     --url {self.base_url}/model/async/run/{self.group}/{self.model_id} \\
-                    --header 'Authorization: Bearer {self.__token}' \\
+                    --header 'Authorization: Bearer TOKEN' \\
                     --header 'Content-Type: multipart/form-data' \\
                     --form "input=@/path/to/file"
                 """
@@ -457,7 +458,7 @@ class NeomarilModel(BaseNeomaril):
 
                     headers = {{
                         "Content-Type": "multipart/form-data",
-                        "Authorization": "Bearer {self.__token}"
+                        "Authorization": "Bearer TOKEN"
                     }}
 
                     response = requests.request("POST", url, files=upload_data, headers=headers)
@@ -473,7 +474,7 @@ class NeomarilModel(BaseNeomaril):
                     method: 'POST',
                     headers: {{
                         'Content-Type': 'multipart/form-data',
-                        Authorization: 'Bearer {self.__token}'
+                        Authorization: 'Bearer TOKEN'
                     }}
                     }};
 
@@ -507,8 +508,10 @@ class NeomarilModel(BaseNeomaril):
         >>> model.get_model_execution('1')
         """
         if self.operation == 'async':
-            return NeomarilExecution(self.model_id, 'AsyncModel', exec_id, password=self.__credentials, 
-                                     url=self.base_url, group=self.group)
+            run = NeomarilExecution(self.model_id, 'AsyncModel', group=self.group, exec_id=exec_id, password=self.__credentials, 
+                                     url=self.base_url, group_token=self.__token)
+            run.get_status()
+            return run
         else:
             raise ModelError("Sync models don't have executions")
 
@@ -1043,7 +1046,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         extra_files : list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
         env : str, optional
-            Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
+            .env file to be used in your model enviroment. This will be encrypted in the server.
         python_version : str, optional
             Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'
         operation : str
