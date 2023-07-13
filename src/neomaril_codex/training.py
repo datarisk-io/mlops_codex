@@ -72,8 +72,14 @@ class NeomarilTrainingExecution(NeomarilExecution):
         self.group = group
     
         self.training_type = self.execution_data['TrainingType']
+        self.name = self.execution_data['ExperimentName']
         self.run_data = self.execution_data['RunData']
 
+
+    def __repr__(self) -> str:
+        return f"""Neomaril{self.exec_type}Execution(name="{self.name}",
+                                        exec_id="{self.exec_id}", status="{self.status}")"""
+    
     def __upload_model(self, model_name:str, model_reference:Optional[str]=None, source_file:Optional[str]=None, 
                                          schema:Optional[Union[str, dict]]=None, extra_files:Optional[list]=None, 
                                          env:Optional[str]=None, operation:str='Sync', input_type:str=None) -> str:
@@ -371,7 +377,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
     def __upload_training(self, run_name:str, train_data:str, training_reference:Optional[str]=None, 
                                                 python_version:str='3.8', conf_dict:Optional[Union[str, dict]]=None,
                                                 source_file:Optional[str]=None, requirements_file:Optional[str]=None,
-                                                extra_files:Optional[list]=None) -> str:
+                                                env:Optional[str]=None, extra_files:Optional[list]=None) -> str:
         
         """
         Upload the files to the server
@@ -392,6 +398,8 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             Path of the source file. The file must have a training function that accepts one parameter: model_path (absolute path of where the file is located). Just used when training_type is Custom
         requirements_file : str, optional
             Path of the requirements file. The packages versions must be fixed eg: pandas==1.0. Just used when training_type is Custom
+        env : str, optional
+            .env file to be used in your training enviroment. This will be encrypted in the server.
         extra_files : list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file. Just used when training_type is Custom
         
@@ -420,6 +428,9 @@ class NeomarilTrainingExperiment(BaseNeomaril):
                 ("source", (file_extesions[source_file.split('.')[-1]], open(source_file, "r"))),
                 ("requirements", ("requirements.txt", open(requirements_file, "r")))
             ]
+
+            if env:
+                upload_data.append(("env", (".env", env)))
          
             if extra_files:
                 extra_data = [('extra', (c.split('/')[-1], open(c, "r"))) for c in extra_files]
@@ -488,12 +499,13 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             raise ModelError(f'Unable to retrive experiment "{self.training_id}"')
     
         self.training_data = response.json()['Description']
-        self.executions = self.training_data['Executions']
+        self.executions = [c['Id'] for c in self.training_data['Executions']]
 
     def run_training(self, run_name:str, train_data:str, training_reference:Optional[str]=None, 
                      python_version:str='3.8', conf_dict:Optional[Union[str, dict]]=None,
                      source_file:Optional[str]=None, requirements_file:Optional[str]=None,
-                     extra_files:Optional[list]=None, wait_complete:Optional[bool]=False) -> Union[dict, NeomarilExecution]:
+                     extra_files:Optional[list]=None, env:Optional[str]=None,
+                     wait_complete:Optional[bool]=False) -> Union[dict, NeomarilExecution]:
         """
         Runs a prediction from the current model.
 
@@ -513,6 +525,8 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             Path of the source file. The file must have a training function that accepts one parameter: model_path (absolute path of where the file is located). Just used when training_type is Custom
         requirements_file : str
             Path of the requirements file. The packages versions must be fixed eg: pandas==1.0. Just used when training_type is Custom
+        env : str, optional
+            .env file to be used in your training enviroment. This will be encrypted in the server.
         extra_files : list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file. Just used when training_type is Custom
         wait_complete : bool, optional
@@ -537,8 +551,8 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
         if self.training_type == 'Custom':
             exec_id = self.__upload_training(run_name, train_data, training_reference=training_reference,
-                                                                            python_version=python_version, source_file=source_file,
-                                                                            requirements_file=requirements_file, extra_files=extra_files)
+                                            python_version=python_version, source_file=source_file, env=env,
+                                            requirements_file=requirements_file, extra_files=extra_files)
 
         elif self.training_type == 'AutoML':
             exec_id = self.__upload_training(run_name, train_data, conf_dict=conf_dict)
