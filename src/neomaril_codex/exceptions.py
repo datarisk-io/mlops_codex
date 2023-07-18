@@ -10,6 +10,10 @@ class ModelError(Exception):
     """Raised when a model is not avaliable"""
     pass
 
+class PreprocessingError(Exception):
+    """Raised when a pre processing is not avaliable"""
+    pass
+
 class GroupError(Exception):
     """Raised when a group is not avaliable"""
     pass
