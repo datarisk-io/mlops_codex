@@ -273,33 +273,28 @@ class NeomarilExecution(BaseNeomaril):
 		load_dotenv()
 		self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
 		self.__token = os.getenv('NEOMARIL_GROUP_TOKEN') if os.getenv('NEOMARIL_GROUP_TOKEN') else group_token
-		self.operation = ''
-
+		
 		try_login(self.__credentials, self.base_url)
 
 		if exec_type == 'AsyncModel':
 				self.__url_path = 'model/async'
-				self.operation = 'model'
 		elif exec_type == 'Training':
 				self.__url_path = 'training'
-				self.operation = 'training'
 		elif exec_type == 'AsyncPreprocessing':
 				self.__url_path = 'preprocessing/async'
-				self.operation = 'preprocessing'
 		else:
-				raise InputError(f"Invalid execution type '{exec_type}'. Valid options are 'AsyncModel', 'Training' and 'AsyncPreprocessing'")
+				raise InputError(f"Invalid execution type '{exec_type}'. Valid options are 'AsyncModel' and 'Training'")
 
-		
-		url = f"{self.base_url}/{self.__url_path}/status/{group}/{exec_id}"
+		url = f"{self.base_url}/{self.__url_path.replace('/async', '')}/describe/{group}/{parent_id}/{exec_id}"
+		response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
 
-		response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__token})
-		if response.status_code not in [200, 410]:
-				logger.error(response.text)
-				raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
+		if response.status_code == 404:
+				raise ModelError(f'Execution "{exec_id}" not found.')
 
-		result = response.json()
+		elif response.status_code >= 500:
+				raise ModelError(f'Unable to retrive execution "{exec_id}"')
 
-		self.status = result['Status']
+
 		self.execution_data = {'ExecutionState': result['Status']}
 		
 	def __repr__(self) -> str:
@@ -373,7 +368,7 @@ class NeomarilExecution(BaseNeomaril):
 					logger.error(response.text)
 					raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
 
-			filename = f'output_{self.exec_id}.csv'
+			filename = f'output_{self.exec_id}.zip'
 			if not path.endswith('/'):
 					filename = '/'+filename
 
