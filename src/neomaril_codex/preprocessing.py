@@ -27,22 +27,29 @@ class NeomarilPreprocessing(BaseNeomaril):
 
         try_login(self.__credentials, self.base_url)
         
-        self.name = self.preprocessing_data['Name']
-        self.status = self.preprocessing_data['Status']
-        self.schema = self.preprocessing_data['Schema']
-        self.operation = self.preprocessing_data['Operation'].lower()
+        url = f"{self.base_url}/preprocessing/list"
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
+
+        results = response.json()
+        for result in results.get('Results'):
+            if result.get('Hash') == preprocessing_id:
+                self.operation = result.get('Operation')
+                
+        
+        response = self.__get_status()
+        self.status = response.get('Status')
+
         self.__preprocessing_ready = self.status == "Deployed"
 
     def __repr__(self) -> str:
-        return f"""NeomarilPreprocessing(name="{self.name}", group="{self.group}", 
+        return f"""NeomarilPreprocessing, group="{self.group}", 
                                 status="{self.status}",
                                 preprocessing_id="{self.preprocessing_id}",
                                 operation="{self.operation.title()}",
-                                schema={str(self.schema)}
                                 )"""
 
     def __str__(self):
-        return f'NEOMARIL preprocessing "{self.name} (Group: {self.group}, Id: {self.preprocessing_id})"'
+        return f'NEOMARIL preprocessing (Group: {self.group}, Id: {self.preprocessing_id})"'
 
     def wait_ready(self):
         """
@@ -141,12 +148,12 @@ class NeomarilPreprocessing(BaseNeomaril):
         """
         if self.__preprocessing_ready:
             if (group_token is not None) | (self.__token is not None):
-                url = f"{self.base_url}/preprocessing/{self.operation}/run/{self.group}/{self.preprocessing_id}"
+                url = f"{self.base_url}/preprocessing/{self.operation.lower()}/run/{self.group}/{self.preprocessing_id}"
                 if self.__token and not group_token:
                     group_token = self.__token
                 if group_token and not self.__token:
                     self.__token = group_token
-                if self.operation == 'sync':
+                if self.operation.lower() == 'sync':
                     url = url.replace('localhost:7070', 'localhost:7071')
                     preprocessing_input = {
                             "Input": data
@@ -156,10 +163,13 @@ class NeomarilPreprocessing(BaseNeomaril):
 
                     return req.json()
 
-                elif self.operation == 'async':
+                elif self.operation.lower() == 'async':
 
-                    req = requests.post(url, files=[("input", (data.split('/')[-1], open(data, "rb")))],
-                                                    headers={'Authorization': 'Bearer ' + group_token})
+                    files = {
+                        'dataset': open(data, 'rb'),
+                    }
+
+                    req = requests.post(url, files=files, headers={'Authorization': 'Bearer ' + group_token})
 
                     if req.status_code == 202:
                         message = req.json()
@@ -184,6 +194,7 @@ class NeomarilPreprocessing(BaseNeomaril):
                 
             else:
                 raise AuthenticationError("Group token not informed")
+        return run
         # else:
         #     url = f"{self.base_url}/preprocessing/describe/{self.group}/{self.preprocessing_id}"
         #     response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials}).json()['Description']
@@ -201,7 +212,7 @@ class NeomarilPreprocessing(BaseNeomaril):
     
     def get_preprocessing_execution(self, exec_id:str) -> None:
         """
-        Get a execution instace for that preprocessing.
+        Get a execution instance for that preprocessing.
 
         Arguments
         ---------
@@ -217,106 +228,12 @@ class NeomarilPreprocessing(BaseNeomaril):
         -------
         >>> preprocessing.get_preprocessing_execution('1')
         """
-        if self.operation == 'async':
-            return NeomarilExecution(self.preprocessing_id, 'AsyncPreprocessing', exec_id, password=self.__credentials, 
-                                     url=self.base_url, group=self.group)
+        if self.operation.lower() == 'async':
+            return NeomarilExecution(self.preprocessing_id, 'AsyncPreprocessing', exec_id=exec_id, password=self.__credentials, 
+                                     url=self.base_url, group_token=self.__token, group=self.group)
         else:
             raise PreprocessingError("Sync preprocessing don't have executions")
 
-    def health(self) -> str: # CARDOSO
-        """
-        Get the preprocessing deployment process health state.
-
-        Returns
-        -------
-        str
-            OK - if the it is possible to get the health state
-            NOK - if an exception occurs
-        
-        Example
-        -------
-        >>> preprocessing.health()
-         'OK'
-        """
-        if self.operation == 'async':
-            try:
-                try_login(self.__credentials, self.base_url)
-                return 'OK'
-            except Exception as e:
-                logger.error('Server error: '+e)
-                return 'NOK'
-        elif self.operation == 'sync':
-            url = f"{self.base_url.replace('localhost:7070', 'localhost:7071')}/preprocessing/sync/health/{self.group}/{self.preprocessing_id}"
-            response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
-            if response.status_code == 200:
-                return response.json()['Message']
-            else:
-                logger.error('Server error: '+response.text)
-                return 'NOK'
-            
-    def restart_preprocessing(self, wait_for_ready:bool=True):
-        """
-        Restart a preprocessing deployment process health state. 
-
-        Parameters
-        -----------
-        wait_for_ready : bool
-            If the preprocessing is being deployed, wait for it to be ready instead of failing the request. Defaults to True
-
-        Example
-        -------
-        >>> preprocessing.restart_preprocessing()
-        """
-        if (self.operation == "sync") and (self.status == "Deployed"):
-            url = f"{self.base_url.replace('localhost:7070', 'localhost:7071')}/preprocessing/restart/{self.group}/{self.preprocessing_id}"
-            response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
-            if response.status_code < 300:
-                logger.info("Pre processing is restarting")
-                self.status = self.__get_status()['Status']
-                if wait_for_ready:
-                    print('Wating for deploy to be ready.', end='')
-                    while self.status == 'Building':
-                        sleep(30)
-                        self.status = self.__get_status()['Status']
-                        print('.', end='', flush=True)
-    
-    def delete(self):
-        """
-        Deletes the current preprocessing.
-        IMPORTANT! For now this is irreversible, if you want to use the preprocessing again later you will need to upload again (and it will have a new ID).
-
-        Raises
-        ------
-        ServerError
-            Pre processing deleting failed
-
-        Returns
-        -------
-        str
-            If preprocessing is at status=Deployed deletes the preprocessing and return a json with his information. If it isn't Deployed it returns the message that the preprocessing is under another state
-
-        Example
-        -------
-        >>> preprocessing.delete()
-        """
-        if self.__preprocessing_ready:
-            req = requests.delete(f"{self.base_url}/preprocessing/delete/{self.group}/{self.preprocessing_id}", headers={'Authorization': 'Bearer ' + self.__credentials})
-        
-            if req.status_code == 200:
-                response = requests.get(f"{self.base_url}/preprocessing/describe/{self.group}/{self.preprocessing_id}", 
-                                            headers={'Authorization': 'Bearer ' + self.__credentials})
-            
-                self.preprocessing_data = response.json()['Description']
-                self.status = self.preprocessing_data['Status']
-                self.__preprocessing_ready = False
-        
-                return req.json()
-            else:
-                raise ServerError('Pre processing deleting failed')
-      
-        else:
-            return 'Pre processing is '+self.status
-    
     def __get_status(self):
         """
         Gets the status of the preprocessing.
@@ -346,6 +263,35 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         super().__init__(password=password, url=url)
         load_dotenv()
         self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
+
+    def __get_preprocessing_status(self, preprocessing_id:str, group:str) -> dict:
+        """
+        Gets the status of the preprocessing with the hash equal to `preprocessing_id`
+
+        Parameters
+        ----------
+        group : str
+            Group the model is inserted
+        preprocessing_id : str
+            Model id (hash) from the model being searched
+
+        Raises
+        ------
+        ModelError
+            Model unavailable
+
+        Returns
+        -------
+        dict
+            The model status and a message if the status is 'Failed'
+        """
+
+        url = f"{self.base_url}/preprocessing/status/{group}/{preprocessing_id}"
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
+        if response.status_code not in [200, 410]:
+            raise PreprocessingError(f'Preprocessing "{preprocessing_id}" not found')
+        
+        return response.json()
 
     def get_preprocessing(self, preprocessing_id:str, group:str="datarisk", group_token:Optional[str]=None, wait_for_ready:bool=True) -> NeomarilPreprocessing:
         """
@@ -408,64 +354,60 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         else:
             raise ServerError('Unknown preprocessing status: ',status)
         
-    # def search_preprocessing(self, name:Optional[str]=None, state:Optional[str]=None, 
-    #                                     group:Optional[str]=None, only_deployed:bool=False) -> list:
-    #     """
-    #     Search for preprocessing using the name of the preprocessing
+    def search_preprocessing(self, name:Optional[str]=None, state:Optional[str]=None, 
+                                        group:Optional[str]=None, only_deployed:bool=False) -> list:
+        """
+        Search for preprocessing using the name of the preprocessing
 
-    #     Arguments
-    #     ---------
-    #     name : str, optional
-    #         Text that its expected to be on the preprocessing name. It runs similar to a LIKE query on SQL
-    #     state : str, optional
-    #         Text that its expected to be on the state. It runs similar to a LIKE query on SQL
-    #     group : str, optional
-    #         Text that its expected to be on the group name. It runs similar to a LIKE query on SQL
-    #     only_deployed : bool, optional
-    #         If its True, filter only preprocessing ready to be used (status == "Deployed"). Defaults to False
+        Arguments
+        ---------
+        name : str, optional
+            Text that its expected to be on the preprocessing name. It runs similar to a LIKE query on SQL
+        state : str, optional
+            Text that its expected to be on the state. It runs similar to a LIKE query on SQL
+        group : str, optional
+            Text that its expected to be on the group name. It runs similar to a LIKE query on SQL
+        only_deployed : bool, optional
+            If its True, filter only preprocessing ready to be used (status == "Deployed"). Defaults to False
 
-    #     Raises
-    #     ------
-    #     ServerError
-    #         Unexpected server error
+        Raises
+        ------
+        ServerError
+            Unexpected server error
 
-    #     Returns
-    #     -------
-    #     list
-    #         List with the preprocessing data, it can works like a filter depending on the arguments values
-    #     Example
-    #     -------
-    #     >>> client.search_preprocessing(group='ex_group', only_deployed=True)
-    #     """
-    #     url = f"{self.base_url}/preprocessing/search"
+        Returns
+        -------
+        list
+            List with the preprocessing data, it can works like a filter depending on the arguments values
+        Example
+        -------
+        >>> client.search_preprocessing(group='ex_group', only_deployed=True)
+        """
+        url = f"{self.base_url}/preprocessing/search"
 
-    #     query = {}
+        query = {}
 
-    #     if name:
-    #         query['name'] = name
+        if name:
+            query['name'] = name
 
-    #     if state:
-    #         query['state'] = state
+        if state:
+            query['state'] = state
 
-    #     if group:
-    #         query['group'] = group
+        if group:
+            query['group'] = group
 
-    #     if only_deployed:
-    #         query['state'] = 'Deployed'
+        if only_deployed:
+            query['state'] = 'Deployed'
 
-    #     response = requests.get(url, params=query, headers={'Authorization': 'Bearer ' + self.__credentials})
+        response = requests.get(url, params=query, headers={'Authorization': 'Bearer ' + self.__credentials})
         
-    #     if response.status_code == 200:
-    #         results = response.json()['Results']
-    #         parsed_results = []
-    #         for r in results:
-    #             r['Schema'] = json.loads(r['Schema'])
-    #             parsed_results.append(r)
-
-    #         return parsed_results
+        if response.status_code == 200:
+            results = response.json()['Results']
+            
+            return results
         
-    #     else:
-    #         raise ServerError('Unexpected server error: ', response.text)
+        else:
+            raise ServerError('Unexpected server error: ', response.text)
 
     def get_logs(self, preprocessing_id, start:Optional[str]=None, end:Optional[str]=None, routine:Optional[str]=None, type:Optional[str]=None):
         """
@@ -509,7 +451,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         return self._logs(url, self.__credentials, start=start, end=end, routine=routine, type=type)
 
     def __upload_preprocessing(self, preprocessing_name:str, preprocessing_reference:str, source_file:str, 
-                            preprocessing_file:str, requirements_file:str, schema:Optional[Union[str, dict]]=None, 
+                            requirements_file:str, schema:Optional[Union[str, dict]]=None, 
                             group:Optional[str]=None, extra_files:Optional[list]=None, env:Optional[str]=None, 
                             python_version:str='3.8', operation:str='Sync', input_type:str=None) -> str:
         """
@@ -523,8 +465,6 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
             The name of the scoring function inside the source file
         source_file : str
             Path of the source file. The file must have a scoring function that accepts two parameters: data (data for the request body of the preprocessing) and preprocessing_path (absolute path of where the file is located)
-        preprocessing_file : str
-            Path of the preprocessing pkl file
         requirements_file : str
             Path of the requirements file. The packages versions must be fixed eg: pandas==1.0
         schema : Union[str, dict], optional
@@ -553,14 +493,13 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
             The new preprocessing id (hash)
         """
         
-        url = f"{self.base_url}/preprocessing/upload/{group}"
+        url = f"{self.base_url}/preprocessing/register/{group}"
         
         file_extesions = {'py': 'script.py', 'ipynb': "notebook.ipynb"}
         
      
         upload_data = [
             ("source", (file_extesions[source_file.split('.')[-1]], open(source_file, "r"))),
-            ("preprocessing", (preprocessing_file.split('/')[-1], open(preprocessing_file, "rb"))),
             ("requirements", ("requirements.txt", open(requirements_file, "r")))
         ]
 
@@ -588,8 +527,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
             
             upload_data += extra_data
             
-        form_data = {'name': preprocessing_name, 'preprocessing_reference': preprocessing_reference, 'operation': operation, 'input_type': input_type,
-                                 'python_version': "Python"+python_version.replace('.', '')}
+        form_data = {'name': preprocessing_name, 'script_reference': preprocessing_reference, 'operation': operation, 'python_version': "Python"+python_version.replace('.', '')}
             
         response = requests.post(url, data=form_data, files=upload_data, headers={'Authorization': 'Bearer ' + self.__credentials})
         
@@ -633,7 +571,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
             raise InputError('Invalid parameters for preprocessing creation')
 
     def create(self, preprocessing_name:str, preprocessing_reference:str, source_file:str, 
-                                     preprocessing_file:str, requirements_file:str, schema:Optional[Union[str, dict]]=None, 
+                                     requirements_file:str, schema:Optional[Union[str, dict]]=None, 
                                      group:str=None, extra_files:Optional[list]=None, env:Optional[str]=None,
                                      python_version:str='3.8', operation='Sync', input_type:str='json|csv|parquet', 
                                      wait_for_ready:bool=True)-> Union[NeomarilPreprocessing, str]:
@@ -648,8 +586,6 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
             The name of the scoring function inside the source file
         source_file : str
             Path of the source file. The file must have a scoring function that accepts two parameters: data (data for the request body of the preprocessing) and preprocessing_path (absolute path of where the file is located)
-        preprocessing_file : str
-            Path of the preprocessing pkl file
         requirements_file : str
             Path of the requirements file. The packages versions must be fixed eg: pandas==1.0
         schema : Union[str, dict]
@@ -701,9 +637,9 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
             logger.info("Group not informed, using default 'datarisk' group")
         
         preprocessing_id = self.__upload_preprocessing(preprocessing_name, preprocessing_reference, source_file, 
-                                                preprocessing_file, requirements_file, schema=schema, group=group,
-                                                extra_files=extra_files, python_version=python_version,env=env,
-                                                operation=operation, input_type=input_type)
+                                                requirements_file, schema=schema, group=group, extra_files=extra_files,
+                                                python_version=python_version,env=env, operation=operation,
+                                                input_type=input_type)
                 
         self.__host_preprocessing(operation.lower(), preprocessing_id, group)
         
