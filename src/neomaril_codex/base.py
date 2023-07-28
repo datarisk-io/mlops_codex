@@ -296,6 +296,7 @@ class NeomarilExecution(BaseNeomaril):
 
 
 		self.execution_data = {'ExecutionState': result['Status']}
+		self.status = self.execution_data['ExecutionState']
 		
 	def __repr__(self) -> str:
 		return f"""Neomaril{self.exec_type}Execution(exec_id="{self.exec_id}", status="{self.status}")"""
