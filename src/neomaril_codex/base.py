@@ -294,8 +294,8 @@ class NeomarilExecution(BaseNeomaril):
 		elif response.status_code >= 500:
 				raise ModelError(f'Unable to retrive execution "{exec_id}"')
 
-
-		self.execution_data = {'ExecutionState': result['Status']}
+		self.execution_data = response.json()['Description']
+		
 		self.status = self.execution_data['ExecutionState']
 		
 	def __repr__(self) -> str:
