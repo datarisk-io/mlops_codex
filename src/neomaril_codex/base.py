@@ -275,30 +275,31 @@ class NeomarilExecution(BaseNeomaril):
 		load_dotenv()
 		self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
 		self.__token = os.getenv('NEOMARIL_GROUP_TOKEN') if os.getenv('NEOMARIL_GROUP_TOKEN') else group_token
-
+		
 		try_login(self.__credentials, self.base_url)
 
 		if exec_type == 'AsyncModel':
 				self.__url_path = 'model/async'
 		elif exec_type == 'Training':
 				self.__url_path = 'training'
+		elif exec_type == 'AsyncPreprocessing':
+				self.__url_path = 'preprocessing/async'
 		else:
 				raise InputError(f"Invalid execution type '{exec_type}'. Valid options are 'AsyncModel' and 'Training'")
 
 		url = f"{self.base_url}/{self.__url_path.replace('/async', '')}/describe/{group}/{parent_id}/{exec_id}"
 		response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
-		
+
 		if response.status_code == 404:
 				raise ModelError(f'Execution "{exec_id}" not found.')
-		
+
 		elif response.status_code >= 500:
 				raise ModelError(f'Unable to retrive execution "{exec_id}"')
-		
 
 		self.execution_data = response.json()['Description']
-
+		
 		self.status = self.execution_data['ExecutionState']
-
+		
 	def __repr__(self) -> str:
 		return f"""Neomaril{self.exec_type}Execution(exec_id="{self.exec_id}", status="{self.status}")"""
 
@@ -358,24 +359,26 @@ class NeomarilExecution(BaseNeomaril):
 		
 		if self.exec_type == 'AsyncModel':
 			token = self.__token
+		elif self.exec_type == 'AsyncPreprocessing':
+			token = self.__token
 		elif self.exec_type == 'Training':
 			token = self.__credentials
 
 		if self.status == 'Succeeded':
-				url = f"{self.base_url}/{self.__url_path}/result/{self.group}/{self.exec_id}"
-				response = requests.get(url, headers={'Authorization': 'Bearer ' + token})
-				if response.status_code not in [200, 410]:
-						logger.error(response.text)
-						raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
+			url = f"{self.base_url}/{self.__url_path}/result/{self.group}/{self.exec_id}"
+			response = requests.get(url, headers={'Authorization': 'Bearer ' + token})
+			if response.status_code not in [200, 410]:
+					logger.error(response.text)
+					raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
 
-				filename = f'output_{self.exec_id}.zip'
-				if not path.endswith('/'):
-						filename = '/'+filename
+			filename = f'output_{self.exec_id}.zip'
+			if not path.endswith('/'):
+					filename = '/'+filename
 
-				with open(path+filename, 'wb') as f:
-						f.write(response.content)
+			with open(path+filename, 'wb') as f:
+					f.write(response.content)
 
-				logger.info(f'Output saved in {path+filename}')
+			logger.info(f'Output saved in {path+filename}')
 		elif self.status == 'Failed':
 			raise ExecutionError("Execution failed")
 		else:
