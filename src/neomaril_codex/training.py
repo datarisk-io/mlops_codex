@@ -82,7 +82,8 @@ class NeomarilTrainingExecution(NeomarilExecution):
     
     def __upload_model(self, model_name:str, model_reference:Optional[str]=None, source_file:Optional[str]=None, 
                                          schema:Optional[Union[str, dict]]=None, extra_files:Optional[list]=None, 
-                                         env:Optional[str]=None, operation:str='Sync', input_type:str=None) -> str:
+                                         env:Optional[str]=None, requirements_file:Optional[str]=None, operation:str='Sync', 
+                                         input_type:str=None) -> str:
         """
         Upload the files to the server
 
@@ -98,6 +99,8 @@ class NeomarilTrainingExecution(NeomarilExecution):
             Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be send as well
         extra_files list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
+        requirements_file : str, optional
+            Path of the requirements file. This will override the requirements used in trainning. The packages versions must be fixed eg: pandas==1.0
         env : str, optional
             Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
         operation : str
@@ -134,7 +137,8 @@ class NeomarilTrainingExecution(NeomarilExecution):
 
             if env:
                 upload_data.append(("env", (".env", env)))
-            
+            if requirements_file:
+                upload_data.append(("requirements", ("requirements.txt", env)))
             if extra_files:
                 extra_data = [('extra', (c.split('/')[-1], open(c, "r"))) for c in extra_files]
                 
@@ -238,7 +242,8 @@ class NeomarilTrainingExecution(NeomarilExecution):
 
     def promote_model(self, model_name:str, model_reference:Optional[str]=None, source_file:Optional[str]=None, 
                                          schema:Optional[Union[str, dict]]=None, extra_files:Optional[list]=None, 
-                                         env:Optional[str]=None, operation:str='Sync', input_type:str=None)-> NeomarilModel:
+                                         requirements_file:Optional[str]=None, env:Optional[str]=None, operation:str='Sync', 
+                                         input_type:str=None)-> NeomarilModel:
         """        
         Upload models trained inside Neomaril.
 
@@ -254,6 +259,8 @@ class NeomarilTrainingExecution(NeomarilExecution):
             Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be send as well
         extra_files list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
+        requirements_file : str, optional
+            Path of the requirements file. This will override the requirements used in trainning. The packages versions must be fixed eg: pandas==1.0
         env : str, optional
             Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
         operation : str
@@ -281,8 +288,9 @@ class NeomarilTrainingExecution(NeomarilExecution):
         if self.status != 'Succeeded':
             raise TrainingError("Training execution must be Succeeded to be promoted, current status is "+self.status)
             
-        model_id = self.__upload_model(model_name, model_reference=model_reference, source_file=source_file, env=env,
-                                                                        schema=schema, extra_files=extra_files, operation=operation, 
+        model_id = self.__upload_model(model_name, model_reference=model_reference, source_file=source_file, env=env, 
+                                                                        requirements_file=requirements_file, schema=schema,
+                                                                        extra_files=extra_files, operation=operation, 
                                                                         input_type=input_type)
         
         if model_id:
