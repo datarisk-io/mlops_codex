@@ -1,24 +1,24 @@
-Treinando seu modelo
+Training your model
 ===================
 
-Treinar seu modelo no Neomaril ajuda por centralizar os registros num único lugar, enquanto economiza tempo ao executar os experimentos em paralelo.
+Training your model in Neomaril helps by logging everything in a model registry, while also saving time by running experiments in parallel.
 
-Além disso, o módulo de treinamento é conectado aos módulos de implantação (deploy) e monitoramento, o que facilita os próximos passos.
+Also, the training module is connected to the deploying and monitoring module, so using the training in Neomaril saves time in the next steps.
 
 
-Tipos de treinamento
+Training types
 ---------------
 
-Primeiro, precisamos criar um experimento de treino. Nós agregamos múltiplas execuções de treinamento num único experimento de treino. Cada execução de treino pode eventualmente se tornar um modelo implantado ou não.
+First we need to create a training experiment. We aggregate multiple train runs into one training experiment. Each train run can eventually became a deployed model or not.
 
-**Custom:** É quando o usuário define tanto o código, quanto o ambiente de treinamento.
+**Custom:** Is when the user will define the whole training code and define the training environment.
 
-**AutoML:** É quando o treinamento é pre-definido usando o módulo de AutoML. Os arquivos necessários são os dados de treinamento e alguns parâmetros de configuração para o pacote.
+**AutoML:** Is when the training is pre defined using the AutoML module. The required files are the training data and some configuration parameters for the package.
 
-Criando o experimento de treino
+Creating the training experiment
 --------------------------------
 
-Nós podemos criar o experimento usando o método :py:meth:`neomaril_codex.training.NeomarilTrainingClient.create_training_experiment`.
+We can create the experiment using the :py:meth:`neomaril_codex.training.NeomarilTrainingClient.create_training_experiment` method.
 
 .. code:: python
 
@@ -30,13 +30,13 @@ Nós podemos criar o experimento usando o método :py:meth:`neomaril_codex.train
                                             )
 
 
-O retorno desse método é a classe :py:class:`neomaril_codex.training.NeomarilTrainingExperiment`, que nos possibilita criar múltiplas execuções que funcionam como versões do experimento principal.
-Então você precisa enviar um dataset e o código de treinamento para essa execução (se for um experimento do tipo Custom) ou simplesmente a configuração (para um experimento do AutoML).
+The return of the method is a :py:class:`neomaril_codex.training.NeomarilTrainingExperiment`, where you can create multiple executions that works like versions of the main experiment.
+Then you need to actually upload a dataset and a training code for your execution (if is a Custom experiment) or the configuration (for the AutoML experiment).
 
-Executando um treinamento
+Running a training execution
 ----------------------------
 
-Para um experimento Custom você precisa ter uma função de entrada como essa:
+For the custom experiment you need a entrypoint function like this:
 
 .. code:: python
 
@@ -57,20 +57,20 @@ Para um experimento Custom você precisa ter uma função de entrada como essa:
                 "metrics": {"auc": auc.mean(), "f1_score": f_score.mean()}}
 
 
-O único parâmetro na função é o caminho para o arquivo com os dados. Desta forma, nós podemos executar o treinamento quando os arquivos forem enviados para o Neomaril.
-No experimento de treino Custom você tem todo o controle do processo, podendo testar vários algoritmos, otimizações de hiperparâmetros e validar em múltiplos segmentos dos dados.
-O importante é respeitar o padrão de retorno da função, onde esperamos receber as informações sobre essa versão do modelo final para fins de registro. O retorno deve ser um dicionário com as seguintes chaves:
+The only parameter on the function is the path for the data file. This way we can execute it when the files are uploaded to Neomaril.
+In the custom training experiment you can do whatever you want, test multiple algorithms, optimize hyperparameters, validate on multiple segments of the data.
+The important thing is the return of the function, where we get information about the final model of this version so we can log it. The return must be a dictionary with the following keys:
 
-- `X_train`: O dataframe que será usado para ajustar o modelo.
-- `y_train`: O dataframe/array/series alvo (target) que será usado para ajustar o modelo.
-- `model_output`: Um dataframe/array/series com as saídas (outputs) do modelo. Por exemplo, os valores preditos/probabilidades, classes ou qualquer outra informação útil. Essa informação deve estar na saída do modelo implantado (deployed) futuramente para ser usado no monitoramento.
-- `pipeline`: A instância final do modelo ajustado. Idealmente deve ser um `Scikit-Learn Pipeline Class <https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html>`_, mas outras classes de algoritmos que tem o método *get_params* implementado também funcionam. Esse modelo é salvo no arquivo `model.pkl` usando `cloudpickle <https://github.com/cloudpipe/cloudpickle> _` ou com o método `save_model`, se a classe do algoritmo tem essa função.
-- `extra`: Uma lista opcional de nomes para arquivos extras que são gerados no treinamento. Podem ser plots, datasets de validação, etc. Eles devem ser salvos no mesmo caminho que é informado como parâmetro da função.
-- `metrics`: Um dicionário com cada chave representando uma métrica. Você pode usar qualquer valor para as chaves e pode salvar quantos valores desejar, entretanto o valor deve ser numérico. Exemplo: `{"auc_train": 0.7, "auc_test": 0.65}`
+- `X_train`: The dataframe that will be used to fit the model.
+- `y_train`: The target dataframe/array/series that will be used to fit the model.
+- `model_output`: A dataframe/array/series with outputs of the model. This can be the predicted values/probabilities, classes or any other useful information. This information needs to be in the output of the future deployed model to be used in the monitoring
+- `pipeline`: The final fitted model instance. Ideally it should be a `Scikit-Learn Pipeline Class <https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html>`_, but any other algorithm class that has the *get_params* method implemented works. This will be saved as `model.pkl` with `cloudpickle <https://github.com/cloudpipe/cloudpickle> _` or with the `save_model` method if the algorithm class has that.
+- `extra`: A optional list of filenames for extra files that are generated in the training. This can be plots, validation datasets, etc. They need to be saved in the same path that is provided as the function parameter.
+- `metrics`: A dictionary with each key as a metric. You can use any name for the metric key and save as many as you want, but the value must be numeric. Eg: `{"auc_train": 0.7, "auc_test": 0;65}`
 
-Além disso, também precisamos das informações do ambiente (versão do Python e pacotes requeridos).
+Besides that we also need the information for the environment (python version and package requirements). 
 
-Então podemos chamar o método :py:meth:`neomaril_codex.training.NeomarilTrainingExperiment.run_training`.
+Then we can call the :py:meth:`neomaril_codex.training.NeomarilTrainingExperiment.run_training` method.
 
 .. code:: python
 
@@ -88,7 +88,7 @@ Então podemos chamar o método :py:meth:`neomaril_codex.training.NeomarilTraini
                                 wait_complete=True
     )
 
-Para o AutoML nós só precisamos dos dados e dos parâmetros de configuração. Você pode checar a :doc:`automl_parameters` para uma explicação mais detalhada.
+For the AutoML we just need the data and the configuration parameters. You can check the :doc:`automl_parameters` for more details. 
 
 .. code:: python
 
@@ -109,11 +109,11 @@ Para o AutoML nós só precisamos dos dados e dos parâmetros de configuração.
 
 
 
-Verificando os resultados da execução
+Checking the execution results
 ------------------------------
 
-O retorno do método :py:meth:`neomaril_codex.training.NeomarilTrainingExperiment.run_training` é uma instância da classe :py:class:`neomaril_codex.training.NeomarilTrainingExecution`.
-Com essa classe nós podemos seguir a execução assíncrona daquela versão do experimento e verificar suas informações.
+The return of the :py:meth:`neomaril_codex.training.NeomarilTrainingExperiment.run_training` is a :py:class:`neomaril_codex.training.NeomarilTrainingExecution` instace
+With this class we can follow the asynchronous execution of that experiment version and check information on it. 
 
 .. code:: python
 
@@ -135,7 +135,7 @@ Com essa classe nós podemos seguir a execução assíncrona daquela versão do 
     #     'Status': 'Requested'}
 
 
-Nós podemos inclusive baixar os resultados (arquivo do modelo e outros salvos com a chave `extra`).
+We can also download the results (model file and files saved in the `extra` key)
 
 .. code:: python
 
@@ -143,4 +143,4 @@ Nós podemos inclusive baixar os resultados (arquivo do modelo e outros salvos c
     
     #>>> 2023-05-26 10:02:13.441 | INFO     | neomaril_codex.base:download_result:376 - Output saved in ./output_2.zip
 
-Se o modelo estiver bom o suficiente podemos começar o processo de implantação.
+If the model is good enough we can start the deploying process.

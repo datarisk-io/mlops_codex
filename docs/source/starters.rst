@@ -1,7 +1,7 @@
-Guia para iniciantes
+Starters Guide
 ===============
 
-Inicie o uso do Neomaril.
+Get started on using Neomaril.
 
 
 .. toctree::

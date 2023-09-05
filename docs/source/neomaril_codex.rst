@@ -5,7 +5,7 @@ O Neomaril-Codex é um pacote desenvolvido pela Datarisk para ajudar pessoas que
 Esta página apresenta um resumo de todos os objetos, funções e métodos presentes neste pacote.
 
 
-Módulos
+Modules
 ~~~~~~~
 
 .. toctree::

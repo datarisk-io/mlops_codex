@@ -1,8 +1,8 @@
-Módulo de treinamento
+Training module
 ===============================
 
 
-Módulo com as classes que permitem gerenciar seus experimentos de treinamento.
+Module with the classes that alows to manage your trainining experiments.
 
 
 neomaril\_codex.training.NeomarilTrainingExecution

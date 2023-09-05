@@ -1,8 +1,8 @@
-Módulo de pipeline
+Pipeline module
 ===============================
 
 
-Este módulo permite que você configure a pipeline do seu modelo.
+This module alows you to configure your model pipeline.
 
 
 neomaril\_codex.pipeline.NeomarilPipeline
