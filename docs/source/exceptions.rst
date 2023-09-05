@@ -1,8 +1,8 @@
-Exceptions module
+Módulo de exceções
 =================================
 
 
-Module that has all classes to deal with exceptions during the use of the package.
+Módulo que agrupa todas as classes que lidam com exceções durante o uso do pacote.
 
 
 neomaril\_codex.exceptions

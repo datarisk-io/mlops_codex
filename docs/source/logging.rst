@@ -1,9 +1,9 @@
-Logging module
+Módulo de registro (logging)
 ==============
 
 
-Neomaril has a log parser that clean logs and tries to find useful information. This is the module to access this functionalities.
-Since there are a lot of logger types is hard to create the perfect parser, so using this one helps your model script being parsed by Neomaril and sending cleaner messages.
+O Neomaril tem uma funcionalidade para limpar os registros (logs), tentando deixar apenas informações úteis. Nessa página tratamos deste módulo.
+Como existem diversos tipos de registradores (loggers) é difícil criar um mecanismo suficientemente genérico e eficiente para fazer a análise em todos os possíveis cenários. Entretanto, recomendamos o uso deste módulo pois foi testado e já está integrado ao Neomaril, sendo capaz de limpar e enviar suas mensagens adequadamente.
 
 
 neomaril\_codex.logging.Logger

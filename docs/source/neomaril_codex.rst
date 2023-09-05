@@ -1,8 +1,8 @@
 neomaril\_codex package
 =======================
 
-The neomaril-codex is a package developed by Datarisk to help people who works with ML to train, deploy, monitor and manage their models.
-This page gives an overview of all objects, functions and methods present at the package.
+O Neomaril-Codex é um pacote desenvolvido pela Datarisk para ajudar pessoas que trabalham com ML a treinar, implantar (deploy), monitorar e gerenciar seus modelos.
+Esta página apresenta um resumo de todos os objetos, funções e métodos presentes neste pacote.
 
 
 Modules

@@ -1,8 +1,8 @@
-Base module
+Módulo base
 ===============================
 
 
-Module with the base classes used at Neomaril.
+Módulo com as classes base usadas no Neomaril.
 
 
 neomaril\_codex.base.BaseNeomaril
