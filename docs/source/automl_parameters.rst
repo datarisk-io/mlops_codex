@@ -1,6 +1,6 @@
 :orphan:
 
-Configuração AutoML
+AutoML configuration
 ====================
 
 

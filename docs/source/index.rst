@@ -6,25 +6,25 @@
 Neomaril-Codex
 ==============
 
-Este é o pacote oficial para interagir com o Neomaril.
-O Neomaril é uma plataforma para gerenciamento de modelos de Machine Learning (ML), que permite aos usuários treinar, implantar (deploy), e monitorar seus modelos. Uma das formas de interagir com essa plataforma é através da API REST disponibilizada. O objetivo deste pacote é, portanto, facilitar essa utilização.
-Os usuário precisam hospedar seus scripts e notebooks Python no Neomaril-Codex para usar a API do Neomaril. 
+Its a Package for interacting with Neomaril.
+Neomaril is an API for Machine Learning (ML) models management, allowing the users to train, deploy and monitor those models.
+The users will need to host its Python scripts and notebooks to Neomaril-Codex to use the Neomaril API.
 
 
-Instalação
+Installation
 ---------------
 
-O pacote está disponível no PyPI e pode ser instalado com o comando:
+The package is available on PyPI and can thus be installed with:
 
 .. code:: python
 
    pip install neomaril-codex
 
 
-Iniciando
+Getting started
 ---------------
 
-Verifique nosso guia sobre como usar o Neomaril Codex para gerenciar seus modelos
+Check our guide on how to use Neomaril Codex to manage models 
 
 .. toctree::
    :maxdepth: 2
@@ -32,15 +32,15 @@ Verifique nosso guia sobre como usar o Neomaril Codex para gerenciar seus modelo
    starters
 
 
-Além disso, disponibilizamos vários `notebooks <https://github.com/datarisk-io/mlops-neomaril-codex/tree/master/notebooks>`_ para exemplificar o uso das funcionalidades do Neomaril-Codex.
-Você pode encontrá-lo em:
+Beside that several `notebooks <https://github.com/datarisk-io/mlops-neomaril-codex/tree/master/notebooks>`_ gives examples of how to use Neomaril-Codex to manage, deploy and other package functionalities.
+You can find it at:
 
 
-Referência do pacote
+Package Reference
 -----------------
 
-Dá uma breve apresentação de todos os objetos, funções e métodos.
-Todas as classes e funções expostas no namespace neomaril_codex.* são públicas.
+Gives an overview of all objects, functions and methods.
+All classes and functions exposed in neomaril_codex.* namespace are public.
 
 
 .. toctree::
@@ -50,23 +50,23 @@ Todas as classes e funções expostas no namespace neomaril_codex.* são públic
    neomaril_codex
 
 
-Versão de desenvolvimento
+Development Version
 -------------------
 
-Se você quiser acompanhar a versão de desenvolvimento do pacote, você pode instalá-la a partir do repositório git:
+If you want to track the development version of the package, you can install it from the git repo:
 
 .. code:: python
 
    pip install git+https://github.com/datarisk-io/mlops-neomaril-codex.git@master
 
-Mantenedores
+Maintainers
 -----------
 
 - Manuella Dias Cruz: https://github.com/ManuDiasCruz
 - Jonathan Carvalho: https://github.com/johnrc90
 
 
-Índices e tabelas
+Indices and tables
 ==================
 
 * :ref:`genindex`

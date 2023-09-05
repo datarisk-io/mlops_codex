@@ -1,11 +1,11 @@
-Conectando ao Neomaril
+Connecting to Neomaril
 ======================
 
-Para interagir com o Neomaril devemos acessar os clientes.
+For interacting with Neomaril we need to access the clients. 
 
-Atualmente temos duas opções :py:class:`neomaril_codex.training.NeomarilTrainingClient` e :py:class:`neomaril_codex.model.NeomarilModelClient`.
+We have 2 of them :py:class:`neomaril_codex.training.NeomarilTrainingClient` and :py:class:`neomaril_codex.model.NeomarilModelClient`.
 
-Vocês precisa da URL do servidor e um token válido. A melhor forma de configurar é usando um arquivo *.env* com essas variáveis de ambiente:
+You need the server URL and a token to access the Neomaril. The best way to do it is using a *.env* file with the following env variables
 
 .. code::
 
@@ -13,7 +13,7 @@ Vocês precisa da URL do servidor e um token válido. A melhor forma de configur
     NEOMARIL_TOKEN='123'
 
 
-Se você criar esse arquivo no mesmo diretório que está executando seu código, elas seram importadas automaticamente.
+If you create this file in the same directory your are running your code we will import it automatically
 
 .. code:: python
 
@@ -26,15 +26,15 @@ Se você criar esse arquivo no mesmo diretório que está executando seu código
 
 
 
-Criando um grupo
+Creating a group
 ----------------
 
-Grupos são usados para separar experimentos de treino e modelos que podem ter diferentes usuários finais.
-Internamente, nós os usamos para organizar o sistema de arquivos e a rede numa configuração que nos possibilita criar processos isolados para cada grupo. Quando um grupo é criado, concomitantemente é gerado um token único, que deve ser usado para executar os modelos de modo seguro.
+Groups are a way to separate training experiments and models that might have different end-users. 
+We use it to organize the file system and network in a way that we can create a isolated process for a group. When a group is created a unique token is created to it, this is used to run the models and also increase the security of the platform.
 
-Todo recurso criado no Neomaril deve estar num grupo, então esse deve ser o primeiro passo na utilização da ferramenta.
+Every resource you create in Neomaril should be in a group, so creating one should be the first thing you do.
 
-Para criar um grupo você pode usar qualquer cliente, nós precisamos apenas do nome. Além disso também podemos adicionar uma descrição.
+To create a group you can use any client, we just need its name. But we also could add description to it.
 
 .. code:: python
 

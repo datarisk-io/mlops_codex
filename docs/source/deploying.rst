@@ -1,17 +1,17 @@
-Implantação (deploying) em produção
+Deploying to production
 =======================
 
-Quando implantamos um modelo no Neomaril, nós criamos uma API para que você consiga conectar seu modelo a outros serviços. Você pode também usar o Neomaril Codex para executar o modelo remotamente dentro de uma aplicação Python.
+When deploying a model to Neomaril we create a API so you can connect your model with other services. You can also use Neomaril Codex to execute your model remotely inside a python application.
 
 
-Preparando para produção
+Preparing to production
 ------------------------
 
-A primeira coisa que precisamos é do script de escoragem. Assim como no treinamento, nós precisamos de uma função de entrada (entrypoint). Os parâmetros e retornos dessa função vão depender da operação do modelo.
+The first thing we need is the scoring script. Similar to the training we need a entrypoint function. The parameters and return of this function will depend on the model operation. 
 
 
-**Sync model:** Abreviação para modelo síncrono. Esse é o modelo que mais se aproxima da ideia de operação em "tempo real". Este modelo espera um JSON e retorna também um JSON após alguns segundos.
-A função de entrada (entrypoint) deve ser parecida com:
+**Sync model:** This is the "real time" model. The model will expect a JSON and return a JSON after a few seconds.
+The entrypoint function should look like this:
 
 .. code:: python
 
@@ -22,14 +22,14 @@ A função de entrada (entrypoint) deve ser parecida com:
         
         return {"pred": int(model.predict(df)), "proba": float(model.predict_proba(df)[0,1])}
 
-O primeiro parâmetro é a entrada do modelo no formato JSON. Essa entrada é recebida como uma string JSON, então você pode decodificar (parse) da maneira que quiser.
-O outro parâmetro é um caminho (string). Assim como no treinamento, ele é usado para localizar tanto os arquivos do modelo, quanto outros arquivos que você pode subir (upload) para o Neomaril (veja a próxima seção).
-O retorno dessa função deve ser um dicionário que pode ser convertido em JSON, ou então uma string JSON válida.
+The first parameter is the JSON data that will be sent to the model (this comes as a JSON string, so you should parse it the way you want).
+The other one is the path. Like the training you can use it to open the model files and other files you will upload (see next section).
+The return of the function should be a dictionary that can be parsed to a JSON, or a already valid JSON string. 
 
-Tenha em mente que alguns tipos de dados (por exemplo valores numpy `int64` e `float64`) não podem ser convertidos em JSON normalmente, então seu código deve gerenciar esse passo antes de retornar a resposta para o Neomaril.
+Keep in mind that some data types (like numpy `int64` and `float64` values) cannot normally be parsed to JSON, so your code should handle that before returning the response to Neomaril. 
 
-**Async model:** Abreviação para modelo assíncrono. Esse tipo de modelo deve ser usado para cenários de escoragem em batch, onde são enviados arquivos com vários registros de uma vez. Como esse processo geralmente leva mais tempo para finalizar dependendo do tamanho dos arquivos de entrada, ele é executado de maneira assíncrona.
-A função de entrada (entrypoint) deve ser parecida com:
+**Async model:** This is for batch scoring. We send files with usually a lot o records at once. Since this might take a while depeding on the file size, we run this asynchronously.
+The entrypoint function should look like this:
 
 .. code:: python
 
@@ -49,17 +49,17 @@ A função de entrada (entrypoint) deve ser parecida com:
 
         return output
 
-O primeiro parâmetro dessa função é uma string com o caminho para encontrar os dados de entrada. Note que temos parâmetros diferentes para os caminhos da função, pois cada execução do modelo assíncrono é salva num local distinto. Além disso os arquivos enviados para o servidor (uploaded) quando implantando (deploying) o modelo são constantes.
-Se você deseja manter seu código mais dinâmico (e não forçar um padrão para o nome dos arquivos), você pode usar a variável de ambiente `inputFileName`, que terá o mesmo valor do nome do arquivo enviado (uploaded) para aquela execução.
-Você deve salvar o resultado no mesmo caminho usado para os arquivos de entrada. E o retorno dessa função deve ser o caminho completo do resultado.
+The first parameter is now also a path for the data. We have different path parameter because each async model execution is saved in a different place. And the files uploaded when deploying the model are kept the same every time.
+If you want to keep your code more dynamic (and don't want to enforce a file name pattern) you can use the `inputFileName` env variable, that will be same as the filename uploaded for that execution.
+You must save the result in the same path you got the input file. And the return of that function should be this full path.
 
 
-Implantando (deploying) seu modelo
+Deploying your model
 --------------------
 
-Com todos os arquivos prontos podemos fazer a implantação do modelo de duas formas.
+With all files ready we can deploy the model in two ways.
 
-- Usando o :py:meth:`neomaril_codex.training.NeomarilTrainingExecution.promote_model` para promover uma execução de treinamento bem-sucedida.
+- Using the :py:meth:`neomaril_codex.training.NeomarilTrainingExecution.promote_model` to promote a succeeded training execution.
 
 .. code:: python
 
@@ -80,7 +80,7 @@ Com todos os arquivos prontos podemos fazer a implantação do modelo de duas fo
 
 
 
-- Usando o :py:meth:`neomaril_codex.model.NeomarilModelClient.create_model` para implantar o modelo treinado fora do Neomaril.
+- Using the :py:meth:`neomaril_codex.model.NeomarilModelClient.create_model` to deploy a model trained outside Neomaril
 
 .. code:: python
     
@@ -100,17 +100,17 @@ Com todos os arquivos prontos podemos fazer a implantação do modelo de duas fo
 
 
 
-Como você pode ver, implantar um modelo já treinado no Neomaril requer menos informações (os modelos vindo do AutoML requerem apenas 2 parâmetros).
+As you can see deploying a model already trained in Neomaril requires less information (the AutoML models require only 2 parameters).
 
-Esses métodos retornam uma :py:class:`neomaril_codex.model.NeomarilModel`. Você pode usar o parâmetro *wait_for_ready* no método de implantação, ou chamar o método :py:meth:`neomaril_codex.model.NeomarilModel.wait_ready` para garantir que a instância :py:class:`neomaril_codex.model.NeomarilModel` está pronta para uso.
-Nós vamos instalar as dependências do modelo (se você estiver promovendo um treinamento nós vamos usar as mesmas dependências usadas na execução do treinamento), e executar alguns testes. Para os modelos síncronos, é necessário um exemplo em JSON do esquema esperado para a API.
+Those methods return a :py:class:`neomaril_codex.model.NeomarilModel`. You can use the *wait_for_ready* parameter on the deployment method or call the :py:meth:`neomaril_codex.model.NeomarilModel.wait_ready` to make sure the :py:class:`neomaril_codex.model.NeomarilModel` instance is ready to use.
+We will install the model depedencies (if you are promoting a training we will use the same as the training execution), and run some tests. For the sync models we require a sample JSON of the expected schema for the API.
 
-Se a implantação for bem-sucedida você pode já começar a usar seu modelo.
+If the deployment succeeds you can start using your model.
 
-Usando seu modelo
+Using your model
 ---------------------
 
-Nós podemos usar a mesma instância :py:class:`neomaril_codex.model.NeomarilModel` para chamar o modelo.
+We can use the same :py:class:`neomaril_codex.model.NeomarilModel` instance to call the model.
 
 .. code:: python
 
@@ -121,26 +121,26 @@ Nós podemos usar a mesma instância :py:class:`neomaril_codex.model.NeomarilMod
     # >>> 2023-05-26 12:04:14.714 | INFO     | neomaril_codex.model:predict:344 - Execution 5 started. Use the id to check its status.
 
 
-Modelos síncronos retornar um dicionário e modelos assíncronos retorna uma :py:class:`neomaril_codex.base.NeomarilExecution` que pode ser usada para verificar o status e fazer o download do resultado, similar ao contexto da execução de treinamento.
+Sync models return a dictionary and async models return a :py:class:`neomaril_codex.base.NeomarilExecution` that you can use to check the status and download the result similiar to the training execution.
 
-Para usar os modelos você precisa de um `group token`, que é gerado no momento de criação do grupo (verifique :ref:`connecting_to_neomaril:creating a group`). Você pode adicionar esse token à variável de ambiente NEOMARIL_GROUP_TOKEN, usando o método :py:meth:`neomaril_codex.model.NeomarilModel.set_token`, ou então adicionar em cada chamada ao método :py:meth:`neomaril_codex.model.NeomarilModel.predict`.
-
-
-A maior parte do tempo você precisará usar seu modelo fora do ambiente Python, compartilhando através da API REST.
-Você pode chamar o atributo :py:attr:`neomaril_codex.model.NeomarilModel.docs` para compartilhar uma página no formato OpenAPI Swagger, ou então usar o método :py:meth:`neomaril_codex.model.NeomarilModel.generate_predict_code` para criar o código de exemplo de uma requisição para o modelo.
+To use the models you need a `group token`, that is generated when creating the group (check :ref:`connecting_to_neomaril:creating a group`). You can add this token in the NEOMARIL_GROUP_TOKEN env variable, use the :py:meth:`neomaril_codex.model.NeomarilModel.set_token` method or add in each :py:meth:`neomaril_codex.model.NeomarilModel.predict` call.
 
 
-Monitorando seu modelo
+Most of the time you might need to used your model outside a python environment, sharing it through a REST API.
+You can call the :py:attr:`neomaril_codex.model.NeomarilModel.docs` attribute to share a OpenAPI Swagger page, or use the :py:meth:`neomaril_codex.model.NeomarilModel.generate_predict_code` method to create a sample request code to your model. 
+
+
+Monitoring your model
 ---------------------
 
-Monitorar o modelo significa entender como este está se comportanto em produção, de forma a entender se é o momento de atualiza-lo devido ao nível de predições erradas.
+Model monitoring means keeping track with how the model is being used in production so we can update the model if it start making bad predictions.
 
-Atualmente, o Neomaril faz apenas o monitoramento indireto. Isso significa acompanhar a entrada do modelo em produção e verificar se está próxima dos dados apresentados no treinamento.
-Então, quando configuramos o monitoramento nós precisamos saber quais dados de treinamento geraram o modelo, e quais features são relevantes para o processo de monitoramento.
+For now Neomaril only does indirect monitoring, that means following the input of the model in production and checking if is close to the data presented to the model in training.
+So when configure the monitoring we need to know which training generated that model and what features are relevant to monitoring the model.
 
-Além disso, precisamos saber como lidar tanto com as features quanto com o modelo.
+Besides we need to know how to handle the features and the model. 
 
-Os dados de produção são salvos em formato cru (raw), mas os dados de treinamento não (verifique :ref:`training_guide:Running a training execution`). Então, precisamos saber quais são os passos no processamento dos dados crus para obter as features do modelo, como foi feito durante o treinamento:
+The production data is saved raw, and the training data is not (check :ref:`training_guide:Running a training execution`). So we need to know the steps in processing the raw data to get the model features like the ones we saved during training:
 
 **TBD in the preprocess module.**
 

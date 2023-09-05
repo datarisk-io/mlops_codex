@@ -1,8 +1,8 @@
-Módulo do modelo
+Model module
 ============================
 
 
-Módulo com todas as classes e métodos para gerenciar os modelos de Machine Learning (ML) implantados no Neomaril.
+Module with all classes and methods to manage the Machine Learning (ML) models deployed at Neomaril.
 
 
 neomaril\_codex.model.NeomarilModel
