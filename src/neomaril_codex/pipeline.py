@@ -109,7 +109,7 @@ class NeomarilPipeline:
         >>> pipeline.register_monitoring_config(directory = "./samples/monitoring", preprocess = "preprocess.py", preprocess_function = "score", shap_function = "score", config = "configuration.json", packages = "requirements.txt")
         >>> pipeline.start()
         """
-        with open(path, 'r') as stream:
+        with open(path, 'rb') as stream:
             try:
                 conf=yaml.safe_load(stream)
             except yaml.YAMLError as exc:

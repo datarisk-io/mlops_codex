@@ -7,28 +7,29 @@ from time import sleep
 import requests
 import json
 from neomaril_codex.base import *
-from neomaril_codex.utils import *
+from neomaril_codex.__utils import *
 from neomaril_codex.exceptions import *
 
 class NeomarilPreprocessing(BaseNeomaril):
 
-    def __init__(self, preprocessing_id:str, password:Optional[str]=None, group:str="datarisk", group_token:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/') -> None:
+    def __init__(self, preprocessing_id:str, login:Optional[str]=None, password:Optional[str]=None, group:str="datarisk", 
+                 group_token:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/') -> None:
 
         load_dotenv()
         logger.info('Loading .env')
 
         super().__init__()
-        self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
+        self.__credentials = (login if login else os.getenv('NEOMARIL_USER'), password if password else os.getenv('NEOMARIL_PASSWORD'))
         self.preprocessing_id = preprocessing_id
         self.group = group
-        self.__token = os.getenv('NEOMARIL_GROUP_TOKEN') if os.getenv('NEOMARIL_GROUP_TOKEN') else group_token
+        self.__token = group_token if group_token else os.getenv('NEOMARIL_GROUP_TOKEN')
         self.base_url = os.getenv('NEOMARIL_URL') if os.getenv('NEOMARIL_URL') else url
         self.base_url = parse_url(self.base_url)
 
-        try_login(self.__credentials, self.base_url)
+        try_login(*self.__credentials, self.base_url)
         
         url = f"{self.base_url}/preprocessing/list"
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
 
         results = response.json()
         for result in results.get('Results'):
@@ -175,7 +176,8 @@ class NeomarilPreprocessing(BaseNeomaril):
                         message = req.json()
                         logger.info(message['Message'])
                         exec_id = message['ExecutionId']
-                        run = NeomarilExecution(self.preprocessing_id, 'AsyncPreprocessing', exec_id=exec_id, password=self.__credentials, 
+                        run = NeomarilExecution(self.preprocessing_id, 'AsyncPreprocessing', exec_id=exec_id, 
+                                                login=self.__credentials[0], password=self.__credentials[1], 
                                                 url=self.base_url, group=self.group, group_token=group_token)
                         response = run.get_status()
                         status = response['Status']
@@ -229,8 +231,8 @@ class NeomarilPreprocessing(BaseNeomaril):
         >>> preprocessing.get_preprocessing_execution('1')
         """
         if self.operation.lower() == 'async':
-            return NeomarilExecution(self.preprocessing_id, 'AsyncPreprocessing', exec_id=exec_id, password=self.__credentials, 
-                                     url=self.base_url, group_token=self.__token, group=self.group)
+            return NeomarilExecution(self.preprocessing_id, 'AsyncPreprocessing', exec_id=exec_id, login=self.__credentials[0],
+                                     password=self.__credentials[1], url=self.base_url, group_token=self.__token, group=self.group)
         else:
             raise PreprocessingError("Sync pre processing don't have executions")
 
@@ -250,7 +252,7 @@ class NeomarilPreprocessing(BaseNeomaril):
 
 		"""
         url = f"{self.base_url}/preprocessing/status/{self.group}/{self.preprocessing_id}"
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
         if response.status_code < 300:
             return response.json()
         else:
@@ -258,11 +260,11 @@ class NeomarilPreprocessing(BaseNeomaril):
         
 class NeomarilPreprocessingClient(BaseNeomarilClient):
 
-    def __init__(self, password:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/') -> None:
+    def __init__(self, login:Optional[str]=None, password:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/') -> None:
 
-        super().__init__(password=password, url=url)
+        super().__init__(login=login, password=password, url=url)
         load_dotenv()
-        self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
+        self.__credentials = (login if login else os.getenv('NEOMARIL_USER'), password if password else os.getenv('NEOMARIL_PASSWORD'))
 
     def __get_preprocessing_status(self, preprocessing_id:str, group:str) -> dict:
         """
@@ -287,7 +289,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         """
 
         url = f"{self.base_url}/preprocessing/status/{group}/{preprocessing_id}"
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
         if response.status_code not in [200, 410]:
             raise PreprocessingError(f'Preprocessing "{preprocessing_id}" not found')
         
@@ -341,7 +343,8 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
                     sleep(10)
             else:
                 logger.info("Returning preprocessing, but preprocessing is not ready.")
-                NeomarilPreprocessing(preprocessing_id, password=self.__credentials, group=group, url=self.base_url, group_token=group_token)
+                NeomarilPreprocessing(preprocessing_id, login=self.__credentials[0], password=self.__credentials[1], 
+                                      group=group, url=self.base_url, group_token=group_token)
             
         if status in ['Disabled', 'Ready']:
             raise PreprocessingError(f'Preprocessing "{preprocessing_id}" unavailable (disabled or deploy process is incomplete)')
@@ -350,12 +353,13 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
             raise PreprocessingError(f'Preprocessing "{preprocessing_id}" deploy failed, so preprocessing is unavailable.')
         elif status == 'Deployed': 
             logger.info(f'Preprocessing {preprocessing_id} its deployed. Fetching preprocessing.')
-            return NeomarilPreprocessing(preprocessing_id, password=self.__credentials, group=group, url=self.base_url, group_token=group_token)
+            return NeomarilPreprocessing(preprocessing_id, login=self.__credentials[0], password=self.__credentials[1], 
+                                         group=group, url=self.base_url, group_token=group_token)
         else:
             raise ServerError('Unknown preprocessing status: ',status)
         
     def search_preprocessing(self, name:Optional[str]=None, state:Optional[str]=None, 
-                                        group:Optional[str]=None, only_deployed:bool=False) -> list:
+                             group:Optional[str]=None, only_deployed:bool=False) -> list:
         """
         Search for pre processing using the name of the pre processing
 
@@ -399,7 +403,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         if only_deployed:
             query['state'] = 'Deployed'
 
-        response = requests.get(url, params=query, headers={'Authorization': 'Bearer ' + self.__credentials})
+        response = requests.get(url, params=query, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
         
         if response.status_code == 200:
             results = response.json()['Results']
@@ -499,15 +503,15 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         
      
         upload_data = [
-            ("source", (file_extesions[source_file.split('.')[-1]], open(source_file, "r"))),
-            ("requirements", ("requirements.txt", open(requirements_file, "r")))
+            ("source", (file_extesions[source_file.split('.')[-1]], open(source_file, 'rb'))),
+            ("requirements", ("requirements.txt", open(requirements_file, 'rb')))
         ]
 
         if operation=="Sync":
             input_type = "json"
             if schema:
                 if isinstance(schema, str):
-                    schema_file = open(schema, "r")
+                    schema_file = open(schema, 'rb')
                 elif isinstance(schema, dict):
                     schema_file = json.dumps(schema)
                     
@@ -523,13 +527,13 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
             upload_data.append(("env", (".env", env)))
         
         if extra_files:
-            extra_data = [('extra', (c.split('/')[-1], open(c, "r"))) for c in extra_files]
+            extra_data = [('extra', (c.split('/')[-1], open(c, 'rb'))) for c in extra_files]
             
             upload_data += extra_data
             
         form_data = {'name': preprocessing_name, 'script_reference': preprocessing_reference, 'operation': operation, 'python_version': "Python"+python_version.replace('.', '')}
             
-        response = requests.post(url, data=form_data, files=upload_data, headers={'Authorization': 'Bearer ' + self.__credentials})
+        response = requests.post(url, data=form_data, files=upload_data, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
         
         if response.status_code == 201:
             data = response.json()
@@ -563,7 +567,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         if operation == 'sync':
             url = url.replace('localhost:7070', 'localhost:7071')
 
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__credentials})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
         if response.status_code == 202:
             logger.info(f"Preprocessing host in process - Hash: {preprocessing_id}")
         else:
