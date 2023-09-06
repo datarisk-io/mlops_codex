@@ -25,6 +25,7 @@ jobs:
       - name: Sphinx build
         run: |
           sphinx-build docs/source _build
+          sphinx-build docs/source -D language='pt_BR' _build/pt_BR
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact
