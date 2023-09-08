@@ -81,3 +81,8 @@ html_theme_options = {
 html_static_path = ['_static']
 
 source_suffix = [".rst"]
+
+# Internacionalization: https://www.sphinx-doc.org/en/master/usage/advanced/intl.html
+language = 'en'             # main language of the documentation
+locale_dirs = ['locale/']   # where translations are going
+gettext_compact = False     # optional.

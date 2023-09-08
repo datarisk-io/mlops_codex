@@ -16,11 +16,16 @@ jobs:
       - uses: actions/setup-python@v2
       - name: Install dependencies
         run: |
-          pip install pydata-sphinx-theme==0.12.0 sphinx==6.1.3 m2r2
+          pip install \
+            pydata-sphinx-theme==0.12.0 \
+            sphinx==6.1.3 \
+            sphinx-intl==2.1.0 \
+            m2r2
           pip install -r requirements.txt
       - name: Sphinx build
         run: |
           sphinx-build docs/source _build
+          sphinx-build docs/source -D language='pt_BR' _build/pt_BR
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact
