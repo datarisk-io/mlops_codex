@@ -261,11 +261,10 @@ class NeomarilPreprocessing(BaseNeomaril):
 class NeomarilPreprocessingClient(BaseNeomarilClient):
 
     def __init__(self, login:Optional[str]=None, password:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/') -> None:
-
-        super().__init__(login=login, password=password, url=url)
-        load_dotenv()
         self.__credentials = (login if login else os.getenv('NEOMARIL_USER'), password if password else os.getenv('NEOMARIL_PASSWORD'))
-
+        super().__init__(login=self.__credentials[0], password=self.__credentials[1], url=url)
+        load_dotenv()
+        
     def __get_preprocessing_status(self, preprocessing_id:str, group:str) -> dict:
         """
         Gets the status of the pre processing with the hash equal to `preprocessing_id`

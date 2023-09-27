@@ -700,9 +700,10 @@ class NeomarilModelClient(BaseNeomarilClient):
     """
     def __init__(self, login:Optional[str]=None, password:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/') -> None:
 
-        super().__init__(login=login, password=password, url=url)
-        load_dotenv()
         self.__credentials = (login if login else os.getenv('NEOMARIL_USER'), password if password else os.getenv('NEOMARIL_PASSWORD'))
+
+        super().__init__(login=self.__credentials[0], password=self.__credentials[1], url=url)
+        load_dotenv()
             
     def __repr__(self) -> str:
             return f'NeomarilModelClient(url="{self.base_url}", version="{self.client_version}")'

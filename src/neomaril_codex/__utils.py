@@ -36,8 +36,9 @@ def try_login(login:str, password:str, base_url:str) -> bool:
     
 
 def refresh_token(login:str, password:str):
-  if app.get_accounts():
-    token = app.acquire_token_silent([CLIENT_ID], account=[acc for acc in app.get_accounts() if acc['username'] == login][0])
+  accounts = [acc for acc in app.get_accounts() if acc['username'] == login]
+  if len(accounts) > 0:
+    token = app.acquire_token_silent([CLIENT_ID], account=accounts[0])
   else:
     token = app.acquire_token_by_username_password(login, password, [CLIENT_ID])
   
