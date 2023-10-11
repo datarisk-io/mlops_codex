@@ -1,12 +1,14 @@
+import os
 from joblib import load
 import pandas as pd
 
 
 def score(data_path, model_path):
     
-    model = load(model_path+"/model.pkl")
+    with open(model_path+"/model.pkl", 'rb') as f:
+        model = load(f)
 
-    X = pd.read_csv(data_path+'/input.csv')
+    X = pd.read_csv(data_path+'/'+os.getenv('inputFileName'))
     df = X.copy()
 
     df['proba'] = model.predict_proba(X)[:,1]
