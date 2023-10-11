@@ -4,16 +4,19 @@ import json
 import shap
 from joblib import load
 
+
 def parse(data):
     
     df = pd.DataFrame(data=json.loads(data), index=[0])
+    df.loc[df['mean_perimeter'] < 150, 'mean_perimeter'] = None
     
     return df
 
 
 def get_shap(data, model_path):
 
-    model = load(model_path+"/model.pkl")
+    with open(model_path+"/model.pkl", 'rb') as f:
+        model = load(f)
 
     explainer = shap.Explainer(model[-1])
     shap_values = explainer.shap_values(model[:-1].transform(data))

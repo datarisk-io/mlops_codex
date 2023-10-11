@@ -2,6 +2,7 @@ import pandas as pd
 import shap
 from joblib import load
 
+
 def parse(input_path, output_path):
     
     df_input = pd.read_csv(input_path)
@@ -12,7 +13,8 @@ def parse(input_path, output_path):
 
 def get_shap(data, model_path):
 
-    model = load(model_path+"/model.pkl")
+    with open(model_path+"/model.pkl", 'rb') as f:
+        model = load(f)
 
     explainer = shap.Explainer(model[-1])
     shap_values = explainer.shap_values(model[:-1].transform(data))
