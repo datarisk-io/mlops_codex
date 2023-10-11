@@ -3,7 +3,6 @@ from lightgbm import LGBMClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import cross_val_score
-import os
 
 
 def train_model(base_path):
