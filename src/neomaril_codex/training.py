@@ -69,6 +69,8 @@ class NeomarilTrainingExecution(NeomarilExecution):
                  password:Optional[str]=None, url:str=None) -> None:
         super().__init__(training_id, 'Training', exec_id=exec_id, login=login, password=password, url=url, group=group)
         load_dotenv()
+        logger.info('Loading .env')
+
         self.__credentials = (login if login else os.getenv('NEOMARIL_USER'), password if password else os.getenv('NEOMARIL_PASSWORD'))
 
         self.training_id = training_id
@@ -355,6 +357,8 @@ class NeomarilTrainingExperiment(BaseNeomaril):
                  group:str="datarisk", url:str='https://neomaril.staging.datarisk.net/') -> None:
         super().__init__()
         load_dotenv()
+        logger.info('Loading .env')
+
         self.__credentials = (login if login else os.getenv('NEOMARIL_USER'), password if password else os.getenv('NEOMARIL_PASSWORD'))
         self.training_id = training_id
         self.base_url = os.getenv('NEOMARIL_URL') if os.getenv('NEOMARIL_URL') else url
@@ -684,6 +688,7 @@ class NeomarilTrainingClient(BaseNeomarilClient):
                 ServerError: Server unavailable
         """
         load_dotenv()
+        logger.info('Loading .env')
 
         self.__credentials = (login if login else os.getenv('NEOMARIL_USER'), password if password else os.getenv('NEOMARIL_PASSWORD'))
         self.base_url = os.getenv('NEOMARIL_URL') if os.getenv('NEOMARIL_URL') else url

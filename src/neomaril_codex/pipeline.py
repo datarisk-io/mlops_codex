@@ -15,8 +15,10 @@ class NeomarilPipeline:
 
     Atributtes
     ----------
+	login : str
+		Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
 	password : str
-		Password for authenticating with the client. You can also use the env variable NEOMARIL_TOKEN to set this
+		Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
     group: str
         Group the model is inserted
 	url : str
@@ -36,8 +38,11 @@ class NeomarilPipeline:
         pipeline.start()
         pipeline.run_monitoring('2', 'Mb29d61da4324a39a8bc2e0946f213b4959643916d354bf39940de2124f1e9d8')
     """
-    def __init__(self, group:str, password:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/', python_version:float=3.9) -> None:
-        self.__credentials = os.getenv('NEOMARIL_TOKEN') if os.getenv('NEOMARIL_TOKEN') else password
+    def __init__(self, group:str, login:Optional[str]=None, password:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/', python_version:float=3.9) -> None:
+        load_dotenv()
+        logger.info('Loading .env')
+
+        self.__credentials = (login if login else os.getenv('NEOMARIL_USER'), password if password else os.getenv('NEOMARIL_PASSWORD'))
         self.base_url = os.getenv('NEOMARIL_URL') if os.getenv('NEOMARIL_URL') else url
         self.base_url = parse_url(self.base_url)
         self.group = group
@@ -96,7 +101,7 @@ class NeomarilPipeline:
         Raises
         ------
         PipelineError
-            Undefined NEOMARIL_TOKEN
+            Undefined credentials
 
         Returns
         -------
@@ -118,13 +123,17 @@ class NeomarilPipeline:
         load_dotenv()
         logger.info('Loading .env')
 
-        token = os.getenv("NEOMARIL_TOKEN")
-        if not token:
-            raise PipelineError("When using a config file the environment variable NEOMARIL_TOKEN must be defined")
+        login = os.getenv("NEOMARIL_USER")
+        if not login:
+            raise PipelineError("When using a config file the environment variable NEOMARIL_USER must be defined")
+
+        password = os.getenv("NEOMARIL_PASSWORD")
+        if not password:
+            raise PipelineError("When using a config file the environment variable NEOMARIL_PASSWORD must be defined")
         
         url = os.getenv('NEOMARIL_URL', conf.get('url'))
 
-        pipeline = NeomarilPipeline(conf['group'], password=token, url=url, python_version=conf['python_version'])
+        pipeline = NeomarilPipeline(conf['group'], login=login, password=password, url=url, python_version=conf['python_version'])
 
         if 'training' in conf.keys():
             pipeline.register_train_config(**conf['training'])
@@ -156,7 +165,7 @@ class NeomarilPipeline:
         >>> pipeline.run_training()
         """
         logger.info('Running training')
-        client = NeomarilTrainingClient(password=self.__credentials, url=self.base_url)
+        client = NeomarilTrainingClient(login=self.__credentials[0], password=self.__credentials[1], url=self.base_url)
         client.create_group(self.group, self.group)
 
         conf = self.train_config
@@ -213,8 +222,8 @@ class NeomarilPipeline:
 
         if training_id:
             logger.info('Deploying scorer from training')
-            training_run = NeomarilTrainingExecution(training_id[0], self.group, training_id[1], password=self.__credentials, 
-                                                     url=self.base_url)
+            training_run = NeomarilTrainingExecution(training_id[0], self.group, training_id[1], login=self.__credentials[0], 
+                                                     password=self.__credentials[1], url=self.base_url)
 
             model_name = conf.get('name', training_run.execution_data.get('ExperimentName', ''))
 
@@ -231,7 +240,7 @@ class NeomarilPipeline:
 
         else:
             logger.info('Deploying scorer')
-            client = NeomarilModelClient(password=self.__credentials, url=self.base_url)
+            client = NeomarilModelClient(login=self.__credentials[0], password=self.__credentials[1], url=self.base_url)
             client.create_group(self.group, self.group)
             
             model = client.create_model(conf.get('name'), conf['score_function'], os.path.join(PATH, conf['source']), 
@@ -278,8 +287,8 @@ class NeomarilPipeline:
                 json.dump(conf_dict, f)
                 f.truncate()
 
-        model = NeomarilModel(model_id, password=self.__credentials, group=self.group, group_token=os.getenv('NEOMARIL_GROUP_TOKEN'),
-                                url=self.base_url)
+        model = NeomarilModel(model_id, login=self.__credentials[0], password=self.__credentials[1], group=self.group, 
+                              group_token=os.getenv('NEOMARIL_GROUP_TOKEN'), url=self.base_url)
 
         model.register_monitoring(conf['preprocess_function'], conf['shap_function'], 
                                     configuration_file=os.path.join(PATH, conf['config']),

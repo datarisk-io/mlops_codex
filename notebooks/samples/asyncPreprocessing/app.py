@@ -1,7 +1,8 @@
+import os
 import pandas as pd
 
 def process(data_path):
-    df = pd.read_csv(data_path+'/input.csv')
+    df = pd.read_csv(data_path+'/'+os.getenv('inputFileName'))
 
     parameters_to_keep = [
         'mean_radius', 'mean_texture', 'mean_perimeter', 'mean_area',

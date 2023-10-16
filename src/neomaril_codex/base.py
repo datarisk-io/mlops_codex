@@ -1,4 +1,5 @@
 import requests, os
+from time import sleep
 from datetime import datetime, timedelta
 from typing import Optional
 from loguru import logger
@@ -274,13 +275,15 @@ class NeomarilExecution(BaseNeomaril):
 	def __init__(self, parent_id:str, exec_type:str, group:Optional[str]=None, exec_id:Optional[str]=None, 
 				 login:Optional[str]=None, password:Optional[str]=None, url:str=None, group_token:Optional[str]=None) -> None:
 		super().__init__()
+		load_dotenv()
+		logger.info('Loading .env')
+
 		self.base_url = os.getenv('NEOMARIL_URL') if os.getenv('NEOMARIL_URL') else url
 		self.base_url = parse_url(self.base_url)
 		self.exec_type = exec_type
 		self.exec_id = exec_id
 		self.status = 'Requested'
 		self.group = group
-		load_dotenv()
 		self.__credentials = (login if login else os.getenv('NEOMARIL_USER'), password if password else os.getenv('NEOMARIL_PASSWORD'))
 		self.__token = group_token if group_token else os.getenv('NEOMARIL_GROUP_TOKEN')
 		
@@ -295,18 +298,26 @@ class NeomarilExecution(BaseNeomaril):
 		else:
 				raise InputError(f"Invalid execution type '{exec_type}'. Valid options are 'AsyncModel' and 'Training'")
 
-		url = f"{self.base_url}/{self.__url_path.replace('/async', '')}/describe/{group}/{parent_id}/{exec_id}"
-		response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
-
-		if response.status_code == 404:
-				raise ModelError(f'Execution "{exec_id}" not found.')
-
-		elif response.status_code >= 500:
-				raise ModelError(f'Unable to retrive execution "{exec_id}"')
-
-		self.execution_data = response.json()['Description']
+		if exec_type == 'AsyncPreprocessing':
+			# CHANGEME when add describe execution for preprocessing
 		
-		self.status = self.execution_data['ExecutionState']
+			self.execution_data = {}
+			
+			self.status = 'Running'
+
+		else:
+			url = f"{self.base_url}/{self.__url_path.replace('/async', '')}/describe/{group}/{parent_id}/{exec_id}"
+			response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
+
+			if response.status_code == 404:
+					raise ModelError(f'Execution "{exec_id}" not found.')
+
+			elif response.status_code >= 500:
+					raise ModelError(f'Unable to retrive execution "{exec_id}"')
+
+			self.execution_data = response.json()['Description']
+			
+			self.status = self.execution_data['ExecutionState']
 		
 	def __repr__(self) -> str:
 		return f"""Neomaril{self.exec_type}Execution(exec_id="{self.exec_id}", status="{self.status}")"""
@@ -342,8 +353,22 @@ class NeomarilExecution(BaseNeomaril):
 		self.execution_data['ExecutionState'] = result['Status']
 
 		return result
+	
+	def wait_ready(self): 
+		"""
+        Waits the execution until is no longer running
+        
+        Example
+        -------
+        >>> model.wait_ready()
+        """
+		if self.status in ['Requested', 'Running']:
+			self.status = self.get_status()['Status']
+			while self.status == 'Running':
+				sleep(30)
+				self.status = self.get_status()['Status']
 
-	def download_result(self, path:Optional[str]='./') -> dict:
+	def download_result(self, path:Optional[str]='./', filename:Optional[str]='output.zip') -> dict:
 		"""
 		Gets the output of the execution.
 
@@ -351,6 +376,8 @@ class NeomarilExecution(BaseNeomaril):
 		---------
 		path : str
 			Path of the result file. Default value is './'
+		filename : str
+			Name of the result file. Default value is 'output.zip'
 
 		Raises
 		------
@@ -377,7 +404,6 @@ class NeomarilExecution(BaseNeomaril):
 					logger.error(response.text)
 					raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
 
-			filename = f'output_{self.exec_id}.zip'
 			if not path.endswith('/'):
 					filename = '/'+filename
 
