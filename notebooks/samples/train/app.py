@@ -3,13 +3,20 @@ from lightgbm import LGBMClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import cross_val_score
+import os
 
 
 def train_model(base_path):
     """
     Função usada para treinar o modelo com base em um conjunto de dados fornecido.
     Essa função deve estruturar os passos que o Neomaril terá que executar para retornar o
-    conjunto de informações resultantes do treino. 
+    conjunto de informações resultantes do treino do modelo. 
+    Na função você pode usar variáveis de ambiente carregadas a partir de um arquivo .env,
+    como exemplificado no código nas linhas 50-53, e também é possível utilizar 
+    uma variável de ambiente carregada diretamente pelo Neomaril (linhas 55-56) que é a:
+    inputFileName : str
+        Que contém o nome do arquivo da base de dados que foi feito upload
+
 
     Parâmetros
     ---------
@@ -40,7 +47,13 @@ def train_model(base_path):
         Que podem ser gráficos, conjuntos de validação, etc. Eles precisam ser salvos no mesmo caminho (base_path) que é fornecido como parâmetro da função.
     """
 
-    # Adicionar uma env qualquer aqui O.o
+    ## Você também pode usar variáveis de ambiente como nas linhas comentadas abaixo
+    # my_var = os.getenv('MY_VAR')
+    # if my_var is None:
+    #    raise Exception("Could not find `env` variable")
+
+    ## Variável de ambiente do Neomaril
+    # df = pd.read_csv(base_path+'/'+os.getenv('inputFileName'))
 
     df = pd.read_csv(base_path+"/dados.csv")    # Carrega a base de dados, 'dados.csv' deve ser o nome do arquivo
     X = df.drop(columns=['target'])             # Separa a base de dados da coluna com os targets
