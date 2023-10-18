@@ -5,14 +5,13 @@ from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import cross_val_score
 import os
 
-
-def train_model(base_path):
+def train_model(base_path): # Esse nome da função (train_model) é que deve ser passado no campo 'training_reference'
     """
     Função usada para treinar o modelo com base em um conjunto de dados fornecido.
     Essa função deve estruturar os passos que o Neomaril terá que executar para retornar o
     conjunto de informações resultantes do treino do modelo. 
 
-    Na função você pode usar variáveis de ambiente carregadas a partir de um arquivo .env,
+    Na função o usuário pode usar variáveis de ambiente carregadas a partir de um arquivo .env,
     como exemplificado no código nas linhas 55-58.
     Caso não queira deixar o nome da base de dados fixo, o Neomaril carrega o nome desse arquivo
     na variável de ambiente (exemplo nas linhas 60-61):
@@ -24,13 +23,13 @@ def train_model(base_path):
     ---------
     base_path : str
         O caminho de pastas para os arquivos que serão usados. 
-        Você pode usar um valor default para testes locais, mas no Neomaril será usado o caminho remoto dos arquivos.
+        O usuário pode usar um valor default para testes locais, mas no Neomaril será usado o caminho remoto dos arquivos.
         Por exemplo: "/path/to/treino/customizado/experimento1"
 
     Retorno
     -------
     dict: 
-        um dicionário contendo as seguintes chaves
+        Um dicionário contendo as seguintes chaves
             X_train: DataFrame
                 Os dados que serão usados para treinar o modelo
             y_train: DataFrame
@@ -45,14 +44,14 @@ def train_model(base_path):
                 Isso será salvo como model.pkl com cloudpickle <https://github.com/cloudpipe/cloudpickle> ou com o método save_model se a classe de algoritmo tiver isso.
             metrics: dict
                 Um dicionário com cada chave como um métrica. 
-                Você pode usar qualquer nome para a chave da métrica e salvar quantos quiser, mas o valor deve ser numérico. 
+                O usuário pode usar qualquer nome para a chave da métrica e salvar quantos quiser, mas o valor deve ser numérico. 
                 Por exemplo: {“auc_train”: 0,7, “auc_test”: 0,65}
             extra: string list
                 Uma lista opcional de nomes de arquivos para arquivos extras que são gerados no treinamento. 
                 Que podem ser gráficos, conjuntos de validação, etc. Eles precisam ser salvos no mesmo caminho (base_path) que é fornecido como parâmetro da função.
     """
 
-    ## Você também pode usar variáveis de ambiente como nas linhas comentadas abaixo
+    ## Variáveis de ambiente carregadas de um arquivo fornecido pelo usuário no campo 'env'
     # my_var = os.getenv('MY_VAR')
     # if my_var is None:
     #    raise Exception("Could not find `env` variable")
