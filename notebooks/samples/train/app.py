@@ -11,9 +11,11 @@ def train_model(base_path):
     Função usada para treinar o modelo com base em um conjunto de dados fornecido.
     Essa função deve estruturar os passos que o Neomaril terá que executar para retornar o
     conjunto de informações resultantes do treino do modelo. 
+
     Na função você pode usar variáveis de ambiente carregadas a partir de um arquivo .env,
-    como exemplificado no código nas linhas 50-53, e também é possível utilizar 
-    uma variável de ambiente carregada diretamente pelo Neomaril (linhas 55-56) que é a:
+    como exemplificado no código nas linhas 55-58.
+    Caso não queira deixar o nome da base de dados fixo, o Neomaril carrega o nome desse arquivo
+    na variável de ambiente (exemplo nas linhas 60-61):
     inputFileName : str
         Que contém o nome do arquivo da base de dados que foi feito upload
 
@@ -21,7 +23,8 @@ def train_model(base_path):
     Parâmetros
     ---------
     base_path : str
-        O caminho de pastas para os arquivos que serão usados. Você pode usar um valor default para testes locais, mas no Neomaril será usado o caminho remoto dos arquivos.
+        O caminho de pastas para os arquivos que serão usados. 
+        Você pode usar um valor default para testes locais, mas no Neomaril será usado o caminho remoto dos arquivos.
         Por exemplo: "/path/to/treino/customizado/experimento1"
 
     Retorno
@@ -54,11 +57,10 @@ def train_model(base_path):
     # if my_var is None:
     #    raise Exception("Could not find `env` variable")
 
-    ## Variável de ambiente do Neomaril
+    ## Variável de ambiente carregada do Neomaril com nome da base de dados (usado em alternativa a linha 63)
     # df = pd.read_csv(base_path+'/'+os.getenv('inputFileName'))
 
-    df = pd.read_csv(base_path+"/dados.csv")    # Carrega a base de dados, 'dados.csv' deve ser o nome do arquivo enviado para o Neomaril.
-    # df = pd.read_csv(base_path+"/"+os.getenv('inputFileName'))    # Caso não queira deixar o nome do arquivo fixo o Neomaril salva o nome do arquivo enviado nessa variavel de ambiente
+    df = pd.read_csv(base_path+"/dados.csv")    # Carrega a base de dados, 'dados.csv' deve ser o nome do arquivo enviado para o Neomaril
     
     # Os dados enviados devem ser os dados completos para treino e validação, então fica a critério do usuário como tratar os dados aqui
     X = df.drop(columns=['target'])             # Separa a base de dados da coluna com os targets
@@ -73,7 +75,7 @@ def train_model(base_path):
 
     results = pd.DataFrame({"pred": pipe.predict(X), "proba": pipe.predict_proba(X)[:,1]})  # Constrói o DataFrame com os resultados
     
-    # Retorna os resultados do treino segundo os parametros experados pelo Neomaril
+    # Retorna os resultados do treino segundo os parâmetros esperados pelo Neomaril
     return {"X_train": X, "y_train": y, "model_output": results, "pipeline": pipe, 
             "metrics": {"auc": auc.mean(), "f1_score": f_score.mean()}}
 
