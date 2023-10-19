@@ -1,18 +1,12 @@
 import json 
+import os
 
-def process(data, base_path): # O nome da função (process) é que deve ser passado no campo 'script_reference'
+def process(data): # O nome da função (process) é que deve ser passado no campo 'preprocess_reference'
     """
-    Função usada para executar o modelo síncrono com base no resultado do treino.
-    Essa função deve estruturar os passos que o Neomaril executará para retornar o resultado
-    da aplicação do modelo para os dados reais. 
+    Função usada para fazer o pré-processamento da base de dados
+    Essa função deve estruturar os passos que o Neomaril executará para transformar a base de dados de entrada
+    em uma nova base de dados operações de pré-processamento, sejam elas filtragens, extração de features, etc
     
-    Na função o usuário pode usar variáveis de ambiente carregadas a partir de um arquivo .env,
-    como exemplificado no código nas linhas 39-42.
-    Caso não queira deixar o nome do arquivo com as variáveis do modelo fixo, o Neomaril carrega 
-    o nome desse arquivo na variável de ambiente (exemplo nas linhas 44-45):
-    modelFileName : str
-        Que contém o nome do arquivo do modelo treinado
-
     Parâmetros
     ---------
     data : str
@@ -22,18 +16,15 @@ def process(data, base_path): # O nome da função (process) é que deve ser pas
 
     Retorno
     -------
-    dict | list dict| str no formato JSON:
-        Um dicionário, lista de dicionários ou string no format de um JSON válido contendo 
-        as chaves e os valores para os resultados de saída do modelo.
-        Neste exemplo, usamos a chaves:
-            pred: int
-                Valor de predição do modelo
-            proba: int 
-                Probabilidade da pertencer a classe 'a'
+    dict | str no formato JSON:
+        Um dicionário ou string no format de um JSON válido contendo as chaves e os valores correspondentes 
+        aos dados, que formam a base de dados transformada.
     """
 
+    # Carrega os dados do JSON para um objeto python
     data = json.loads(data)
     
+    # Cria uma lista com os parâmetros da base de dados que devem ser mantidos
     parameters_to_keep = ['mean_radius', 'mean_texture', 'mean_perimeter', 'mean_area', 'mean_smoothness',
                        'mean_compactness', 'mean_concavity', 'mean_concave_points', 'mean_symmetry',
                        'mean_fractal_dimension', 'radius_error', 'texture_error', 'perimeter_error',
@@ -42,9 +33,12 @@ def process(data, base_path): # O nome da função (process) é que deve ser pas
                        'worst_texture', 'worst_perimeter', 'worst_area', 'worst_smoothness', 'worst_compactness',
                        'worst_concavity', 'worst_concave_points', 'worst_symmetry', 'worst_fractal_dimension']
 
+    # Cria dicionário que irá armazenar os valores escolhidos
     result = {}
     
+    # Varre o objeto python a procura dos parâmetros que devem ser mantidos e adiciona no dicionário result
     for parameter in parameters_to_keep:
         result[parameter] = data.get(parameter, 0)
-        
+    
+    # Retorna o dicionário com a nova base de dados
     return result
