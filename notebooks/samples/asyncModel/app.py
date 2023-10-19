@@ -21,7 +21,7 @@ def score(data_path, model_path):# O nome da função (score) é que deve ser pa
     ---------
     data_path : str
         O caminho para os dados que serão usados pelo modelo que deverão chegar no formato string
-    base_path : str
+    model_path : str
         O caminho para o arquivo do modelo e outros arquivos complementares
 
     Retorno
@@ -40,7 +40,7 @@ def score(data_path, model_path):# O nome da função (score) é que deve ser pa
     ## Variável de ambiente carregada do Neomaril com nome do arquivo do modelo (usado em alternativa a linha 44)
     # with open(base_path+os.getenv('modelFileName'), 'rb') as f:
 
-    # Usado para construir o modelo a ser executado com base no arquivo de modelo passado como parâmetro
+    # Constrói o modelo a ser executado com base no arquivo de modelo passado como parâmetro
     with open(model_path+"/model.pkl", 'rb') as f:
         model = load(f)
 

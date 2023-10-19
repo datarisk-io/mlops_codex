@@ -44,11 +44,11 @@ def score(data, base_path): # O nome da função (score) é que deve ser passado
     ## Variável de ambiente do Neomaril com nome do arquivo do modelo (usado em alternativa a linha 48)
     # with open(base_path+os.getenv('modelFileName'), 'rb') as f:
 
-    # Usado para construir o modelo a ser executado com base no arquivo de modelo passado como parâmetro
+    # Constrói o modelo a ser executado com base no arquivo de modelo passado como parâmetro
     with open(base_path+"/model.pkl", 'rb') as f:
         model = load(f)
 
-    # Constrói o DataFrame com os dados de entrada
+    # Constrói um DataFrame com os dados de entrada
     df = pd.DataFrame(data=json.loads(data), index=[0])
     
     # Retorna os resultados da execução do modelo como um dicionário
