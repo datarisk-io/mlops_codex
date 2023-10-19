@@ -1,15 +1,27 @@
-{   
-    "train_data": {
-        "file_type": "csv",
-        "sep": ",",
-        "file_name": "dados.csv"
-    }, 
-    "model_flow": "classification", 
-    "target": "target", 
-    "iterations": 100, 
-    "metric": "ks", 
-    "split_type": "random", 
-    "stages": {
-        "models": ["catboost"]
-        }
+{
+    "train_data":{
+        "file_type": "csv",         // <string, Obrigatório> Tipo de arquivo dos dados carregados. Pode ser `csv` ou `parquet`
+        "file_name": "dados.csv",   // <string, Obrigatório> Nome do arquivo dos dados carregados
+        "sep": ","                  // <string, Obrigatório para CSV> Caractere usado como separador do arquivo csv
+    },
+    "model_flow":"classification",  // <string, Obrigatório> Classe do modelo, por enquanto só pode ser `classification`
+    "target":"target",              // <string, Obrigatório> Nome da coluna de target nos dados carregados
+    // "cat_cols":["ID"],           // <string, Opcional> Nome das colunas que precisam ser codificadas como categóricas. O padrão é uma lista vazia (vamos tentar encontrar colunas categóricas)
+    "iterations":100,               // <int, Opcional> Quantas combinações de pipelines serão testadas. O padrão é 1.
+    "metric":"ks",                  // <string, Opcional> Métrica que usaremos para encontrar o melhor modelo. Para classificação, as opções são `auc`, `precision`, `recall`, `f1`, `gini`, `ks`. O padrão é `auc`.
+    "split_type":"random",          // <string, Opcional> Como dividiremos os conjuntos de dados de treinamento, validação e teste. As opções são `random`, `stratified` (random mas tentando obter a mesma proporção de dados entre os splits) e `oot` (validação é random, mas o teste é dividido por data). O valor padrão é `random`
+    // "val_size": 0.2,             // <float, Opcional> Proporção do conjunto de validação para o conjunto de dados completo. O padrão é 0.2
+    // "holdout_size": 0.1,         // <float, Opcional> Proporção do conjunto de teste para o conjunto de dados completo. Só usado quando `split_type` é `random` ou `stratified`. O padrão é 0.1
+    // "stratify_col": "TARGET",    // <string, Opcional> Qual coluna usar para estratificar o split (mantendo a mesma proporção entre os splits). Só usado quando `split_type` é `stratified`. O padrão é a coluna de destino
+    // "date_col": "DATE",          // <string, Opcional> Qual coluna usar para encontrar os registros mais recentes. Só usado quando `split_type` é `oot`
+    // "oot_split_size": 0.1,       // <float, Opcional> Fração dos dados mais recentes a usar como conjunto de teste. Quando `split_type` é `oot` este ou (exclusivo) `split_date` deve ser informado. O padrão é 0.2
+    // "split_date": "2020-01-01",  // <string, Opcional> Data para filtrar o conjunto de teste. Quando `split_type` é `oot` este ou (exclusivo) `oot_split_size` deve ser informado.
+    "stages":{
+        "models":["catboost"]       // <list[string], Opcional> Algoritmos para testar. As opções são `logeg`, `catboost`, `xgboost`, `lightgbm`, `rf`, `dt`. O padrão é usar todos
+        // "missing":["mean"]       // <list[string], Opcional> Métodos de imputação de valores ausentes para testar. As opções são `mean`, `median`, `tail` (substituindo dados ausentes por um valor no lado esquerdo da distribuição), `random` e `none` (funcionará apenas se o algoritmo já lidar com dados ausentes). Só será usado se os dados tiverem valores ausentes. O padrão é usar todos
+        // "cleaner":["iqr"]        // <list[string], Opcional> Métodos de remoção de outliers para testar. As opções são `iqr`, `rare` e `none`. O padrão é usar todos
+        // "encoding":["catboost"]  // <list[string], Opcional> Métodos de codificação categórica para testar. As opções são `rankcount`, `catboost`, `count` e `dt`. Só será usado se os dados tiverem colunas categóricas. O padrão é usar todos
+        // "preprocess":["none"]    // <list[string], Opcional> Métodos de escala para testar. As opções são `norm`, `robust`, `minmax`, `binarizer` e `none`. O padrão é usar todos
+        // "unbalance":["none"]     // <list[string], Opcional> Métodos de balanceamento de target para testar. As opções são `smote`, `random_under` e `none`. Só será usado se a coluna target tiver uma classe minoritária com menos de 10% do registros. O padrão é usar todos
+    }
 }
