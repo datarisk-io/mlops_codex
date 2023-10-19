@@ -39,21 +39,46 @@ Running a training execution
 For the custom experiment you need a entrypoint function like this:
 
 .. code:: python
+    import pandas as pd
+    from lightgbm import LGBMClassifier
+    from sklearn.impute import SimpleImputer
+    from sklearn.pipeline import make_pipeline
+    from sklearn.model_selection import cross_val_score
+    import os
+    
+    # Função que fornece os passos para treinar o modelo com base em um conjunto de dados fornecido. 
+    # Seu nome (train_model) deve ser passado no campo 'training_reference'
+    # O seu parâmetro (base_path) deve conter o caminho de pastas para os arquivos que serão usados. 
+    # Um exemplo para o seu valor é: "/path/to/treino/customizado/experimento1"
+    def train_model(base_path): 
 
-    def train_model(base_path):
-        df = pd.read_csv(base_path+"/dados.csv")
-        X = df.drop(columns=['target'])
-        y = df[["target"]]
-        
-        pipe = make_pipeline(SimpleImputer(), XGBClassifier())
-        auc = cross_val_score(pipe, X, y, cv=5, scoring="roc_auc")
-        f_score = cross_val_score(pipe, X, y, cv=5, scoring="f1")
-        pipe.fit(X, y)
+        ## Variáveis de ambiente carregadas de um arquivo fornecido pelo usuário no campo 'env'
+        # my_var = os.getenv('MY_VAR')
+        # if my_var is None:
+        #    raise Exception("Could not find `env` variable")
 
-        results = pd.DataFrame({"pred": pipe.predict(X), "proba": pipe.predict_proba(X)[:,1]})
-        results.proba.hist().get_figure().savefig(base_path+'/probas.png', format='png')
+        ## Variável de ambiente carregada do Neomaril com nome da base de dados (usado em alternativa a linha 61)
+        # df = pd.read_csv(base_path+'/'+os.getenv('inputFileName'))
+        df = pd.read_csv(base_path+"/dados.csv")    # Carrega a base de dados (dados.csv) que precisa ter o mesmo nome
+                                                    # arquivo enviado para o Neomaril no campo 'train_data'
         
-        return {"X_train": X, "y_train": y, "model_output": results, "pipeline": pipe, 'extras': [base_path+'/probas.png'],
+        # Os dados enviados devem ser os dados completos para treino e validação (excluída a amostra de validação), 
+        # ficando a critério do usuário como tratar os dados aqui
+        X = df.drop(columns=['target'])             # Separa a base de dados da coluna com os targets
+        y = df[["target"]]                          # Salva os targets num DataFrame
+        
+        pipe = make_pipeline(SimpleImputer(), LGBMClassifier())     # Define quais serão os passos para treinar o modelo
+        
+        # Nesse exemplo usamos a validação cruzada, mas isso fica a critério do usuário
+        auc = cross_val_score(pipe, X, y, cv=5, scoring="roc_auc")  # Validação dos resultados usando a métrica 'auc'
+        f_score = cross_val_score(pipe, X, y, cv=5, scoring="f1")   # Validação dos resultados usando a métrica 'f1'
+        pipe.fit(X, y)  # Treina o modelo
+
+        # Constrói o DataFrame com os resultados
+        results = pd.DataFrame({"pred": pipe.predict(X), "proba": pipe.predict_proba(X)[:,1]})  
+        
+        # Retorna os resultados do treino segundo os parâmetros esperados pelo Neomaril
+        return {"X_train": X, "y_train": y, "model_output": results, "pipeline": pipe, 
                 "metrics": {"auc": auc.mean(), "f1_score": f_score.mean()}}
 
 
