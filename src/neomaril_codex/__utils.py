@@ -2,8 +2,8 @@ import requests
 from neomaril_codex.exceptions import *
 from msal import PublicClientApplication
 
-CLIENT_ID = '1432430b-d7b5-4081-b46b-7ca8ddffda26'
-AUTHORITY = 'https://datariskb2c.b2clogin.com/datariskb2c.onmicrosoft.com/B2C_1_NEOMARIL_API_SIGNIN'
+CLIENT_ID = '676f0aa7-0eba-4ac6-ae3b-d93a5e487803'
+AUTHORITY = 'https://datariskauth.b2clogin.com/datariskauth.onmicrosoft.com/B2C_1_NI'
 
 app = PublicClientApplication(CLIENT_ID, authority=AUTHORITY)
 

@@ -9,6 +9,7 @@ import json
 from neomaril_codex.base import *
 from neomaril_codex.__utils import *
 from neomaril_codex.exceptions import *
+from neomaril_codex.preprocessing import *
 
 class NeomarilModel(BaseNeomaril):
     """
@@ -295,7 +296,8 @@ class NeomarilModel(BaseNeomaril):
         self.__token = group_token
         logger.info(f"Token for group {self.group} added.")
 
-    def predict(self, data:Union[dict, str], group_token:Optional[str]=None, wait_complete:Optional[bool]=False) -> Union[dict, NeomarilExecution]:
+    def predict(self, data:Union[dict, str, NeomarilExecution], preprocessing: Optional[NeomarilPreprocessing]=None, 
+                group_token:Optional[str]=None, wait_complete:Optional[bool]=False) -> Union[dict, NeomarilExecution]:
         """
         Runs a prediction from the current model.
 
@@ -333,11 +335,27 @@ class NeomarilModel(BaseNeomaril):
                             "Input": data
                     }
 
+                    if preprocessing:
+                        model_input['ScriptHash'] = preprocessing.preprocessing_id
+
                     req = requests.post(url, data=json.dumps(model_input), headers={'Authorization': 'Bearer ' + group_token})
 
                     return req.json()
 
                 elif self.operation == 'async':
+                    if preprocessing:
+                        if preprocessing.operation == 'async':
+                            preprocessing.set_token(group_token)
+                            pre_run = preprocessing.run(data)
+                            pre_run.wait_ready()
+                            if pre_run.status != "Succeeded":
+                                logger.error("Preprocessing failed, we wont send any data to it")
+                                logger.info("Returning Preprocessing run instead.")
+                                return pre_run
+                            data = './result_preprocessing'
+                            pre_run.download_result(path='/.', filename='result_preprocessing')
+                        else:
+                            raise PreprocessingError("Can only use async preprocessing with async models")
 
                     req = requests.post(url, files=[("input", (data.split('/')[-1], open(data, "rb")))],
                                                     headers={'Authorization': 'Bearer ' + group_token})
@@ -700,10 +718,12 @@ class NeomarilModelClient(BaseNeomarilClient):
     """
     def __init__(self, login:Optional[str]=None, password:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/') -> None:
 
+        load_dotenv()
+        logger.info('Loading .env')
+
         self.__credentials = (login if login else os.getenv('NEOMARIL_USER'), password if password else os.getenv('NEOMARIL_PASSWORD'))
 
         super().__init__(login=self.__credentials[0], password=self.__credentials[1], url=url)
-        load_dotenv()
             
     def __repr__(self) -> str:
             return f'NeomarilModelClient(url="{self.base_url}", version="{self.client_version}")'

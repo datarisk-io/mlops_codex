@@ -1,4 +1,6 @@
+import os
 import pandas as pd
+
 
 def process(data_path:str):  # O nome da função (process) é que deve ser passado no campo 'preprocess_reference'
     """
