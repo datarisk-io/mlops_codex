@@ -4,9 +4,9 @@ import pandas as pd
 import os
 
 
-def score(data, base_path): # O nome da função (score) é que deve ser passado no campo 'model_reference'
+def score(data:str, base_path:str): # O nome da função (score) é que deve ser passado no campo 'model_reference'
     """
-    Função usada para executar o modelo síncrono com base no resultado do treino.
+    Função usada para executar o modelo síncrono.
     Essa função deve estruturar os passos que o Neomaril executará para retornar o resultado
     da aplicação do modelo para os dados reais. 
     
@@ -33,7 +33,7 @@ def score(data, base_path): # O nome da função (score) é que deve ser passado
             pred: int
                 Valor de predição do modelo
             proba: int 
-                Probabilidade da pertencer a classe 'a'
+                Probabilidade da pertencer a classe '1'
     """
 
     ## Variáveis de ambiente carregadas de um arquivo fornecido pelo usuário no campo 'env'
@@ -44,12 +44,13 @@ def score(data, base_path): # O nome da função (score) é que deve ser passado
     ## Variável de ambiente do Neomaril com nome do arquivo do modelo (usado em alternativa a linha 48)
     # with open(base_path+os.getenv('modelFileName'), 'rb') as f:
 
-    # Constrói o modelo a ser executado com base no arquivo de modelo passado como parâmetro
+    # Carrega o modelo já treinado para ser executado com base no arquivo de modelo passado como parâmetro
     with open(base_path+"/model.pkl", 'rb') as f:
         model = load(f)
 
-    # Constrói um DataFrame com os dados de entrada
+    # Constrói um DataFrame com os dados de entrada. Os dados chegam como um JSON string então temos que tranforma-los em um dicionário
     df = pd.DataFrame(data=json.loads(data), index=[0])
     
-    # Retorna os resultados da execução do modelo como um dicionário
+    # Retorna os resultados da execução do modelo como um dicionário.
+    # Importante que nesse caso como vamos converter para um JSON não podemos usar os tipos do numpy, então convertemos para int e float puros.
     return {"pred": int(model.predict(df)), "proba": float(model.predict_proba(df)[0,1])}

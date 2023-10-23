@@ -5,7 +5,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import cross_val_score
 import os
 
-def train_model(base_path): # O nome da função (train_model) é que deve ser passado no campo 'training_reference'
+def train_model(base_path:str): # O nome da função (train_model) é que deve ser passado no campo 'training_reference'
     """
     Função usada para treinar o modelo com base em um conjunto de dados fornecido.
     Essa função deve estruturar os passos que o Neomaril terá que executar para retornar o

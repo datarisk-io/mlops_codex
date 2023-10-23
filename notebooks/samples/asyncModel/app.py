@@ -3,7 +3,7 @@ from joblib import load
 import pandas as pd
 
 
-def score(data_path, model_path):# O nome da função (score) é que deve ser passado no campo 'model_reference'
+def score(data_path:str, model_path:str):# O nome da função (score) é que deve ser passado no campo 'model_reference'
     """
     Função usada para executar o modelo assíncrono com base no resultado do treino.
     Essa função deve estruturar os passos que o Neomaril executará para retornar o resultado
@@ -40,7 +40,7 @@ def score(data_path, model_path):# O nome da função (score) é que deve ser pa
     ## Variável de ambiente carregada do Neomaril com nome do arquivo do modelo (usado em alternativa a linha 44)
     # with open(base_path+os.getenv('modelFileName'), 'rb') as f:
 
-    # Constrói o modelo a ser executado com base no arquivo de modelo passado como parâmetro
+    # Carrega o modelo já treinado para ser executado com base no arquivo de modelo passado como parâmetro
     with open(model_path+"/model.pkl", 'rb') as f:
         model = load(f)
 
@@ -55,7 +55,7 @@ def score(data_path, model_path):# O nome da função (score) é que deve ser pa
     df['proba'] = model.predict_proba(X)[:,1]   # Calcula a predição de cada entrada da tabela de dados
     df['pred'] = model.predict(X)               # Calcula a probabilidade de cada entrada da tabela de dados
 
-    # Cria o caminho com o nome do arquivo de output, nesse caso 'output.csv' 
+    # Cria o caminho com o nome do arquivo de output, nesse caso 'output.csv'. Importante que esse arquivo deve ser salvo no mesmo caminho que os dados que foram enviados.
     output = data_path+'/output.csv'
 
     # Transforma o DataFrame, com a predição e a probabilidade, para csv colocando no arquivo do caminho do output
