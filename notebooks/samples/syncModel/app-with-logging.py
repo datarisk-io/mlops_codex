@@ -9,7 +9,8 @@ def score(data, base_path):
 
     logger.debug("USING LOGGER")
 
-    model = load(base_path+"/model.pkl")
+    with open(base_path+"/model.pkl", 'rb') as f:
+        model = load(f)
 
     df = pd.DataFrame(data=json.loads(data), index=[0])
     

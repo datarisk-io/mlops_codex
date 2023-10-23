@@ -15,11 +15,31 @@ The entrypoint function should look like this:
 
 .. code:: python
 
-    def score(data, base_path):
-        model = load(base_path+"/model.pkl")
+    # Função que descreve os passos para o Neomaril executar o modelo treinado.
+    # Os parâmetros de entrada são:
+    #   data : str
+    #       Os dados que serão usados pelo modelo que deverão chegar no formato string
+    #   base_path : str
+    #       O caminho para o arquivo do modelo e outros arquivos complementares
+    def score(data:str, base_path:str): # O nome da função (score) é que deve ser passado no campo 'model_reference'
 
+        ## Variáveis de ambiente carregadas de um arquivo fornecido pelo usuário no campo 'env'
+        # my_var = os.getenv('MY_VAR')
+        # if my_var is None:
+        #    raise Exception("Could not find `env` variable")
+
+        ## Variável de ambiente do Neomaril com nome do arquivo do modelo
+        # with open(base_path+os.getenv('modelFileName'), 'rb') as f:
+
+        # Carrega o modelo já treinado para ser executado com base no arquivo de modelo passado como parâmetro
+        with open(base_path+"/model.pkl", 'rb') as f:
+            model = load(f)
+
+        # Constrói um DataFrame com os dados de entrada. Os dados chegam como um JSON string então temos que tranforma-los em um dicionário
         df = pd.DataFrame(data=json.loads(data), index=[0])
         
+        # Retorna os resultados da execução do modelo como um dicionário
+        # Importante que nesse caso como vamos converter para um JSON não podemos usar os tipos do numpy, então convertemos para int e float puros.
         return {"pred": int(model.predict(df)), "proba": float(model.predict_proba(df)[0,1])}
 
 The first parameter is the JSON data that will be sent to the model (this comes as a JSON string, so you should parse it the way you want).
@@ -33,20 +53,43 @@ The entrypoint function should look like this:
 
 .. code:: python
 
-    def score(data_path, model_path):
-    
-        model = load(model_path+"/model.pkl")
+    # Função que descreve os passos para o Neomaril executar o modelo treinado.
+    # Os parâmetros de entrada são:
+    #   data_path : str
+    #       O caminho para os dados que serão usados pelo modelo que deverão chegar no formato string
+    #   model_path : str
+    #       O caminho para o arquivo do modelo e outros arquivos complementares
+    def score(data_path:str, model_path:str):## Variáveis de ambiente carregadas de um arquivo fornecido pelo usuário no campo 'env'
 
-        X = pd.read_csv(data_path+'/input.csv')
-        df = X.copy()
+        # my_var = os.getenv('MY_VAR')
+        # if my_var is None:
+        #    raise Exception("Could not find `env` variable")
 
-        df['proba'] = model.predict_proba(X)[:,1]
-        df['pred'] = model.predict(X)
+        ## Variável de ambiente carregada do Neomaril com nome do arquivo do modelo
+        # with open(base_path+os.getenv('modelFileName'), 'rb') as f:
 
+        # Carrega o modelo já treinado para ser executado com base no arquivo de modelo passado como parâmetro
+        with open(model_path+"/model.pkl", 'rb') as f:
+            model = load(f)
+
+        ## Variável de ambiente carregada do Neomaril com nome da base de dados
+        # X = pd.read_csv(data_path+'/'+os.getenv('inputFileName'))
+
+        # Carrega os dados da base de entrada do arquivo para um DataFrame
+        X = pd.read_csv(data_path+"/dados.csv")
+
+        df = X.copy()   # Cria uma cópia do DataFrame com os dados de entrada
+
+        df['proba'] = model.predict_proba(X)[:,1]   # Calcula a predição de cada entrada da tabela de dados
+        df['pred'] = model.predict(X)               # Calcula a probabilidade de cada entrada da tabela de dados
+
+        # Cria o caminho com o nome do arquivo de output, nesse caso 'output.csv'. Importante que esse arquivo deve ser salvo no mesmo caminho que os dados que foram enviados.
         output = data_path+'/output.csv'
 
+        # Transforma o DataFrame, com a predição e a probabilidade, para csv colocando no arquivo do caminho do output
         df.to_csv(output, index=False)
 
+        # Retorna o caminho com o arquivo com os resultados da execução do modelo
         return output
 
 The first parameter is now also a path for the data. We have different path parameter because each async model execution is saved in a different place. And the files uploaded when deploying the model are kept the same every time.
