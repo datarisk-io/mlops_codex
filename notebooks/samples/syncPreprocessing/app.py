@@ -1,7 +1,7 @@
 import json 
 import os
 
-def process(data): # O nome da função (process) é que deve ser passado no campo 'preprocess_reference'
+def process(data:str, base_path:str): # O nome da função (process) é que deve ser passado no campo 'preprocess_reference'
     """
     Função usada para fazer o pré-processamento da base de dados
     Essa função deve estruturar os passos que o Neomaril executará para transformar a base de dados de entrada

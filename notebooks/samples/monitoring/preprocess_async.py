@@ -3,7 +3,7 @@ import shap
 from joblib import load
 
 # Função 1: o nome dela deve ser passado no campo 'preprocess_reference'
-def parse(input_path, output_path):
+def parse(input_path:str, output_path:str):
     """
     Deve ser usada para transformar os dados brutos do modelo salvos no mesmo formato 
     que os dados do treino.
