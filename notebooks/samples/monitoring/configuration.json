@@ -1,7 +1,7 @@
 {
     "Period": "week",
     "TrainData": {
-        "NeomarilTrainingExecution": "2",
+        "NeomarilTrainingExecution": "1",
         "TrainDateRef": "2022-09-01"
     },
     "InputCols": [

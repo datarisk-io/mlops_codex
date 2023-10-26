@@ -44,11 +44,9 @@ def score(data_path:str, model_path:str):# O nome da função (score) é que dev
     with open(model_path+"/model.pkl", 'rb') as f:
         model = load(f)
 
-    ## Variável de ambiente carregada do Neomaril com nome da base de dados (usado em alternativa a linha 51)
-    # X = pd.read_csv(data_path+'/'+os.getenv('inputFileName'))
-
     # Carrega os dados da base de entrada do arquivo para um DataFrame
-    X = pd.read_csv(data_path+"/dados.csv")
+    ## Variável de ambiente carregada do Neomaril com nome da base de dados enviada. Usamos para o exemplo com preprocessamento. 
+    X = pd.read_csv(data_path+'/'+os.getenv('inputFileName'))
 
     df = X.copy()   # Cria uma cópia do DataFrame com os dados de entrada
 
