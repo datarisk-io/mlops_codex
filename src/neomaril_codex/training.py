@@ -131,11 +131,9 @@ class NeomarilTrainingExecution(NeomarilExecution):
 
         if self.training_type == 'Custom':
             form_data['model_reference'] = model_reference
-            form_data['input_type'] = input_type
-        
+
             file_extesions = {'py': 'app.py', 'ipynb': "notebook.ipynb"}
         
-
             upload_data = [
                 ("source", (file_extesions[source_file.split('.')[-1]], open(source_file, 'rb')))
             ]
@@ -169,6 +167,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
             if input_type == 'json|csv|parquet':
                 raise InputError("Choose a input type from "+input_type)
 
+        form_data['input_type'] = input_type
             
         response = requests.post(url, data=form_data, files=upload_data, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
         
