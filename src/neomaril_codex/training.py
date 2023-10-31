@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import io
 import re
 from typing import Union, Optional, List
+from contextlib import contextmanager
 import requests
-import json
 from time import sleep
 from neomaril_codex.base import *
 from neomaril_codex.model import NeomarilModel
@@ -13,6 +12,23 @@ from neomaril_codex.__utils import *
 from neomaril_codex.exceptions import *
 
 patt = re.compile(r'(\d+)')
+
+class NeomarilTrainingLogger:
+    def __init__(self, name, X_train, y_train):
+        self.name = name
+        self.X_train = X_train
+        self.y_train = y_train
+        self.model_output = None
+        self.model = None
+        self.metrics = {}
+        self.params = {}
+        self.requirements = None
+        self.python_version = None
+        self.extras = []
+
+        # TODO Create method to log files
+
+
 
 class NeomarilTrainingExecution(NeomarilExecution):
     """
@@ -154,12 +170,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
         if operation=="Sync":
             input_type = "json"
             if schema:
-                if isinstance(schema, str):
-                    schema_file = open(schema, 'rb')
-                elif isinstance(schema, dict):
-                    schema_file = io.StringIO()
-                    json.dump(schema, schema_file).seek(0)
-                upload_data.append(("schema", ("schema.json", schema_file)))
+                upload_data.append(("schema", ("schema.json", parse_dict_or_file(schema))))
             else:
                 raise InputError("Schema file is mandatory for Sync models")
 
@@ -392,10 +403,12 @@ class NeomarilTrainingExperiment(BaseNeomaril):
     def __str__(self):
         return f'NEOMARIL training experiment "{self.experiment_name} (Group: {self.group}, Id: {self.training_id})"'
     
-    def __upload_training(self, run_name:str, train_data:str, training_reference:Optional[str]=None, 
-                                                python_version:str='3.8', conf_dict:Optional[Union[str, dict]]=None,
-                                                source_file:Optional[str]=None, requirements_file:Optional[str]=None,
-                                                env:Optional[str]=None, extra_files:Optional[list]=None) -> str:
+    def __upload_training(self, run_name:str, train_data:Optional[str]=None, training_reference:Optional[str]=None, 
+                          python_version:str='3.8', conf_dict:Optional[Union[str, dict]]=None,
+                          source_file:Optional[str]=None, requirements_file:Optional[str]=None,
+                          env:Optional[str]=None, X_train=None, y_train=None, model_outputs=None,
+                          model_file:Optional[str]=None, model_metrics:Optional[Union[str, dict]]=None,
+                          model_params:Optional[Union[str, dict]]=None, extra_files:Optional[list]=None) -> str:
         
         """
         Upload the files to the server
@@ -434,9 +447,11 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         
         url = f"{self.base_url}/training/upload/{self.group}/{self.training_id}"
 
-        upload_data = [
-                ("train_data", (train_data.split('/')[-1], open(train_data, "rb")))
-            ]
+        upload_data = []
+        form_data = {'run_name': run_name}
+
+        if self.training_type != 'External':
+            upload_data.append(("train_data", (train_data.split('/')[-1], open(train_data, "rb"))))
 
         if self.training_type == 'Custom':
         
@@ -455,22 +470,20 @@ class NeomarilTrainingExperiment(BaseNeomaril):
                 
                 upload_data += extra_data
                 
-            form_data = {'run_name': run_name, 'training_reference': training_reference,
-                                    'python_version': "Python"+python_version.replace('.', '')}
+            form_data['training_reference']= training_reference,
+            form_data['python_version'] = "Python"+python_version.replace('.', '')
         
         elif self.training_type == 'AutoML':
                 
-            form_data = {'run_name': run_name}
-
             if conf_dict:
-                if isinstance(conf_dict, str):
-                    schema_file = open(conf_dict, 'rb')
-                elif isinstance(conf_dict, dict):
-                    schema_file = io.StringIO()
-                    json.dump(conf_dict, schema_file).seek(0)
-                upload_data.append(("conf_dict", ("conf.json", schema_file)))
+                upload_data.append(("conf_dict", ("conf.json", parse_dict_or_file(conf_dict))))
             else:
                 raise InputError("conf_dict is mandatory for AutoML training")
+            
+        elif self.training_type == 'External':
+            if python_version:
+                form_data['python_version'] = "Python"+python_version.replace('.', '')
+
 
         response = requests.post(url, data=form_data, files=upload_data, 
                                  headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
@@ -520,10 +533,13 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         self.training_data = response.json()['Description']
         self.executions = [c['Id'] for c in self.training_data['Executions']]
 
-    def run_training(self, run_name:str, train_data:str, training_reference:Optional[str]=None, 
+    def run_training(self, run_name:str, train_data:Optional[str]=None, training_reference:Optional[str]=None, 
                      python_version:str='3.8', conf_dict:Optional[Union[str, dict]]=None,
                      source_file:Optional[str]=None, requirements_file:Optional[str]=None,
-                     extra_files:Optional[list]=None, env:Optional[str]=None,
+                     extra_files:Optional[list]=None, env:Optional[str]=None, 
+                     X_train=None, y_train=None, model_outputs=None,
+                     model_file:Optional[str]=None, model_metrics:Optional[Union[str, dict]]=None,
+                     model_params:Optional[Union[str, dict]]=None,
                      wait_complete:Optional[bool]=False) -> Union[dict, NeomarilExecution]:
         """
         Runs a prediction from the current model.
@@ -569,12 +585,18 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             raise InputError('Invalid python version. Avaliable versions are 3.7, 3.8, 3.9, 3.10')
 
         if self.training_type == 'Custom':
-            exec_id = self.__upload_training(run_name, train_data, training_reference=training_reference,
-                                            python_version=python_version, source_file=source_file, env=env,
-                                            requirements_file=requirements_file, extra_files=extra_files)
+            exec_id = self.__upload_training(run_name, train_data=train_data, training_reference=training_reference,
+                                             python_version=python_version, source_file=source_file, env=env,
+                                             requirements_file=requirements_file, extra_files=extra_files)
 
         elif self.training_type == 'AutoML':
-            exec_id = self.__upload_training(run_name, train_data, conf_dict=conf_dict)
+            exec_id = self.__upload_training(run_name, train_data=train_data, conf_dict=conf_dict)
+
+        elif self.training_type == 'External':
+            exec_id = self.__upload_training(run_name, python_version=python_version,
+                                             requirements_file=requirements_file, extra_files=extra_files, 
+                                             X_train=X_train, y_train=y_train, model_outputs=model_outputs,
+                                             model_file=model_file, model_metrics=model_metrics, model_params=model_params)
 
         else:
             raise InputError('Invalid training type')
@@ -642,6 +664,22 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         """
         self.__refresh_execution_list()
         return [self.get_training_execution(e) for e in self.executions]
+    
+    @contextmanager
+    def log_train(self, name, X_train, y_train):
+        if self.training_type != "External":
+            raise TrainingError("Can only log external experiments.")
+        
+        try:
+            self.trainer = NeomarilTrainingLogger(name, X_train, y_train)
+            yield self.trainer
+
+        finally:
+            self.__upload_training(self.trainer.name, python_version=self.trainer.python_version,
+                                   requirements_file=self.trainer.requirements, extra_files=self.trainer.extras, 
+                                   X_train=self.trainer.X_train, y_train=self.trainer.y_train, model_outputs=self.trainer.model_outputs,
+                                   model_file=self.trainer.model, model_metrics=self.trainer.metrics, model_params=self.trainer.params)
+        
 
 class NeomarilTrainingClient(BaseNeomarilClient):
     """

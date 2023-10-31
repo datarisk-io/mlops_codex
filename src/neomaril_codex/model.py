@@ -983,12 +983,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         if operation=="Sync":
             input_type = "json"
             if schema:
-                if isinstance(schema, str):
-                    schema_file = open(schema, 'rb')
-                elif isinstance(schema, dict):
-                    schema_file = json.dumps(schema)
-                    
-                upload_data.append(("schema", ("schema.json", schema_file)))
+                upload_data.append(("schema", ("schema.json", parse_dict_or_file(schema))))
             else:
                 raise InputError("Schema file is mandatory for Sync models")
 

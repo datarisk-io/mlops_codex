@@ -1,4 +1,4 @@
-import requests
+import requests, json, io
 from neomaril_codex.exceptions import *
 from msal import PublicClientApplication
 
@@ -6,6 +6,15 @@ CLIENT_ID = '1432430b-d7b5-4081-b46b-7ca8ddffda26'
 AUTHORITY = 'https://datariskb2c.b2clogin.com/datariskb2c.onmicrosoft.com/B2C_1_NEOMARIL_API_SIGNIN'
 
 app = PublicClientApplication(CLIENT_ID, authority=AUTHORITY)
+
+def parse_dict_or_file(obj):
+    if isinstance(obj, str):
+        schema_file = open(obj, 'rb')
+    elif isinstance(obj, dict):
+        schema_file = io.StringIO()
+        json.dump(obj, schema_file).seek(0)
+
+    return obj
 
 def parse_url(url):
     if url.endswith('/'):
