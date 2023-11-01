@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import os
 import re
+from tempfile import TemporaryDirectory
 from typing import Union, Optional, List
 from contextlib import contextmanager
+
 import requests
 from time import sleep
 from neomaril_codex.base import *
@@ -18,7 +21,7 @@ class NeomarilTrainingLogger:
         self.name = name
         self.X_train = X_train
         self.y_train = y_train
-        self.model_output = None
+        self.model_outputs = None
         self.model = None
         self.metrics = {}
         self.params = {}
@@ -26,9 +29,15 @@ class NeomarilTrainingLogger:
         self.python_version = None
         self.extras = []
 
-        # TODO Create method to log files
+    def save_model(model):
+        self.model = model
+        self.params = model.get_params()
 
+    def save_metric(name, value):
+        self.metrics[name] = value 
 
+    def save_model_output(model_output):
+        self.model_outputs = model_output
 
 class NeomarilTrainingExecution(NeomarilExecution):
     """
@@ -481,8 +490,82 @@ class NeomarilTrainingExperiment(BaseNeomaril):
                 raise InputError("conf_dict is mandatory for AutoML training")
             
         elif self.training_type == 'External':
-            if python_version:
-                form_data['python_version'] = "Python"+python_version.replace('.', '')
+            upload_data = []
+
+            with TemporaryDirectory() as temp_dir:
+
+                #parquets
+                features_path = os.path.join(temp_dir, '/features.parquet')
+                target_path = os.path.join(temp_dir, '/target.parquet')
+                predictions_path = os.path.join(temp_dir, '/predictions.parquet')
+
+                X_train.to_parquet(features_path)
+                y_train.to_parquet(target_path)
+                model_outputs.to_parquet(predictions_path)
+
+                upload_data = [
+                    ("features", (file_extesions[features_path.split('.')[-1]], open(features_path, 'rb'))),
+                    ("target", (file_extesions[target_path.split('.')[-1]], open(target_path, 'rb'))),
+                    ("output", (file_extesions[predictions_path.split('.')[-1]], open(predictions_path, 'rb'))),
+                ]
+
+                # model 
+                model_path = os.path.join(temp_dir, '/model.pkl')
+                
+                with open(model_path, "wb") as f:
+                    pickle.dump(model, f)
+
+                upload_data.append(
+                    ("model",
+                    (file_extesions[model_path.split('.')[-1]], open(model_path, 'rb')))
+                )
+
+                # parameters 
+                params_path = os.path.join(temp_dir, '/params.json')
+                with open(params_path, "w") as f:
+                    json.dump(model_params, f)
+
+                upload_data.append(
+                    ("parameters",
+                    (file_extesions[model_path.split('.')[-1]], open(params_path, 'rb')))
+                )
+
+                if model_metrics:
+                    metrics_path = os.path.join(temp_dir, '/metrics.json')
+                    with open(metrics_path, "w") as f:
+                        json.dump(model_metrics, f)
+
+                    upload_data.append(
+                        ("metrics",
+                        (file_extesions[model_path.split('.')[-1]], open(metrics_path, 'rb')))
+                    )
+
+                if env:
+                    upload_data.append(("env", (".env", env)))
+
+                if env:
+                    upload_data.append(("requirements", ('.txt', requirements_file)))
+
+                if extra_files:
+                    extra_data = [('extra', (c.split('/')[-1], open(c, 'rb'))) for c in extra_files]
+                    upload_data += extra_data
+                
+                form_data['run_name'] = run_name
+
+                if python_version:
+                    form_data['python_version'] = "Python"+python_version.replace('.', '')
+
+                response = requests.post(url, data=form_data, files=upload_data, 
+                                 headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
+        
+                message = response.text
+
+                if response.status_code == 201:
+                    logger.info(message)
+                    return re.search(patt, message).group(1)
+                else:
+                    logger.error(ssage)
+                    raise InputError('Bad input for training upload')
 
 
         response = requests.post(url, data=form_data, files=upload_data, 
@@ -820,7 +903,7 @@ class NeomarilTrainingClient(BaseNeomarilClient):
         if model_type not in ['Classification', 'Regression', 'Unsupervised']:
             raise InputError(f'Invalid model_type {model_type}. Should be one of the following: Classification, Regression or Unsupervised')
 
-        if training_type not in ['Custom', 'AutoML']:
+        if training_type not in ['Custom', 'AutoML', 'External']:
             raise InputError(f'Invalid training_type {training_type}. Should be one of the following: Custom or AutoML')
 
         url = f"{self.base_url}/training/register/{group}"
