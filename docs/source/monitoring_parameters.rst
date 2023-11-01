@@ -1,7 +1,7 @@
 :orphan:
 
 Monitoring configuration
-====================
+========================
 
 
 {
