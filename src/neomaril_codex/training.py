@@ -3,6 +3,7 @@
 
 import os
 import re
+import pickle
 from tempfile import TemporaryDirectory
 from typing import Union, Optional, List
 from contextlib import contextmanager
@@ -29,15 +30,20 @@ class NeomarilTrainingLogger:
         self.python_version = None
         self.extras = []
 
-    def save_model(model):
+    def save_model(self, model, params=None):
         self.model = model
-        self.params = model.get_params()
 
-    def save_metric(name, value):
+    def save_metric(self, name, value):
         self.metrics[name] = value 
 
-    def save_model_output(model_output):
+    def save_model_output(self, model_output):
         self.model_outputs = model_output
+
+    def save_params(self, params):
+        self.params = params
+
+    def set_python_version(self, version):
+        self.python_version = version
 
 class NeomarilTrainingExecution(NeomarilExecution):
     """
@@ -495,49 +501,49 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             with TemporaryDirectory() as temp_dir:
 
                 #parquets
-                features_path = os.path.join(temp_dir, '/features.parquet')
-                target_path = os.path.join(temp_dir, '/target.parquet')
-                predictions_path = os.path.join(temp_dir, '/predictions.parquet')
+                features_path = os.path.join(temp_dir, 'features.parquet')
+                target_path = os.path.join(temp_dir, 'target.parquet')
+                predictions_path = os.path.join(temp_dir, 'predictions.parquet')
 
                 X_train.to_parquet(features_path)
                 y_train.to_parquet(target_path)
                 model_outputs.to_parquet(predictions_path)
 
                 upload_data = [
-                    ("features", (file_extesions[features_path.split('.')[-1]], open(features_path, 'rb'))),
-                    ("target", (file_extesions[target_path.split('.')[-1]], open(target_path, 'rb'))),
-                    ("output", (file_extesions[predictions_path.split('.')[-1]], open(predictions_path, 'rb'))),
+                    ("features", ('features.parquet', open(features_path, 'rb'))),
+                    ("target", ('target.parquet', open(target_path, 'rb'))),
+                    ("output", ('predictions.parquet', open(predictions_path, 'rb'))),
                 ]
 
                 # model 
-                model_path = os.path.join(temp_dir, '/model.pkl')
+                model_path = os.path.join(temp_dir, 'model.pkl')
                 
                 with open(model_path, "wb") as f:
-                    pickle.dump(model, f)
+                    pickle.dump(model_file, f)
 
                 upload_data.append(
                     ("model",
-                    (file_extesions[model_path.split('.')[-1]], open(model_path, 'rb')))
+                    ('model.pkl', open(model_path, 'rb')))
                 )
 
                 # parameters 
-                params_path = os.path.join(temp_dir, '/params.json')
+                params_path = os.path.join(temp_dir, 'params.json')
                 with open(params_path, "w") as f:
                     json.dump(model_params, f)
 
                 upload_data.append(
                     ("parameters",
-                    (file_extesions[model_path.split('.')[-1]], open(params_path, 'rb')))
+                    ('params.json', open(params_path, 'rb')))
                 )
 
                 if model_metrics:
-                    metrics_path = os.path.join(temp_dir, '/metrics.json')
+                    metrics_path = os.path.join(temp_dir, 'metrics.json')
                     with open(metrics_path, "w") as f:
                         json.dump(model_metrics, f)
 
                     upload_data.append(
                         ("metrics",
-                        (file_extesions[model_path.split('.')[-1]], open(metrics_path, 'rb')))
+                        ('metrics.json', open(metrics_path, 'rb')))
                     )
 
                 if env:
@@ -564,7 +570,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
                     logger.info(message)
                     return re.search(patt, message).group(1)
                 else:
-                    logger.error(ssage)
+                    logger.error(message)
                     raise InputError('Bad input for training upload')
 
 
