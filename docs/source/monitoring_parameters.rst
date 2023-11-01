@@ -1,16 +1,16 @@
 :orphan:
 
-AutoML configuration
+Monitoring configuration
 ====================
 
 
 {
     "period": "week", <string, Mandatory> indicates monitoring frequency running. Can be `day`, `week`, `month` or `year`
     "train_data" : {
-        "NeomarilTrainingExecution": "1", <string, Optional> é o id de execução do treino (SOMENTE se foi treinado dentro do neomaril)
-        "train_date_col": (optional[string]) o nome da coluna de data (de tempo mesmo) dos dados (NECESSÁRIO se não tiver o campo "train_date_ref")
-        "train_date_ref": "2022-09-01", (optional[string]) a data de aquisição dos dados (NECESSÁRIO se não tiver o campo "train_date_col", ou seja é necessário conter um, e exclusivamente um, dos campos: "train_date_col" ou exclusivo "train_date_ref")
+        "NeomarilTrainingExecution": "1", <string, Mandatory for model trained inside Neomaril> executionId from training promoted at Neomaril
+        // "train_date_col": "date", <string, Mandatory if no field "train_date_ref" was inserted> name of the date column for the records
+        "train_date_ref": "2022-09-01", <string, Mandatory if no field "train_date_col" was inserted> date the model data was acquired
     }
-    "input_cols": ["mean_radius", "mean_texture"] (list<string>) nome das colunas de features que o monitoramento executará. Precisa ser igual aos dados de treino no MLFlow e à saída da função de pré-processamento
-    "output_cols": ["proba", "pred"](list<string>) nome das colunas de saída da execução do monitoramento. Precisa ser igual aos dados de saída do MLFlow e à saída do da predição do modelo.
+    "input_cols": ["mean_radius", "mean_texture"] , <list[string]> name of the features columns that the monitoring will run. Need to be the same of the train data in MLFlow and the output of the pre-process function
+    "output_cols": ["proba", "pred"] , <list[string]> name of the output columns that the monitoring will run. Need to be the same of the output data in MLFlow and the output of the model scoring function
 }
