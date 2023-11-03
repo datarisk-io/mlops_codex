@@ -18,7 +18,16 @@ from neomaril_codex.exceptions import *
 patt = re.compile(r'(\d+)')
 
 class NeomarilTrainingLogger:
+    """A class for logging Neomaril training runs."""
     def __init__(self, name, X_train, y_train):
+        """
+        Initialize a new NeomarilTrainingLogger.
+
+        Args:
+            name: The name of the training run.
+            X_train: The training data.
+            y_train: The training labels.
+        """
         self.name = name
         self.X_train = X_train
         self.y_train = y_train
@@ -30,19 +39,50 @@ class NeomarilTrainingLogger:
         self.python_version = None
         self.extras = []
 
-    def save_model(self, model, params=None):
+    def save_model(self, model):
+        """
+        Save the trained model to the logger.
+
+        Args:
+            model: The trained model.
+        """
         self.model = model
 
     def save_metric(self, name, value):
+        """
+        Save a metric to the logger.
+
+        Args:
+            name: The name of the metric.
+            value: The value of the metric.
+        """
         self.metrics[name] = value 
 
     def save_model_output(self, model_output):
+        """
+        Save the model output to the logger.
+
+        Args:
+            model_output: The output of the trained model.
+        """
         self.model_outputs = model_output
 
     def save_params(self, params):
+        """
+        Save the training parameters to the logger.
+
+        Args:
+            params: The parameters used to train the model.
+        """
         self.params = params
 
     def set_python_version(self, version):
+        """
+        Set the Python version used to train the model.
+
+        Args:
+            version: The Python version.
+        """
         self.python_version = version
 
 class NeomarilTrainingExecution(NeomarilExecution):
@@ -448,7 +488,19 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             .env file to be used in your training enviroment. This will be encrypted in the server.
         extra_files : list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file. Just used when training_type is Custom
-        
+        X_train: pd.DataFrame, optional
+            The training data.
+        y_train : pd.Series, optional
+            The training labels.
+        model_outputs : pd.DataFrame, optional
+            The model outputs.
+        model_file : str, optional
+            The path to the trained model file.
+        model_metrics : Union[str, dict], optional
+            The path to a JSON file with the model metrics or a dictionary with the metrics.
+        model_params : Union[str, dict], optional
+            The path to a JSON file with the model parameters or a dictionary with the parameters.
+
         Raises
         ------
         InputError
@@ -587,6 +639,21 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
 
     def __send_request(self, url, data, files, headers):
+        """
+        Sends a POST request to the specified URL with the given data, files, and headers.
+
+        Args:
+            url: The URL to send the request to.
+            data: The data to send in the request body. (optional)
+            files: The files to send in the request body. (optional)
+            headers: The headers to send in the request. (optional)
+
+        Returns:
+            The response from the server.
+
+        Raises:
+            InputError: If the response status code is not 201.
+        """
         response = requests.post(url, data=data, files=files, headers=headers)
         
         message = response.text
