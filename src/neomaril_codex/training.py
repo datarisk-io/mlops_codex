@@ -515,31 +515,41 @@ class NeomarilTrainingExperiment(BaseNeomaril):
                     ("output", ('predictions.parquet', open(predictions_path, 'rb'))),
                 ]
 
-                # model 
-                model_path = os.path.join(temp_dir, 'model.pkl')
-                
-                with open(model_path, "wb") as f:
-                    pickle.dump(model_file, f)
+                if model_file:
+                    if isinstance(model_file, str):
+                        model_path = model_file
+                    else:
+                        model_path = os.path.join(temp_dir, 'model.pkl')
+                    
+                        with open(model_path, "wb") as f:
+                            pickle.dump(model_file, f)
 
-                upload_data.append(
-                    ("model",
-                    ('model.pkl', open(model_path, 'rb')))
-                )
+                    upload_data.append(
+                        ("model",
+                        ('model.pkl', open(model_path, 'rb')))
+                    )
 
-                # parameters 
-                params_path = os.path.join(temp_dir, 'params.json')
-                with open(params_path, "w") as f:
-                    json.dump(model_params, f)
+                if model_params:
+                    if isinstance(model_params, dict):
+                        params_path = os.path.join(temp_dir, 'params.json')
+                        with open(params_path, "w") as f:
+                            json.dump(model_params, f)
 
-                upload_data.append(
-                    ("parameters",
-                    ('params.json', open(params_path, 'rb')))
-                )
+                    elif isinstance(model_params, str):
+                        params_path = model_params
+
+                    upload_data.append(
+                        ("parameters",
+                        ('params.json', open(params_path, 'rb')))
+                    )
 
                 if model_metrics:
-                    metrics_path = os.path.join(temp_dir, 'metrics.json')
-                    with open(metrics_path, "w") as f:
-                        json.dump(model_metrics, f)
+                    if isinstance(model_metrics,str):
+                        metrics_path = model_metrics
+                    else:
+                        metrics_path = os.path.join(temp_dir, 'metrics.json')
+                        with open(metrics_path, "w") as f:
+                            json.dump(model_metrics, f)
 
                     upload_data.append(
                         ("metrics",
