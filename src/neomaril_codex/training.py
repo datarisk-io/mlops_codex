@@ -571,21 +571,23 @@ class NeomarilTrainingExperiment(BaseNeomaril):
                 if python_version:
                     form_data['python_version'] = "Python"+python_version.replace('.', '')
 
-                response = requests.post(url, data=form_data, files=upload_data, 
-                                 headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
-        
-                message = response.text
+                return self.__send_request(
+                    url,
+                    data=form_data,
+                    files=upload_data, 
+                    headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)}
+                )
 
-                if response.status_code == 201:
-                    logger.info(message)
-                    return re.search(patt, message).group(1)
-                else:
-                    logger.error(message)
-                    raise InputError('Bad input for training upload')
+        return self.__send_request(
+            url,
+            data=form_data,
+            files=upload_data, 
+            headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)}
+        )
 
 
-        response = requests.post(url, data=form_data, files=upload_data, 
-                                 headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
+    def __send_request(self, url, data, files, headers):
+        response = requests.post(url, data=data, files=files, headers=headers)
         
         message = response.text
 
