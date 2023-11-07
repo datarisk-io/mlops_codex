@@ -1,11 +1,6 @@
 import requests, json, io
+from cachetools.func import ttl_cache
 from neomaril_codex.exceptions import *
-from msal import PublicClientApplication
-
-CLIENT_ID = '1432430b-d7b5-4081-b46b-7ca8ddffda26'
-AUTHORITY = 'https://datariskb2c.b2clogin.com/datariskb2c.onmicrosoft.com/B2C_1_NEOMARIL_API_SIGNIN'
-
-app = PublicClientApplication(CLIENT_ID, authority=AUTHORITY)
 
 def parse_dict_or_file(obj):
     if isinstance(obj, str):
@@ -31,27 +26,20 @@ def try_login(login:str, password:str, base_url:str) -> bool:
     server_status = response.status_code
 
     if server_status == 200:
-      token = app.acquire_token_by_username_password(login, password, [CLIENT_ID])
-      if 'access_token' in token.keys():
-        return response.json()['Version']
-      else:
-        raise AuthenticationError(token.get('error_description', 'Invalid credentials.'))
-
+      token = refresh_token(login, password, base_url)
+      return token
     elif server_status == 401:
       raise AuthenticationError('Invalid credentials.')
 
     elif server_status >= 500:
       raise ServerError('Neomaril server unavailable at the moment.')
     
-
-def refresh_token(login:str, password:str):
-  accounts = [acc for acc in app.get_accounts() if acc['username'] == login]
-  if len(accounts) > 0:
-    token = app.acquire_token_silent([CLIENT_ID], account=accounts[0])
-  else:
-    token = app.acquire_token_by_username_password(login, password, [CLIENT_ID])
+@ttl_cache
+def refresh_token(login:str, password:str, base_url:str):
+  respose = requests.post(f'{base_url}/login', data={'user': login, 'password': password})
   
-  if 'access_token' in token.keys():
-    return token['access_token']
+  if respose.status_code == 200:
+    return respose.json()['Token']
   else:
-    raise AuthenticationError(token.get('error_description', 'Invalid credentials.'))
+    raise AuthenticationError(respose.text)
+
