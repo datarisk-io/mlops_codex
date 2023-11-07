@@ -52,12 +52,12 @@ class NeomarilTrainingExecution(NeomarilExecution):
 
         client = NeomarilTrainingClient('123456')
         client.create_group('ex_group', 'Group for example purpose')
-        training = client.create_training_experiment('Training example', 'Classification',  'Custom', 'ex_group')
+        training = client.create_training_experiment('Training example', 'Classification', 'ex_group')
         print(client.get_training(training.training_id, 'ex_group').training_data)
 
         data_path = './samples/train/'
 
-        run = training.run_training('First test', data_path+'dados.csv', training_reference='train_model', python_version='3.9', requirements_file=data_path+'requirements.txt', wait_complete=True)
+        run = training.run_training('First test', data_path+'dados.csv', training_reference='train_model', training_type='Custom', python_version='3.9', requirements_file=data_path+'requirements.txt', wait_complete=True)
         
         print(run.get_training_execution(run.exec_id))
         print(run.download_result())
@@ -341,12 +341,12 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
         client = NeomarilTrainingClient('123456')
         client.create_group('ex_group', 'Group for example purpose')
-        training = client.create_training_experiment('Training example', 'Classification',  'Custom', 'ex_group')
+        training = client.create_training_experiment('Training example', 'Classification', 'ex_group')
         print(client.get_training(training.training_id, 'ex_group').training_data)
 
         data_path = './samples/train/'
 
-        run = run = training.run_training('First test', data_path+'dados.csv', training_reference='train_model', python_version='3.9', requirements_file=data_path+'requirements.txt', wait_complete=True)
+        run = run = training.run_training('First test', data_path+'dados.csv', training_reference='train_model', training_type='Custom', python_version='3.9', requirements_file=data_path+'requirements.txt', wait_complete=True)
         
         print(run.get_training_execution(run.exec_id))
         print(run.download_result())
@@ -521,7 +521,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         self.executions = [c['Id'] for c in self.training_data['Executions']]
 
     def run_training(self, run_name:str, train_data:str, training_reference:Optional[str]=None, 
-                     python_version:str='3.8', conf_dict:Optional[Union[str, dict]]=None,
+                     training_type:str='Custom', python_version:str='3.8', conf_dict:Optional[Union[str, dict]]=None,
                      source_file:Optional[str]=None, requirements_file:Optional[str]=None,
                      extra_files:Optional[list]=None, env:Optional[str]=None,
                      wait_complete:Optional[bool]=False) -> Union[dict, NeomarilExecution]:
@@ -536,6 +536,8 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             Path of the file with train data.
         training_reference : str, optional
             The name of the training function inside the source file. Just used when training_type is Custom
+        training_type : str
+            Can be Custom, AutoML or External
         python_version : str, optional
             Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'. Just used when training_type is Custom
         conf_dict : Union[str, dict]
@@ -568,12 +570,15 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         if python_version not in ['3.7', '3.8', '3.9', '3.10']:
             raise InputError('Invalid python version. Avaliable versions are 3.7, 3.8, 3.9, 3.10')
 
-        if self.training_type == 'Custom':
+        if training_type not in ['Custom', 'AutoML', 'External']:
+            raise InputError(f'Invalid training_type {training_type}. Should be one of the following: Custom, AutoML or External')
+
+        if training_type == 'Custom':
             exec_id = self.__upload_training(run_name, train_data, training_reference=training_reference,
                                             python_version=python_version, source_file=source_file, env=env,
                                             requirements_file=requirements_file, extra_files=extra_files)
 
-        elif self.training_type == 'AutoML':
+        elif training_type == 'AutoML':
             exec_id = self.__upload_training(run_name, train_data, conf_dict=conf_dict)
 
         else:
@@ -734,7 +739,7 @@ class NeomarilTrainingClient(BaseNeomarilClient):
                                           password=self.__credentials[1], group=group, url=self.base_url)
     
 
-    def create_training_experiment(self, experiment_name:str, model_type:str, training_type:str, group:str='datarisk')-> NeomarilTrainingExperiment:
+    def create_training_experiment(self, experiment_name:str, model_type:str, group:str='datarisk')-> NeomarilTrainingExperiment:
         """
         Create a new training experiment on Neomaril.
 
@@ -744,8 +749,6 @@ class NeomarilTrainingClient(BaseNeomarilClient):
             The name of the experiment, in less than 32 characters
         model_type : str
             The name of the scoring function inside the source file.
-        training_type : str
-            Path of the source file. The file must have a scoring function that accepts two parameters: data (data for the request body of the model) and model_path (absolute path of where the file is located)
         group : str
             Group the model is inserted. Default to 'datarisk' (public group)
 
@@ -763,7 +766,7 @@ class NeomarilTrainingClient(BaseNeomarilClient):
         
         Example
         -------
-        >>> training = client.create_training_experiment('Training example', 'Classification',  'Custom', 'ex_group')
+        >>> training = client.create_training_experiment('Training example', 'Classification', 'ex_group')
         """       
         
         if group:
@@ -782,12 +785,9 @@ class NeomarilTrainingClient(BaseNeomarilClient):
         if model_type not in ['Classification', 'Regression', 'Unsupervised']:
             raise InputError(f'Invalid model_type {model_type}. Should be one of the following: Classification, Regression or Unsupervised')
 
-        if training_type not in ['Custom', 'AutoML']:
-            raise InputError(f'Invalid training_type {training_type}. Should be one of the following: Custom or AutoML')
-
         url = f"{self.base_url}/training/register/{group}"
 
-        data = {'experiment_name': experiment_name, 'model_type': model_type, 'training_type': training_type}
+        data = {'experiment_name': experiment_name, 'model_type': model_type}
 
         response = requests.post(url, data=data, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
 
