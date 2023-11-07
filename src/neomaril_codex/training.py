@@ -4,11 +4,11 @@
 import os
 import re
 import pickle
-from tempfile import TemporaryDirectory
 from typing import Union, Optional, List
 from contextlib import contextmanager
 
 import requests
+import pandas as pd
 from time import sleep
 from neomaril_codex.base import *
 from neomaril_codex.model import NeomarilModel
@@ -19,7 +19,7 @@ patt = re.compile(r'(\d+)')
 
 class NeomarilTrainingLogger:
     """A class for logging Neomaril training runs."""
-    def __init__(self, name, X_train, y_train):
+    def __init__(self, name : str, X_train : pd.DataFrame, y_train: pd.DataFrame, save_path : str = None):
         """
         Initialize a new NeomarilTrainingLogger.
 
@@ -38,6 +38,12 @@ class NeomarilTrainingLogger:
         self.requirements = None
         self.python_version = None
         self.extras = []
+        
+        if not save_path:
+            dir_name = self.name.replace(' ', '_')
+            if not os.path.exists(f'./{dir_name}'):
+                os.mkdir(f'./{dir_name}')
+            self.save_path = f'./{dir_name}'
 
     def save_model(self, model):
         """
@@ -67,16 +73,7 @@ class NeomarilTrainingLogger:
         """
         self.model_outputs = model_output
 
-    def save_params(self, params):
-        """
-        Save the training parameters to the logger.
-
-        Args:
-            params: The parameters used to train the model.
-        """
-        self.params = params
-
-    def set_python_version(self, version):
+    def set_python_version(self, version : str):
         """
         Set the Python version used to train the model.
 
@@ -84,6 +81,168 @@ class NeomarilTrainingLogger:
             version: The Python version.
         """
         self.python_version = version
+    
+    def set_requirements(self, requirements : str):
+        """
+        Set the project requirements.
+
+        Args:
+            requirements: The path of project requirements.
+        """
+        self.requirements = requirements
+
+    def save_plot(self, plot : str):
+        """
+        Save plot graphic image to the logger.
+
+        Args:
+            plot: A path of plot graphic image (jpg/png).
+        """
+        if os.path.exists(plot):
+            self.extra.append(plot)
+
+    def set_extra(self, extra : list):
+        """
+        Set the extra files list.
+
+        Args:
+            extra: A list of paths of the extra file.
+        """
+        self.extra = extra
+
+    def add_extra(self, filename : str, extra : Union[pd.DataFrame, str]):
+        """
+        Add an extra file in the extra file list.
+
+        Args:
+            extra: A path of an extra file or a list to include in extra file list.
+        """
+        if isinstance(extra, str):
+            if os.path.exists(extra):
+                self.extra.append(extra)
+            else:
+                raise FileNotFoundError('Extra file path not found!')
+            
+        elif isinstance(extra, pd.DataFrame):
+            self.extra.append(self.__to_parquet(filename, extra))
+
+    def __to_parquet(self, output_filename : str, input_data : pd.DataFrame):
+        """
+        Transform dataframe to parquet.
+
+        Args:
+            output_filename: The name of output filename to save.
+            input_data: A pandas dataframe to save.
+        """
+        path = os.path.join(self.save_path, f'{output_filename}.parquet')
+        input_data.to_parquet(path)
+        return path
+
+    def __to_json(self, output_filename : str, input_data : dict):
+        """
+        Transform dict to json.
+
+        Args:
+            output_filename: The name of output filename to save.
+            input_data: A dictionary to save.
+        """
+        path = os.path.join(self.save_path, f'{output_filename}.json')
+        with open(path, "w") as f:
+            json.dump(input_data, f)
+        return path
+    
+    def __to_pickle(self, output_filename : str, input_data):
+        """
+        Transform content to pickle.
+
+        Args:
+            output_filename: The name of output filename to save.
+            input_data: The content to save.
+        """
+        path = os.path.join(self.save_path, f'{output_filename}.pkl')
+        with open(path, "wb") as f:
+            pickle.dump(input_data, f)
+        return path
+
+    def _set_params(self):
+
+        missing = self.X_train.isna().sum()
+        missing_dict = {
+            k+"_missings": v
+            for k,v in missing[missing > 0].describe().to_dict().items()
+            if k != "count"
+        }
+
+        params = {
+            'shape': self.X_train.shape,
+            'cols_with_missing': len(missing[missing > 0]),
+            'missing_distribution': missing_dict
+        }
+
+        try:
+            params['pipeline_steps'] = list(self.model.named_steps.keys())
+        except:
+            params['pipeline_steps'] = [
+                str(self.model.__class__).replace("<class '", '').replace("'>", '')
+            ]
+
+        if 'get_all_params' in dir(self.model):
+            hyperparameters = {
+                f"hyperparam_{k}": v
+                for k, v in self.model.get_all_params().items()
+                if k != "task_type"
+            }
+        elif 'get_params' in dir(self.model):
+            hyperparameters = {
+                "hyperparam_" + k: v
+                for k, v in self.model.get_params().items()
+                if k not in params[
+                    'pipeline_steps'
+                ] + [
+                    "steps",
+                    'memory',
+                    'verbose'
+                ]
+            }
+            
+            params = {**params, **hyperparameters}
+
+        if len(self.y_train.value_counts()) < 10:
+            params["target_proportion"] = (
+                self.y_train.value_counts() / len(self.y_train)
+            ).to_dict()
+        else:
+            params["target_distribution"] = {
+                k: v
+                for k,v in self.y_train.describe().to_dict().items()
+                if k != "count"
+            }
+
+        self.params = params
+
+    def _processing_logging_inputs(self):
+        """
+        Processing of everything that be logged.
+        """
+        if isinstance(self.X_train, pd.DataFrame):
+            self.X_train = self.__to_parquet('features', self.X_train)
+
+        if isinstance(self.y_train, pd.DataFrame):
+            self.y_train = self.__to_parquet('target', self.y_train)
+
+        if isinstance(self.model_outputs, pd.DataFrame):
+            self.model_outputs = self.__to_parquet('predictions', self.model_outputs)
+
+        if self.model:
+            self.model = self.__to_pickle('model', self.model)
+
+        if self.params:
+            self._set_params()
+            self.params = self.__to_json('params', self.params)
+
+        if self.metrics:
+            self.metrics = self.__to_json('metrics', self.metrics)
+
 
 class NeomarilTrainingExecution(NeomarilExecution):
     """
@@ -548,65 +707,56 @@ class NeomarilTrainingExperiment(BaseNeomaril):
                 raise InputError("conf_dict is mandatory for AutoML training")
             
         elif self.training_type == 'External':
+            form_data = {}
             upload_data = []
 
-            with TemporaryDirectory() as temp_dir:
-
-                #parquets
-                features_path = os.path.join(temp_dir, 'features.parquet')
-                target_path = os.path.join(temp_dir, 'target.parquet')
-                predictions_path = os.path.join(temp_dir, 'predictions.parquet')
-
-                X_train.to_parquet(features_path)
-                y_train.to_parquet(target_path)
-                model_outputs.to_parquet(predictions_path)
-
-                upload_data = [
-                    ("features", ('features.parquet', open(features_path, 'rb'))),
-                    ("target", ('target.parquet', open(target_path, 'rb'))),
-                    ("output", ('predictions.parquet', open(predictions_path, 'rb'))),
+            if X_train:
+                print(f'X_train:{X_train}')
+                upload_data += [
+                    ("features", ('features.parquet', open(X_train, 'rb')))
                 ]
 
-                if model_file:
-                    if isinstance(model_file, str):
-                        model_path = model_file
-                    else:
-                        model_path = os.path.join(temp_dir, 'model.pkl')
-                    
-                        with open(model_path, "wb") as f:
-                            pickle.dump(model_file, f)
+            if y_train:
+                print(f'y_train:{y_train}')
+                upload_data += [
+                    ("target", ('target.parquet', open(y_train, 'rb')))
+                ]
+            
+            if model_outputs:
+                print(f'model_outputs:{model_outputs}')
+                upload_data += [
+                    ("output", ('predictions.parquet', open(model_outputs, 'rb'))),
+                ]
 
-                    upload_data.append(
-                        ("model",
-                        ('model.pkl', open(model_path, 'rb')))
-                    )
+            if model_file:
+                print(f'model_file:{model_file}')
+                upload_data += [
+                    ("model", open(model_file, 'rb'))
+                ]
 
-                if model_params:
-                    if isinstance(model_params, dict):
-                        params_path = os.path.join(temp_dir, 'params.json')
-                        with open(params_path, "w") as f:
-                            json.dump(model_params, f)
+            if model_params:
+                print(f'model_params:{model_params}')
+                upload_data += [
+                    ("parameters", open(model_params, 'rb'))
+                ]
 
-                    elif isinstance(model_params, str):
-                        params_path = model_params
+            if model_metrics:
+                print(f'model_metrics:{model_metrics}')
+                upload_data += [
+                    ("metrics", open(model_metrics, 'rb'))
+                ]
 
-                    upload_data.append(
-                        ("parameters",
-                        ('params.json', open(params_path, 'rb')))
-                    )
+            if requirements_file:
+                upload_data += [("requirements", open(requirements_file, 'rb'))]
 
-                if model_metrics:
-                    if isinstance(model_metrics,str):
-                        metrics_path = model_metrics
-                    else:
-                        metrics_path = os.path.join(temp_dir, 'metrics.json')
-                        with open(metrics_path, "w") as f:
-                            json.dump(model_metrics, f)
+            if extra_files:
+                extra_data = [('extra', open(extra_file, 'rb')) for extra_file in extra_files]
+                upload_data += extra_data
+            
+            form_data['run_name'] = run_name
 
-                    upload_data.append(
-                        ("metrics",
-                        ('metrics.json', open(metrics_path, 'rb')))
-                    )
+            if python_version:
+                form_data['python_version'] = "Python"+python_version.replace('.', '')
 
                 if env:
                     upload_data.append(("env", (".env", env)))
@@ -637,25 +787,6 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)}
         )
 
-
-    def __send_request(self, url, data, files, headers):
-        """
-        Sends a POST request to the specified URL with the given data, files, and headers.
-
-        Args:
-            url: The URL to send the request to.
-            data: The data to send in the request body. (optional)
-            files: The files to send in the request body. (optional)
-            headers: The headers to send in the request. (optional)
-
-        Returns:
-            The response from the server.
-
-        Raises:
-            InputError: If the response status code is not 201.
-        """
-        response = requests.post(url, data=data, files=files, headers=headers)
-        
         message = response.text
 
         if response.status_code == 201:
@@ -843,6 +974,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             yield self.trainer
 
         finally:
+            self.trainer._processing_logging_inputs()
             self.__upload_training(self.trainer.name, python_version=self.trainer.python_version,
                                    requirements_file=self.trainer.requirements, extra_files=self.trainer.extras, 
                                    X_train=self.trainer.X_train, y_train=self.trainer.y_train, model_outputs=self.trainer.model_outputs,
