@@ -773,19 +773,23 @@ class NeomarilTrainingExperiment(BaseNeomaril):
                 if python_version:
                     form_data['python_version'] = "Python"+python_version.replace('.', '')
 
-                return self.__send_request(
-                    url,
-                    data=form_data,
-                    files=upload_data, 
-                    headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)}
-                )
-
-        return self.__send_request(
+        
+        token = refresh_token(*self.__credentials, self.base_url)
+        response = requests.post(
             url,
             data=form_data,
             files=upload_data, 
-            headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)}
+            headers={'Authorization': 'Bearer ' + token}
         )
+
+        message = response.text
+
+        if response.status_code == 201:
+            print("logger.info(" + message)
+            return re.search(patt, message).group(1)
+        else:
+            print("logger.error(" + message)
+            raise InputError('Bad input for training upload')
 
     def __execute_training(self, exec_id:str) -> None:
         """
