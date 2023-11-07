@@ -787,15 +787,6 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)}
         )
 
-        message = response.text
-
-        if response.status_code == 201:
-            logger.info(message)
-            return re.search(patt, message).group(1)
-        else:
-            logger.error(message)
-            raise InputError('Bad input for training upload')
-
     def __execute_training(self, exec_id:str) -> None:
         """
         Builds the model execution environment
