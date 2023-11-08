@@ -2,8 +2,9 @@
 # coding: utf-8
 
 import os
+import sys
 import re
-import pickle
+import cloudpickle
 from typing import Union, Optional, List
 from contextlib import contextmanager
 
@@ -18,7 +19,32 @@ from neomaril_codex.exceptions import *
 patt = re.compile(r'(\d+)')
 
 class NeomarilTrainingLogger:
-    """A class for logging Neomaril training runs."""
+    """A class for logging Neomaril training runs.
+    
+    Example
+    -------
+
+    .. code-block:: python
+        with training.log_train('Teste 1', X, y) as logger:
+            pipe.fit(X, y)
+            logger.save_model(pipe)
+
+            params = pipe.get_params()
+            params.pop('steps')
+            params.pop('simpleimputer')
+            params.pop('lgbmclassifier')
+            logger.save_params(params)
+
+            model_output = pd.DataFrame({"pred": pipe.predict(X), "proba": pipe.predict_proba(X)[:,1]})
+            logger.save_model_output(model_output)
+
+            auc = cross_val_score(pipe, X, y, cv=5, scoring="roc_auc")
+            f_score = cross_val_score(pipe, X, y, cv=5, scoring="f1")
+            logger.save_metric(name='auc', value=auc.mean())
+            logger.save_metric(name='f1_score', value=f_score.mean())
+
+            logger.set_python_version('3.10')
+        """
     def __init__(self, name : str, X_train : pd.DataFrame, y_train: pd.DataFrame, save_path : str = None):
         """
         Initialize a new NeomarilTrainingLogger.
@@ -36,7 +62,7 @@ class NeomarilTrainingLogger:
         self.metrics = {}
         self.params = {}
         self.requirements = None
-        self.python_version = None
+        self.python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
         self.extras = []
         
         if not save_path:
@@ -161,7 +187,7 @@ class NeomarilTrainingLogger:
         """
         path = os.path.join(self.save_path, f'{output_filename}.pkl')
         with open(path, "wb") as f:
-            pickle.dump(input_data, f)
+            cloudpickle.dump(input_data, f)
         return path
 
     def _set_params(self):
@@ -218,7 +244,7 @@ class NeomarilTrainingLogger:
                 if k != "count"
             }
 
-        self.params = params
+        self.params = {**params, **self.params}
 
     def _processing_logging_inputs(self):
         """
