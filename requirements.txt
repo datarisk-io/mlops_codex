@@ -2,4 +2,7 @@ requests==2.26.0
 loguru==0.6.0
 pyyaml
 python-dotenv==0.21.0
-msal
+cachetools
+cloudpickle>=2.0.0
+pyarrow>=1.0.0
+pandas>=1.0.0

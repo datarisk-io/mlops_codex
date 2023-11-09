@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import io
+import os
+import sys
 import re
+import cloudpickle
 from typing import Union, Optional, List
+from contextlib import contextmanager
+
 import requests
-import json
+import pandas as pd
 from time import sleep
 from neomaril_codex.base import *
 from neomaril_codex.model import NeomarilModel
@@ -13,6 +17,258 @@ from neomaril_codex.__utils import *
 from neomaril_codex.exceptions import *
 
 patt = re.compile(r'(\d+)')
+
+class NeomarilTrainingLogger:
+    """A class for logging Neomaril training runs.
+    
+    Example
+    -------
+
+    .. code-block:: python
+        with training.log_train('Teste 1', X, y) as logger:
+            pipe.fit(X, y)
+            logger.save_model(pipe)
+
+            params = pipe.get_params()
+            params.pop('steps')
+            params.pop('simpleimputer')
+            params.pop('lgbmclassifier')
+            logger.save_params(params)
+
+            model_output = pd.DataFrame({"pred": pipe.predict(X), "proba": pipe.predict_proba(X)[:,1]})
+            logger.save_model_output(model_output)
+
+            auc = cross_val_score(pipe, X, y, cv=5, scoring="roc_auc")
+            f_score = cross_val_score(pipe, X, y, cv=5, scoring="f1")
+            logger.save_metric(name='auc', value=auc.mean())
+            logger.save_metric(name='f1_score', value=f_score.mean())
+
+            logger.set_python_version('3.10')
+        """
+    def __init__(self, name : str, X_train : pd.DataFrame, y_train: pd.DataFrame, save_path : str = None):
+        """
+        Initialize a new NeomarilTrainingLogger.
+
+        Args:
+            name: The name of the training run.
+            X_train: The training data.
+            y_train: The training labels.
+        """
+        self.name = name
+        self.X_train = X_train
+        self.y_train = y_train
+        self.model_outputs = None
+        self.model = None
+        self.metrics = {}
+        self.params = {}
+        self.requirements = None
+        self.python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+        self.extras = []
+        
+        if not save_path:
+            dir_name = self.name.replace(' ', '_')
+            if not os.path.exists(f'./{dir_name}'):
+                os.mkdir(f'./{dir_name}')
+            self.save_path = f'./{dir_name}'
+
+    def save_model(self, model):
+        """
+        Save the trained model to the logger.
+
+        Args:
+            model: The trained model.
+        """
+        self.model = model
+
+    def save_metric(self, name, value):
+        """
+        Save a metric to the logger.
+
+        Args:
+            name: The name of the metric.
+            value: The value of the metric.
+        """
+        self.metrics[name] = value 
+
+    def save_model_output(self, model_output):
+        """
+        Save the model output to the logger.
+
+        Args:
+            model_output: The output of the trained model.
+        """
+        self.model_outputs = model_output
+
+    def set_python_version(self, version : str):
+        """
+        Set the Python version used to train the model.
+
+        Args:
+            version: The Python version.
+        """
+        self.python_version = version
+    
+    def set_requirements(self, requirements : str):
+        """
+        Set the project requirements.
+
+        Args:
+            requirements: The path of project requirements.
+        """
+        self.requirements = requirements
+
+    def save_plot(self, plot : str):
+        """
+        Save plot graphic image to the logger.
+
+        Args:
+            plot: A path of plot graphic image (jpg/png).
+        """
+        if os.path.exists(plot):
+            self.extra.append(plot)
+
+    def set_extra(self, extra : list):
+        """
+        Set the extra files list.
+
+        Args:
+            extra: A list of paths of the extra file.
+        """
+        self.extra = extra
+
+    def add_extra(self, filename : str, extra : Union[pd.DataFrame, str]):
+        """
+        Add an extra file in the extra file list.
+
+        Args:
+            extra: A path of an extra file or a list to include in extra file list.
+        """
+        if isinstance(extra, str):
+            if os.path.exists(extra):
+                self.extra.append(extra)
+            else:
+                raise FileNotFoundError('Extra file path not found!')
+            
+        elif isinstance(extra, pd.DataFrame):
+            self.extra.append(self.__to_parquet(filename, extra))
+
+    def __to_parquet(self, output_filename : str, input_data : pd.DataFrame):
+        """
+        Transform dataframe to parquet.
+
+        Args:
+            output_filename: The name of output filename to save.
+            input_data: A pandas dataframe to save.
+        """
+        path = os.path.join(self.save_path, f'{output_filename}.parquet')
+        input_data.to_parquet(path)
+        return path
+
+    def __to_json(self, output_filename : str, input_data : dict):
+        """
+        Transform dict to json.
+
+        Args:
+            output_filename: The name of output filename to save.
+            input_data: A dictionary to save.
+        """
+        path = os.path.join(self.save_path, f'{output_filename}.json')
+        with open(path, "w") as f:
+            json.dump(input_data, f)
+        return path
+    
+    def __to_pickle(self, output_filename : str, input_data):
+        """
+        Transform content to pickle.
+
+        Args:
+            output_filename: The name of output filename to save.
+            input_data: The content to save.
+        """
+        path = os.path.join(self.save_path, f'{output_filename}.pkl')
+        with open(path, "wb") as f:
+            cloudpickle.dump(input_data, f)
+        return path
+
+    def _set_params(self):
+
+        missing = self.X_train.isna().sum()
+        missing_dict = {
+            k+"_missings": v
+            for k,v in missing[missing > 0].describe().to_dict().items()
+            if k != "count"
+        }
+
+        params = {
+            'shape': self.X_train.shape,
+            'cols_with_missing': len(missing[missing > 0]),
+            'missing_distribution': missing_dict
+        }
+
+        try:
+            params['pipeline_steps'] = list(self.model.named_steps.keys())
+        except:
+            params['pipeline_steps'] = [
+                str(self.model.__class__).replace("<class '", '').replace("'>", '')
+            ]
+
+        if 'get_all_params' in dir(self.model):
+            hyperparameters = {
+                f"hyperparam_{k}": v
+                for k, v in self.model.get_all_params().items()
+                if k != "task_type"
+            }
+        elif 'get_params' in dir(self.model):
+            hyperparameters = {
+                "hyperparam_" + k: v
+                for k, v in self.model.get_params().items()
+                if k not in params[
+                    'pipeline_steps'
+                ] + [
+                    "steps",
+                    'memory',
+                    'verbose'
+                ]
+            }
+            
+            params = {**params, **hyperparameters}
+
+        if len(self.y_train.value_counts()) < 10:
+            params["target_proportion"] = (
+                self.y_train.value_counts() / len(self.y_train)
+            ).to_dict()
+        else:
+            params["target_distribution"] = {
+                k: v
+                for k,v in self.y_train.describe().to_dict().items()
+                if k != "count"
+            }
+
+        self.params = {**params, **self.params}
+
+    def _processing_logging_inputs(self):
+        """
+        Processing of everything that be logged.
+        """
+        if isinstance(self.X_train, pd.DataFrame):
+            self.X_train = self.__to_parquet('features', self.X_train)
+
+        if isinstance(self.y_train, pd.DataFrame):
+            self.y_train = self.__to_parquet('target', self.y_train)
+
+        if isinstance(self.model_outputs, pd.DataFrame):
+            self.model_outputs = self.__to_parquet('predictions', self.model_outputs)
+
+        if self.model:
+            self.model = self.__to_pickle('model', self.model)
+
+        if self.params:
+            self._set_params()
+            self.params = self.__to_json('params', self.params)
+
+        if self.metrics:
+            self.metrics = self.__to_json('metrics', self.metrics)
+
 
 class NeomarilTrainingExecution(NeomarilExecution):
     """
@@ -154,12 +410,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
         if operation=="Sync":
             input_type = "json"
             if schema:
-                if isinstance(schema, str):
-                    schema_file = open(schema, 'rb')
-                elif isinstance(schema, dict):
-                    schema_file = io.StringIO()
-                    json.dump(schema, schema_file).seek(0)
-                upload_data.append(("schema", ("schema.json", schema_file)))
+                upload_data.append(("schema", ("schema.json", parse_dict_or_file(schema))))
             else:
                 raise InputError("Schema file is mandatory for Sync models")
 
@@ -169,7 +420,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
 
         form_data['input_type'] = input_type
             
-        response = requests.post(url, data=form_data, files=upload_data, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
+        response = requests.post(url, data=form_data, files=upload_data, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
         
         if response.status_code == 201:
             data = response.json()
@@ -197,7 +448,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
 
         url = f"{self.base_url}/training/status/{self.group}/{self.exec_id}"
 
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
         if response.status_code not in [200, 410]:
             logger.error(response.text)
             raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
@@ -208,7 +459,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
         self.execution_data['ExecutionState'] = result['Status']
         if self.status == 'Succeeded':
             url = f"{self.base_url}/training/describe/{self.group}/{self.training_id}/{self.exec_id}"
-            response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
+            response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
             self.execution_data = response.json()['Description']
             self.run_data = self.execution_data['RunData']
             try:
@@ -237,7 +488,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
         url = f"{self.base_url}/model/{operation}/host/{self.group}/{model_id}"
         if operation == 'sync':
             url = url.replace('7070','7071')
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
         if response.status_code == 202:
             logger.info(f"Model host in process - Hash: {model_id}")
         else:
@@ -354,7 +605,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
     def __init__(self, training_id:str, login:Optional[str]=None, password:Optional[str]=None, 
                  group:str="datarisk", url:str='https://neomaril.staging.datarisk.net/') -> None:
-        super().__init__()
+        super().__init__(url)
         load_dotenv()
         logger.info('Loading .env')
 
@@ -367,7 +618,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         try_login(*self.__credentials, self.base_url)
         
         url = f"{self.base_url}/training/describe/{self.group}/{self.training_id}"
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
     
         if response.status_code == 404:
             raise ModelError(f'Experiment "{training_id}" not found.')
@@ -392,10 +643,12 @@ class NeomarilTrainingExperiment(BaseNeomaril):
     def __str__(self):
         return f'NEOMARIL training experiment "{self.experiment_name} (Group: {self.group}, Id: {self.training_id})"'
     
-    def __upload_training(self, run_name:str, train_data:str, training_reference:Optional[str]=None, 
-                                                python_version:str='3.8', conf_dict:Optional[Union[str, dict]]=None,
-                                                source_file:Optional[str]=None, requirements_file:Optional[str]=None,
-                                                env:Optional[str]=None, extra_files:Optional[list]=None) -> str:
+    def __upload_training(self, run_name:str, train_data:Optional[str]=None, training_reference:Optional[str]=None, 
+                          python_version:str='3.8', conf_dict:Optional[Union[str, dict]]=None,
+                          source_file:Optional[str]=None, requirements_file:Optional[str]=None,
+                          env:Optional[str]=None, X_train=None, y_train=None, model_outputs=None,
+                          model_file:Optional[str]=None, model_metrics:Optional[Union[str, dict]]=None,
+                          model_params:Optional[Union[str, dict]]=None, extra_files:Optional[list]=None) -> str:
         
         """
         Upload the files to the server
@@ -420,7 +673,19 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             .env file to be used in your training enviroment. This will be encrypted in the server.
         extra_files : list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file. Just used when training_type is Custom
-        
+        X_train: pd.DataFrame, optional
+            The training data.
+        y_train : pd.Series, optional
+            The training labels.
+        model_outputs : pd.DataFrame, optional
+            The model outputs.
+        model_file : str, optional
+            The path to the trained model file.
+        model_metrics : Union[str, dict], optional
+            The path to a JSON file with the model metrics or a dictionary with the metrics.
+        model_params : Union[str, dict], optional
+            The path to a JSON file with the model parameters or a dictionary with the parameters.
+
         Raises
         ------
         InputError
@@ -434,9 +699,11 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         
         url = f"{self.base_url}/training/upload/{self.group}/{self.training_id}"
 
-        upload_data = [
-                ("train_data", (train_data.split('/')[-1], open(train_data, "rb")))
-            ]
+        upload_data = []
+        form_data = {'run_name': run_name}
+
+        if self.training_type != 'External':
+            upload_data.append(("train_data", (train_data.split('/')[-1], open(train_data, "rb"))))
 
         if self.training_type == 'Custom':
         
@@ -455,33 +722,99 @@ class NeomarilTrainingExperiment(BaseNeomaril):
                 
                 upload_data += extra_data
                 
-            form_data = {'run_name': run_name, 'training_reference': training_reference,
-                                    'python_version': "Python"+python_version.replace('.', '')}
+            form_data['training_reference']= training_reference,
+            form_data['python_version'] = "Python"+python_version.replace('.', '')
         
         elif self.training_type == 'AutoML':
                 
-            form_data = {'run_name': run_name}
-
             if conf_dict:
-                if isinstance(conf_dict, str):
-                    schema_file = open(conf_dict, 'rb')
-                elif isinstance(conf_dict, dict):
-                    schema_file = io.StringIO()
-                    json.dump(conf_dict, schema_file).seek(0)
-                upload_data.append(("conf_dict", ("conf.json", schema_file)))
+                upload_data.append(("conf_dict", ("conf.json", parse_dict_or_file(conf_dict))))
             else:
                 raise InputError("conf_dict is mandatory for AutoML training")
+            
+        elif self.training_type == 'External':
+            form_data = {}
+            upload_data = []
 
-        response = requests.post(url, data=form_data, files=upload_data, 
-                                 headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
+            if X_train:
+                print(f'X_train:{X_train}')
+                upload_data += [
+                    ("features", ('features.parquet', open(X_train, 'rb')))
+                ]
+
+            if y_train:
+                print(f'y_train:{y_train}')
+                upload_data += [
+                    ("target", ('target.parquet', open(y_train, 'rb')))
+                ]
+            
+            if model_outputs:
+                print(f'model_outputs:{model_outputs}')
+                upload_data += [
+                    ("output", ('predictions.parquet', open(model_outputs, 'rb'))),
+                ]
+
+            if model_file:
+                print(f'model_file:{model_file}')
+                upload_data += [
+                    ("model", open(model_file, 'rb'))
+                ]
+
+            if model_params:
+                print(f'model_params:{model_params}')
+                upload_data += [
+                    ("parameters", open(model_params, 'rb'))
+                ]
+
+            if model_metrics:
+                print(f'model_metrics:{model_metrics}')
+                upload_data += [
+                    ("metrics", open(model_metrics, 'rb'))
+                ]
+
+            if requirements_file:
+                upload_data += [("requirements", open(requirements_file, 'rb'))]
+
+            if extra_files:
+                extra_data = [('extra', open(extra_file, 'rb')) for extra_file in extra_files]
+                upload_data += extra_data
+            
+            form_data['run_name'] = run_name
+
+            if python_version:
+                form_data['python_version'] = "Python"+python_version.replace('.', '')
+
+                if env:
+                    upload_data.append(("env", (".env", env)))
+
+                if env:
+                    upload_data.append(("requirements", ('.txt', requirements_file)))
+
+                if extra_files:
+                    extra_data = [('extra', (c.split('/')[-1], open(c, 'rb'))) for c in extra_files]
+                    upload_data += extra_data
+                
+                form_data['run_name'] = run_name
+
+                if python_version:
+                    form_data['python_version'] = "Python"+python_version.replace('.', '')
+
         
+        token = refresh_token(*self.__credentials, self.base_url)
+        response = requests.post(
+            url,
+            data=form_data,
+            files=upload_data, 
+            headers={'Authorization': 'Bearer ' + token}
+        )
+
         message = response.text
 
         if response.status_code == 201:
-            logger.info(message)
+            print("logger.info(" + message)
             return re.search(patt, message).group(1)
         else:
-            logger.error(message)
+            print("logger.error(" + message)
             raise InputError('Bad input for training upload')
 
     def __execute_training(self, exec_id:str) -> None:
@@ -500,7 +833,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         """
         
         url = f"{self.base_url}/training/execute/{self.group}/{self.training_id}/{exec_id}"
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
         if response.status_code == 200:
             logger.info(f"Model training starting - Hash: {self.training_id}")
         else:
@@ -509,7 +842,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         
     def __refresh_execution_list(self):
         url = f"{self.base_url}/training/describe/{self.group}/{self.training_id}"
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
     
         if response.status_code == 404:
             raise ModelError(f'Experiment "{self.training_id}" not found.')
@@ -520,10 +853,13 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         self.training_data = response.json()['Description']
         self.executions = [c['Id'] for c in self.training_data['Executions']]
 
-    def run_training(self, run_name:str, train_data:str, training_reference:Optional[str]=None, 
-                     training_type:str='Custom', python_version:str='3.8', conf_dict:Optional[Union[str, dict]]=None,
+    def run_training(self, run_name:str, train_data:Optional[str]=None, training_reference:Optional[str]=None, 
+                     python_version:str='3.8', conf_dict:Optional[Union[str, dict]]=None, training_type:str='Custom', 
                      source_file:Optional[str]=None, requirements_file:Optional[str]=None,
-                     extra_files:Optional[list]=None, env:Optional[str]=None,
+                     extra_files:Optional[list]=None, env:Optional[str]=None, 
+                     X_train=None, y_train=None, model_outputs=None,
+                     model_file:Optional[str]=None, model_metrics:Optional[Union[str, dict]]=None,
+                     model_params:Optional[Union[str, dict]]=None,
                      wait_complete:Optional[bool]=False) -> Union[dict, NeomarilExecution]:
         """
         Runs a prediction from the current model.
@@ -574,12 +910,18 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             raise InputError(f'Invalid training_type {training_type}. Should be one of the following: Custom, AutoML or External')
 
         if training_type == 'Custom':
-            exec_id = self.__upload_training(run_name, train_data, training_reference=training_reference,
-                                            python_version=python_version, source_file=source_file, env=env,
-                                            requirements_file=requirements_file, extra_files=extra_files)
+            exec_id = self.__upload_training(run_name, train_data=train_data, training_reference=training_reference,
+                                             python_version=python_version, source_file=source_file, env=env,
+                                             requirements_file=requirements_file, extra_files=extra_files)
 
         elif training_type == 'AutoML':
-            exec_id = self.__upload_training(run_name, train_data, conf_dict=conf_dict)
+            exec_id = self.__upload_training(run_name, train_data=train_data, conf_dict=conf_dict)
+
+        elif training_type == 'External':
+            exec_id = self.__upload_training(run_name, python_version=python_version,
+                                             requirements_file=requirements_file, extra_files=extra_files, 
+                                             X_train=X_train, y_train=y_train, model_outputs=model_outputs,
+                                             model_file=model_file, model_metrics=model_metrics, model_params=model_params)
 
         else:
             raise InputError('Invalid training type')
@@ -647,6 +989,23 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         """
         self.__refresh_execution_list()
         return [self.get_training_execution(e) for e in self.executions]
+    
+    @contextmanager
+    def log_train(self, name, X_train, y_train):
+        if self.training_type != "External":
+            raise TrainingError("Can only log external experiments.")
+        
+        try:
+            self.trainer = NeomarilTrainingLogger(name, X_train, y_train)
+            yield self.trainer
+
+        finally:
+            self.trainer._processing_logging_inputs()
+            self.__upload_training(self.trainer.name, python_version=self.trainer.python_version,
+                                   requirements_file=self.trainer.requirements, extra_files=self.trainer.extras, 
+                                   X_train=self.trainer.X_train, y_train=self.trainer.y_train, model_outputs=self.trainer.model_outputs,
+                                   model_file=self.trainer.model, model_metrics=self.trainer.metrics, model_params=self.trainer.params)
+        
 
 class NeomarilTrainingClient(BaseNeomarilClient):
     """
@@ -789,7 +1148,7 @@ class NeomarilTrainingClient(BaseNeomarilClient):
 
         data = {'experiment_name': experiment_name, 'model_type': model_type}
 
-        response = requests.post(url, data=data, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
+        response = requests.post(url, data=data, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
 
         if response.status_code < 300:
             response_data = response.json()
