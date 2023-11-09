@@ -18,7 +18,7 @@ class NeomarilPreprocessing(BaseNeomaril):
         load_dotenv()
         logger.info('Loading .env')
 
-        super().__init__()
+        super().__init__(url)
         self.__credentials = (login if login else os.getenv('NEOMARIL_USER'), password if password else os.getenv('NEOMARIL_PASSWORD'))
         self.preprocessing_id = preprocessing_id
         self.group = group
@@ -29,7 +29,7 @@ class NeomarilPreprocessing(BaseNeomaril):
         try_login(*self.__credentials, self.base_url)
         
         url = f"{self.base_url}/preprocessing/list"
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
 
         results = response.json()
         for result in results.get('Results'):
@@ -252,7 +252,7 @@ class NeomarilPreprocessing(BaseNeomaril):
 
 		"""
         url = f"{self.base_url}/preprocessing/status/{self.group}/{self.preprocessing_id}"
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
         if response.status_code < 300:
             return response.json()
         else:
@@ -292,7 +292,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         """
 
         url = f"{self.base_url}/preprocessing/status/{group}/{preprocessing_id}"
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
         if response.status_code not in [200, 410]:
             raise PreprocessingError(f'Preprocessing "{preprocessing_id}" not found')
         
@@ -406,7 +406,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         if only_deployed:
             query['state'] = 'Deployed'
 
-        response = requests.get(url, params=query, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
+        response = requests.get(url, params=query, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
         
         if response.status_code == 200:
             results = response.json()['Results']
@@ -536,7 +536,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
             
         form_data = {'name': preprocessing_name, 'script_reference': preprocessing_reference, 'operation': operation, 'python_version': "Python"+python_version.replace('.', '')}
             
-        response = requests.post(url, data=form_data, files=upload_data, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
+        response = requests.post(url, data=form_data, files=upload_data, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
         
         if response.status_code == 201:
             data = response.json()
@@ -570,7 +570,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         if operation == 'sync':
             url = url.replace('localhost:7070', 'localhost:7071')
 
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
         if response.status_code == 202:
             logger.info(f"Preprocessing host in process - Hash: {preprocessing_id}")
         else:

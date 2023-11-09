@@ -13,8 +13,8 @@ class BaseNeomaril:
 	Super base class to initialize other variables and URLs for other Neomaril classes.
     """
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, base_url) -> None:
+        self.base_url = base_url
 
     def _logs(self, url, creds, start:Optional[str]=None, end:Optional[str]=None, routine:Optional[str]=None, type:Optional[str]=None):
        
@@ -39,7 +39,7 @@ class BaseNeomaril:
             query['type'] = type
 
         response = requests.get(url, params=query,
-                            headers={'Authorization': 'Bearer ' + refresh_token(*creds)})
+                            headers={'Authorization': 'Bearer ' + refresh_token(*creds, self.base_url)})
     
         if response.status_code == 200: 
             return response.json()
@@ -85,7 +85,7 @@ class BaseNeomarilClient(BaseNeomaril):
 			return isCreated
 	"""
 	def __init__(self, login:Optional[str]=None, password:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/') -> None:
-		super().__init__()
+		super().__init__(url)
 		load_dotenv()
 		logger.info('Loading .env')
 
@@ -117,7 +117,7 @@ class BaseNeomarilClient(BaseNeomaril):
 		"""
 
 		url = f"{self.base_url}/groups"
-		token = refresh_token(*self.__credentials)
+		token = refresh_token(*self.__credentials, self.base_url)
 		response = requests.get(url, headers={'Authorization': 'Bearer ' + token})
 
 		if response.status_code == 200:
@@ -152,7 +152,7 @@ class BaseNeomarilClient(BaseNeomaril):
 		data = {"name": name, "description": description}
 
 		url = f"{self.base_url}/groups"
-		token = refresh_token(*self.__credentials)
+		token = refresh_token(*self.__credentials, self.base_url)
 		response = requests.post(url, data=data, headers={'Authorization': 'Bearer ' + token})
 
 		if response.status_code == 201:
@@ -204,7 +204,7 @@ class BaseNeomarilClient(BaseNeomaril):
 		"""
 
 		url = f"{self.base_url}/refresh/{name}"
-		token = refresh_token(*self.__credentials)
+		token = refresh_token(*self.__credentials, self.base_url)
 		
 		response = requests.get(url, params={'force': str(force).lower()},
 														 headers={'Authorization': 'Bearer ' + token})
@@ -274,7 +274,7 @@ class NeomarilExecution(BaseNeomaril):
 
 	def __init__(self, parent_id:str, exec_type:str, group:Optional[str]=None, exec_id:Optional[str]=None, 
 				 login:Optional[str]=None, password:Optional[str]=None, url:str=None, group_token:Optional[str]=None) -> None:
-		super().__init__()
+		super().__init__(url)
 		load_dotenv()
 		logger.info('Loading .env')
 
@@ -307,7 +307,7 @@ class NeomarilExecution(BaseNeomaril):
 
 		else:
 			url = f"{self.base_url}/{self.__url_path.replace('/async', '')}/describe/{group}/{parent_id}/{exec_id}"
-			response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials)})
+			response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
 
 			if response.status_code == 404:
 					raise ModelError(f'Execution "{exec_id}" not found.')
@@ -395,7 +395,7 @@ class NeomarilExecution(BaseNeomaril):
 		if self.exec_type in ['AsyncModel', 'AsyncPreprocessing']:
 			token = self.__token
 		elif self.exec_type == 'Training':
-			token = refresh_token(*self.__credentials)
+			token = refresh_token(*self.__credentials, self.base_url)
 
 		if self.status == 'Succeeded':
 			url = f"{self.base_url}/{self.__url_path}/result/{self.group}/{self.exec_id}"
