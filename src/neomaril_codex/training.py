@@ -733,14 +733,14 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             form_data['training_reference']= training_reference,
             form_data['python_version'] = "Python"+python_version.replace('.', '')
         
-        elif self.training_type == 'AutoML':
+        elif training_type == 'AutoML':
                 
             if conf_dict:
                 upload_data.append(("conf_dict", ("conf.json", parse_dict_or_file(conf_dict))))
             else:
                 raise InputError("conf_dict is mandatory for AutoML training")
             
-        elif self.training_type == 'External':
+        elif training_type == 'External':
             upload_data = []
             if model_hash:
                 form_data['model_hash'] = model_hash
@@ -1001,15 +1001,15 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         return [self.get_training_execution(e) for e in self.executions]
     
     @contextmanager
-    def log_train(self, name, X_train, y_train):
+    def log_train(self, name, X_train, y_train, description:Optional[str]=None, save_path:Optional[str]=None):
         
         try:
-            self.trainer = NeomarilTrainingLogger(name, X_train, y_train)
+            self.trainer = NeomarilTrainingLogger(name, X_train, y_train, description=description, save_path=save_path)
             yield self.trainer
 
         finally:
             self.trainer._processing_logging_inputs()
-            self.__upload_training(self.trainer.name, description=self.description, training_type="External", 
+            self.__upload_training(self.trainer.name, description=self.trainer.description, training_type="External", 
                                    python_version=self.trainer.python_version, requirements_file=self.trainer.requirements, 
                                    extra_files=self.trainer.extras, X_train=self.trainer.X_train, y_train=self.trainer.y_train,
                                    model_outputs=self.trainer.model_outputs, model_file=self.trainer.model, 
