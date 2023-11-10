@@ -9,7 +9,7 @@ def parse_dict_or_file(obj):
         schema_file = io.StringIO()
         json.dump(obj, schema_file).seek(0)
 
-    return obj
+    return schema_file
 
 def parse_url(url):
     if url.endswith('/'):
