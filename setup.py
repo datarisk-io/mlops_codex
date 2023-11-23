@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 MODULE_NAME = 'neomaril-codex'
 MODULE_NAME_IMPORT = 'neomaril_codex'
 REPO_NAME = 'mlops-neomaril-codex'
-MODULE_VERSION='1.2.0c'
+MODULE_VERSION='1.2.1'
 
 def requirements_from_pip(filename='requirements.txt'):
     with open(filename, 'r') as pip:

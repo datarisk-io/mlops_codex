@@ -23,9 +23,8 @@ We can create the experiment using the :py:meth:`neomaril_codex.training.Neomari
 .. code:: python
 
     # Creating a new training experiment
-    training = training_client.create_training_experiment('Teste notebook Training custom', # Experiment name, this is how you find your model in MLFLow
+    training = training_client.create_training_experiment('Teste notebook', # Experiment name, this is how you find your model in MLFLow
                                             'Classification', # Model type. Can be Classification, Regression or Unsupervised
-                                            'Custom', # Training type. Can be Custom or AutoML
                                             group='datarisk' # This is the default group. Create a new one when using for a new project
                                             )
 
@@ -103,7 +102,8 @@ Then we can call the :py:meth:`neomaril_codex.training.NeomarilTrainingExperimen
     PATH = './samples/train/'
 
     run1 = training.run_training('First test', # Run name
-                                PATH+'dados.csv', # Path to the file with training data
+                                train_data=PATH+'dados.csv', # Path to the file with training data
+                                training_type='Custom', # Training type. Can be External, Custom or AutoML
                                 source_file=PATH+'app.py', # Path of the source file
                                 requirements_file=PATH+'requirements.txt', # Path of the requirements file, 
     #                           env=PATH+'.env'  #  File for env variables (this will be encrypted in the server)
@@ -117,17 +117,11 @@ For the AutoML we just need the data and the configuration parameters. You can c
 
 .. code:: python
 
-    # Creating a new training experiment
-    training = training_client.create_training_experiment('Teste notebook Training AutoML', # Experiment name
-                                                        'Classification', # Model type. Can be Classification, Regression or Unsupervised
-                                                        'AutoML', # Training type. Can be Custom or AutoML
-                                                        group='datarisk' # This is the default group. Create a new one when using for a new project
-                                                        )
-
     PATH = './samples/autoML/'
 
     run2 = training.run_training('First test', # Run name
-                                PATH+'dados.csv', # Path to the file with training data
+                                training_type='Custom', # Training type. Can be External, Custom or AutoML
+                                train_data=PATH+'dados.csv', # Path to the file with training data
                                 conf_dict=PATH+'conf.json', # Path of the configuration file
                                 wait_complete=True
     )

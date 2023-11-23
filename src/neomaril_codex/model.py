@@ -91,7 +91,6 @@ class NeomarilModel(BaseNeomaril):
         self.model_data = response.json()['Description']
         self.name = self.model_data['Name']
         self.status = self.model_data['Status']
-        self.schema = self.model_data['Schema']
         self.operation = self.model_data['Operation'].lower()
         self.docs = f'{self.base_url}/model/{self.operation}/docs/{self.group}/{self.model_id}'
         if self.operation == 'sync':
@@ -103,7 +102,6 @@ class NeomarilModel(BaseNeomaril):
                                 status="{self.status}",
                                 model_id="{self.model_id}",
                                 operation="{self.operation.title()}",
-                                schema={str(self.schema)}
                                 )"""
 
     def __str__(self):
@@ -419,7 +417,7 @@ class NeomarilModel(BaseNeomaril):
             raise InputError("Suported languages are curl, python or javascript")
 
         if self.operation == 'sync':
-            payload = json.dumps({"Input": self.schema})
+            payload = json.dumps({"Input": {'DATA': 'DATA'}})
             base_url = self.base_url.replace('localhost:7070', 'localhost:7071') 
             if language == 'curl':
                 return f"""curl --request POST \\

@@ -5,11 +5,12 @@ import os
 import sys
 import re
 import cloudpickle
-from typing import Union, Optional, List
+from typing import Union, Optional, List, Any
 from contextlib import contextmanager
 
 import requests
 import pandas as pd
+import numpy as np
 from time import sleep
 from neomaril_codex.base import *
 from neomaril_codex.model import NeomarilModel
@@ -126,7 +127,7 @@ class NeomarilTrainingLogger:
             plot: A path of plot graphic image (jpg/png).
         """
         if os.path.exists(plot):
-            self.extra.append(plot)
+            self.extras.append(plot)
 
     def set_extra(self, extra : list):
         """
@@ -135,7 +136,7 @@ class NeomarilTrainingLogger:
         Args:
             extra: A list of paths of the extra file.
         """
-        self.extra = extra
+        self.extras = extra
 
     def add_extra(self, filename : str, extra : Union[pd.DataFrame, str]):
         """
@@ -146,12 +147,15 @@ class NeomarilTrainingLogger:
         """
         if isinstance(extra, str):
             if os.path.exists(extra):
-                self.extra.append(extra)
+                self.extras.append(extra)
             else:
                 raise FileNotFoundError('Extra file path not found!')
             
         elif isinstance(extra, pd.DataFrame):
-            self.extra.append(self.__to_parquet(filename, extra))
+            self.extras.append(self.__to_parquet(filename, extra))
+
+    def add_requirements(self, filename:str):
+        self.requirements = filename
 
     def __to_parquet(self, output_filename : str, input_data : pd.DataFrame):
         """
@@ -215,13 +219,13 @@ class NeomarilTrainingLogger:
 
         if 'get_all_params' in dir(self.model):
             hyperparameters = {
-                f"hyperparam_{k}": v
+                f"hyperparam_{k}": str(v)
                 for k, v in self.model.get_all_params().items()
                 if k != "task_type"
             }
         elif 'get_params' in dir(self.model):
             hyperparameters = {
-                "hyperparam_" + k: v
+                "hyperparam_" + k: str(v)
                 for k, v in self.model.get_params().items()
                 if k not in params[
                     'pipeline_steps'
@@ -247,25 +251,36 @@ class NeomarilTrainingLogger:
 
         self.params = {**params, **self.params}
 
+    def _parse_data_objects(self, obj:Any) -> pd.DataFrame:
+        """
+        Tranform data types to dataframe
+        """
+
+        if isinstance(obj, pd.Series):
+            return obj.to_frame()
+        elif isinstance(obj, np.ndarray):
+            array_df = pd.DataFrame(obj)
+            array_df.columns = [str(c) for c in array_df.columns]
+            return array_df
+        elif isinstance(obj, pd.DataFrame):
+            return obj
+
     def _processing_logging_inputs(self):
         """
         Processing of everything that be logged.
         """
-        if isinstance(self.X_train, pd.DataFrame):
-            self.X_train = self.__to_parquet('features', self.X_train)
+        
+        self._set_params()
+        self.params = self.__to_json('params', self.params)
 
-        if isinstance(self.y_train, pd.DataFrame):
-            self.y_train = self.__to_parquet('target', self.y_train)
+        self.X_train = self.__to_parquet('features', self._parse_data_objects(self.X_train))
 
-        if isinstance(self.model_outputs, pd.DataFrame):
-            self.model_outputs = self.__to_parquet('predictions', self.model_outputs)
+        self.y_train = self.__to_parquet('target', self._parse_data_objects(self.y_train))
+
+        self.model_outputs = self.__to_parquet('predictions', self._parse_data_objects(self.model_outputs))
 
         if self.model:
             self.model = self.__to_pickle('model', self.model)
-
-        if self.params:
-            self._set_params()
-            self.params = self.__to_json('params', self.params)
 
         if self.metrics:
             self.metrics = self.__to_json('metrics', self.metrics)
@@ -334,7 +349,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
         self.group = group
     
         self.training_type = self.execution_data['TrainingType']
-        self.name = self.execution_data['ExperimentName']
+        self.name = self.execution_data['RunName']
         self.run_data = self.execution_data['RunData']
 
 
@@ -386,10 +401,10 @@ class NeomarilTrainingExecution(NeomarilExecution):
         form_data = {'name': model_name, 'operation': operation}
         upload_data = []
 
-        if self.training_type == 'Custom':
+        if self.training_type != 'AutoML':
             form_data['model_reference'] = model_reference
 
-            file_extesions = {'py': 'app.py', 'ipynb': "notebook.ipynb"}
+            file_extesions = {'py': 'app.py'}
         
             upload_data = [
                 ("source", (file_extesions[source_file.split('.')[-1]], open(source_file, 'rb')))
@@ -1004,16 +1019,17 @@ class NeomarilTrainingExperiment(BaseNeomaril):
     def log_train(self, name, X_train, y_train, description:Optional[str]=None, save_path:Optional[str]=None):
         
         try:
+
             self.trainer = NeomarilTrainingLogger(name, X_train, y_train, description=description, save_path=save_path)
             yield self.trainer
 
         finally:
             self.trainer._processing_logging_inputs()
-            self.__upload_training(self.trainer.name, description=self.trainer.description, training_type="External", 
-                                   python_version=self.trainer.python_version, requirements_file=self.trainer.requirements, 
-                                   extra_files=self.trainer.extras, X_train=self.trainer.X_train, y_train=self.trainer.y_train,
-                                   model_outputs=self.trainer.model_outputs, model_file=self.trainer.model, 
-                                   model_metrics=self.trainer.metrics, model_params=self.trainer.params)
+            self.run_training(self.trainer.name, description=self.trainer.description, training_type="External", 
+                              python_version=self.trainer.python_version, requirements_file=self.trainer.requirements, 
+                              extra_files=self.trainer.extras, X_train=self.trainer.X_train, y_train=self.trainer.y_train,
+                              model_outputs=self.trainer.model_outputs, model_file=self.trainer.model, 
+                              model_metrics=self.trainer.metrics, model_params=self.trainer.params)
         
 
 class NeomarilTrainingClient(BaseNeomarilClient):
