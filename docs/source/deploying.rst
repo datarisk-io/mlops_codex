@@ -48,7 +48,7 @@ The return of the function should be a dictionary that can be parsed to a JSON, 
 
 Keep in mind that some data types (like numpy `int64` and `float64` values) cannot normally be parsed to JSON, so your code should handle that before returning the response to Neomaril. 
 
-**Async model:** This is for batch scoring. We send files with usually a lot o records at once. Since this might take a while depeding on the file size, we run this asynchronously.
+**Async model:** This is for batch scoring. We send files with usually a lot of records at once. Since this might take a while depeding on the file size, we run this asynchronously.
 The entrypoint function should look like this:
 
 .. code:: python

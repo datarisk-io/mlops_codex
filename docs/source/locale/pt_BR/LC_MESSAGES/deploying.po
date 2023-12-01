@@ -87,7 +87,7 @@ msgstr ""
 #: ../../source/deploying.rst:31
 msgid ""
 "**Async model:** This is for batch scoring. We send files with usually a "
-"lot o records at once. Since this might take a while depeding on the file"
+"lot of records at once. Since this might take a while depeding on the file"
 " size, we run this asynchronously. The entrypoint function should look "
 "like this:"
 msgstr ""
