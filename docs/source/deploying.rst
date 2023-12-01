@@ -176,14 +176,14 @@ You can call the :py:attr:`neomaril_codex.model.NeomarilModel.docs` attribute to
 Monitoring your model
 ---------------------
 
-Model monitoring means keeping track with how the model is being used in production so we can update the model if it start making bad predictions.
+Model monitoring means keeping track of how the model is being used in production, so you can update it if it starts making bad predictions.
 
-For now Neomaril only does indirect monitoring, that means following the input of the model in production and checking if is close to the data presented to the model in training.
-So when configure the monitoring we need to know which training generated that model and what features are relevant to monitoring the model.
+For now, Neomaril only does indirect monitoring. This means that Neomaril follows the input of the model in production and checks if it is close to the data presented to the model in training.
+So, when configuring the monitoring system, we need to know which training generated that model and what features are relevant to monitoring the model.
 
-Besides we need to know how to handle the features and the model. 
+Besides that, we need to know how to correctly handle the features and the model. 
 
-The production data is saved raw, and the training data is not (check :ref:`training_guide:Running a training execution`). So we need to know the steps in processing the raw data to get the model features like the ones we saved during training:
+The production data is saved raw, and the training data is not (check :ref:`training_guide:Running a training execution`). So we need to know the steps in processing the raw production data to get the model features like the ones we saved during training:
 
 **TBD in the preprocess module.**
 
