@@ -1,7 +1,7 @@
 Deploying to production
 =======================
 
-When deploying a model to Neomaril we create a API so you can connect your model with other services. You can also use Neomaril Codex to execute your model remotely inside a python application.
+When deploying a model to Neomaril we create an API so you can connect your model with other services. You can also use Neomaril Codex to execute your model remotely inside a python application.
 
 
 Preparing to production
