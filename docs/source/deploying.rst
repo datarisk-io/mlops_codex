@@ -191,3 +191,51 @@ The first method you need to call is :py:meth:`neomaril_codex.pipeline.NeomarilP
 
 Next, you can manually run the monitoring process, calling the method :py:meth:`neomaril_codex.pipeline.NeomarilPipeline.run_monitoring`.
 
+
+Using with preprocess script
+----------------------------
+
+Sometimes you want to run a preprocess script to adjust the model input data before executing it. With Neomaril you can do it.
+
+You must first instantiate the :py:class:`neomaril_codex.base.NeomarilExecution`:
+
+.. code:: python
+
+    model_client = NeomarilModelClient()
+    # >>> 2023-10-26 10:26:42.351 | INFO     | neomaril_codex.model:__init__:722 - Loading .env
+    # >>> 2023-10-26 10:26:42.352 | INFO     | neomaril_codex.base:__init__:90 - Loading .env
+    # >>> 2023-10-26 10:26:43.716 | INFO     | neomaril_codex.base:__init__:102 - Successfully connected to Neomaril
+
+And now you just need to run the model using the preprocess script, as created on **TBD preprocessing**.
+For the **sync model**:
+
+.. code:: python
+
+    sync_model = model_client.get_model(group='datarisk', model_id='M3aa182ff161478a97f4d3b2dc0e9b064d5a9e7330174daeb302e01586b9654c')
+
+    sync_model.predict(data=sync_model.schema, preprocessing=sync_preprocessing)
+    # >>> 2023-10-26 10:26:45.121 | INFO     | neomaril_codex.model:get_model:820 - Model M3aa182ff161478a97f4d3b2dc0e9b064d5a9e7330174daeb302e01586b9654c its deployed. Fetching model.
+    # >>> 2023-10-26 10:26:45.123 | INFO     | neomaril_codex.model:__init__:69 - Loading .env
+    # >>> {'pred': 0, 'proba': 0.005841062869876623}
+
+And for the **async model**:
+
+.. code:: python
+
+    async_model = model_client.get_model(group='datarisk', model_id='Maa3449c7f474567b6556614a12039d8bfdad0117fec47b2a4e03fcca90b7e7c')
+
+    PATH = './samples/asyncModel/'
+
+    execution = async_model.predict(PATH+'input.csv', preprocessing=async_preprocessing)
+    execution.wait_ready()
+    # >>> 2023-10-26 10:26:51.460 | INFO     | neomaril_codex.model:get_model:820 - Model Maa3449c7f474567b6556614a12039d8bfdad0117fec47b2a4e03fcca90b7e7c its deployed. Fetching model.
+    # >>> 2023-10-26 10:26:51.461 | INFO     | neomaril_codex.model:__init__:69 - Loading .env
+    # >>> 2023-10-26 10:26:54.532 | INFO     | neomaril_codex.preprocessing:set_token:123 - Token for group datarisk added.
+    # >>> 2023-10-26 10:26:55.955 | INFO     | neomaril_codex.preprocessing:run:177 - Execution '4' started to generate 'Db84e3baffc3457b9729f39f9f37aa1cd8aada89d3434ea0925e539cb23d7d65'. Use the id to check its status.
+    # >>> 2023-10-26 10:26:55.956 | INFO     | neomaril_codex.base:__init__:279 - Loading .env
+    # >>> 2023-10-26 10:30:12.982 | INFO     | neomaril_codex.base:download_result:413 - Output saved in ./result_preprocessing
+    # >>> 2023-10-26 10:30:14.619 | INFO     | neomaril_codex.model:predict:365 - Execution '5' started. Use the id to check its status.
+    # >>> 2023-10-26 10:30:14.620 | INFO     | neomaril_codex.base:__init__:279 - Loading .env
+
+    execution.download_result()
+    # >>> 2023-10-26 10:32:28.296 | INFO     | neomaril_codex.base:download_result:413 - Output saved in ./output.zip
