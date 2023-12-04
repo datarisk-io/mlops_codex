@@ -11,6 +11,38 @@ from neomaril_codex.__utils import *
 from neomaril_codex.exceptions import *
 
 class NeomarilPreprocessing(BaseNeomaril):
+    """
+    Class to manage Preprocessing scripts deployed inside Neomaril
+
+    Attributes
+    ----------
+	login : str
+		Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+	password : str
+		Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+    preprocessing_id : str
+        Preprocessing script id (hash) from the script you want to access
+    group : str
+        Group the model is inserted. Default is 'datarisk' (public group)
+    base_url : str
+        URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
+
+    Example
+    --------
+    Getting a model, testint its healthy and putting it to run the prediction
+
+    .. code-block:: python
+
+        from neomaril_codex.preprocessing import NeomarilPreprocessingClient
+        from neomaril_codex.model import NeomarilModelClient
+
+        client = NeomarilPreprocessingClient('123456')
+        
+        client.search_preprocessing()
+
+        preprocessing = client.get_preprocessing(preprocessing_id='S72110d87c2a4341a7ef0a0cb35e483699db1df6c5d2450f92573c093c65b062', group='ex_group')
+    
+    """
 
     def __init__(self, preprocessing_id:str, login:Optional[str]=None, password:Optional[str]=None, group:str="datarisk", 
                  group_token:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/') -> None:
@@ -259,7 +291,121 @@ class NeomarilPreprocessing(BaseNeomaril):
             raise PreprocessingError(response.text)
         
 class NeomarilPreprocessingClient(BaseNeomarilClient):
+    """
+    Class for client to access Neomaril and manage Preprocessing scripts
 
+    Attributes
+    ----------
+	login : str
+		Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+	password : str
+		Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+	url : str
+		URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
+
+    Raises
+    ------
+    AuthenticationError
+        Unvalid credentials
+    ServerError
+        Server unavailable
+
+    Example
+    --------
+    Example 1: Creation and managing a Synchronous Preprocess script
+
+    .. code-block:: python
+        
+        from neomaril_codex.preprocessing import NeomarilPreprocessingClient
+        from neomaril_codex.model import NeomarilModelClient
+
+        client = NeomarilPreprocessingClient('123456')
+        PATH = './samples/syncPreprocessing/'
+
+        sync_preprocessing = client.create('Teste preprocessing Sync', # model_name
+                            'process', # name of the scoring function
+                            PATH+'app.py', # Path of the source file
+                            PATH+'requirements.txt', # Path of the requirements file, 
+                            schema=PATH+'schema.json', # Path of the schema file, but it could be a dict (only required for Sync models)
+                            # env=PATH+'.env'  #  File for env variables (this will be encrypted in the server)
+                            # extra_files=[PATH+'utils.py'], # List with extra files paths that should be uploaded along (they will be all in the same folder)
+                            python_version='3.9', # Can be 3.7 to 3.10
+                            operation="Sync", # Can be Sync or Async
+                            group='datarisk' # Model group (create one using the client)
+                            )
+
+        sync_preprocessing.set_token('TOKEN')
+
+        result = sync_preprocessing.run({'variable' : 100})
+        result
+
+    Example 2: creation and deployment of an Asynchronous Preprocess script
+    
+    .. code-block:: python
+        
+        from neomaril_codex.preprocessing import NeomarilPreprocessingClient
+        from neomaril_codex.model import NeomarilModelClient
+        
+        client = NeomarilPreprocessingClient('123456')
+        PATH = './samples/asyncPreprocessing/'
+
+        async_preprocessing = client.create('Teste preprocessing Async', # model_name
+                            'process', # name of the scoring function
+                            PATH+'app.py', # Path of the source file
+                            PATH+'requirements.txt', # Path of the requirements file, 
+                            # env=PATH+'.env',  #  File for env variables (this will be encrypted in the server)
+                            # extra_files=[PATH+'input.csv'], # List with extra files paths that should be uploaded along (they will be all in the same folder)
+                            python_version='3.9', # Can be 3.7 to 3.10
+                            operation="Async", # Can be Sync or Async
+                            group='datarisk', # Model group (create one using the client)
+                            input_type='csv'
+                            )
+
+        async_preprocessing.set_token('TOKEN')
+
+        execution = async_preprocessing.run(PATH+'input.csv')
+
+        execution.get_status()
+
+        execution.wait_ready()
+
+        execution.download_result()
+
+    Example 3: Using preprocessing with a Synchronous model
+    
+    .. code-block:: python
+        
+        from neomaril_codex.preprocessing import NeomarilPreprocessingClient
+        from neomaril_codex.model import NeomarilModelClient
+
+        # the sync preprocess script configuration presented before
+        # ...
+
+        model_client = NeomarilModelClient('123456')
+
+        sync_model = model_client.get_model(group='datarisk', model_id='M3aa182ff161478a97f4d3b2dc0e9b064d5a9e7330174daeb302e01586b9654c')
+
+        sync_model.predict(data=sync_model.schema, preprocessing=sync_preprocessing)
+
+    Example 4: Using preprocessing with an Asynchronous model
+    
+    .. code-block:: python
+        
+        from neomaril_codex.preprocessing import NeomarilPreprocessingClient
+        from neomaril_codex.model import NeomarilModelClient
+
+        # the async preprocess script configuration presented before
+        # ...
+
+        async_model = model_client.get_model(group='datarisk', model_id='Maa3449c7f474567b6556614a12039d8bfdad0117fec47b2a4e03fcca90b7e7c')
+
+        PATH = './samples/asyncModel/'
+
+        execution = async_model.predict(PATH+'input.csv', preprocessing=async_preprocessing)
+        execution.wait_ready()
+
+        execution.download_result()
+    """
     def __init__(self, login:Optional[str]=None, password:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/') -> None:
 
         load_dotenv()

@@ -26,13 +26,17 @@ Modules
 .. toctree::
    :maxdepth: 5
 
+   preprocessing
+
+.. toctree::
+   :maxdepth: 5
+
    pipeline
 
 .. toctree::
    :maxdepth: 5
 
    logging
-
 
 .. toctree::
    :maxdepth: 5

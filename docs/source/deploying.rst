@@ -1,7 +1,7 @@
 Deploying to production
 =======================
 
-When deploying a model to Neomaril we create a API so you can connect your model with other services. You can also use Neomaril Codex to execute your model remotely inside a python application.
+When deploying a model to Neomaril we create an API so you can connect your model with other services. You can also use Neomaril Codex to execute your model remotely inside a python application.
 
 
 Preparing to production
@@ -48,7 +48,7 @@ The return of the function should be a dictionary that can be parsed to a JSON, 
 
 Keep in mind that some data types (like numpy `int64` and `float64` values) cannot normally be parsed to JSON, so your code should handle that before returning the response to Neomaril. 
 
-**Async model:** This is for batch scoring. We send files with usually a lot o records at once. Since this might take a while depeding on the file size, we run this asynchronously.
+**Async model:** This is for batch scoring. We send files with usually a lot of records at once. Since this might take a while depeding on the file size, we run this asynchronously.
 The entrypoint function should look like this:
 
 .. code:: python
@@ -176,14 +176,66 @@ You can call the :py:attr:`neomaril_codex.model.NeomarilModel.docs` attribute to
 Monitoring your model
 ---------------------
 
-Model monitoring means keeping track with how the model is being used in production so we can update the model if it start making bad predictions.
+Model monitoring means keeping track of how the model is being used in production, so you can update it if it starts making bad predictions.
 
-For now Neomaril only does indirect monitoring, that means following the input of the model in production and checking if is close to the data presented to the model in training.
-So when configure the monitoring we need to know which training generated that model and what features are relevant to monitoring the model.
+For now, Neomaril only does indirect monitoring. This means that Neomaril follows the input of the model in production and checks if it is close to the data presented to the model in training.
+So, when configuring the monitoring system, we need to know which training generated that model and what features are relevant to monitoring the model.
 
-Besides we need to know how to handle the features and the model. 
+We offer both "Population Stability Index" (PSI and PSI average) and "SHapley Additive exPlanations" (SHAP and SHAP average) metrics.
 
-The production data is saved raw, and the training data is not (check :ref:`training_guide:Running a training execution`). So we need to know the steps in processing the raw data to get the model features like the ones we saved during training:
+Besides that, we need to know how to correctly handle the features and the model. 
 
-**TBD in the preprocess module.**
+The production data is saved raw, and the training data is not (check :ref:`training_guide:Running a training execution`). So we need to know the steps in processing the raw production data to get the model features like the ones we saved during training: :ref:`monitoring_parameters:Monitoring configuration`
 
+The first method you need to call is :py:meth:`neomaril_codex.pipeline.NeomarilPipeline.register_monitoring_config`, which is responsible for registering the monitoring configuration at the database.
+
+Next, you can manually run the monitoring process, calling the method :py:meth:`neomaril_codex.pipeline.NeomarilPipeline.run_monitoring`.
+
+
+Using with preprocess script
+----------------------------
+
+Sometimes you want to run a preprocess script to adjust the model input data before executing it. With Neomaril you can do it.
+
+You must first instantiate the :py:class:`neomaril_codex.base.NeomarilExecution`:
+
+.. code:: python
+
+    model_client = NeomarilModelClient()
+    # >>> 2023-10-26 10:26:42.351 | INFO     | neomaril_codex.model:__init__:722 - Loading .env
+    # >>> 2023-10-26 10:26:42.352 | INFO     | neomaril_codex.base:__init__:90 - Loading .env
+    # >>> 2023-10-26 10:26:43.716 | INFO     | neomaril_codex.base:__init__:102 - Successfully connected to Neomaril
+
+And now you just need to run the model using the preprocess script (check :ref:`preprocessing:Preprocessing module`).
+For the **sync model**:
+
+.. code:: python
+
+    sync_model = model_client.get_model(group='datarisk', model_id='M3aa182ff161478a97f4d3b2dc0e9b064d5a9e7330174daeb302e01586b9654c')
+
+    sync_model.predict(data=sync_model.schema, preprocessing=sync_preprocessing)
+    # >>> 2023-10-26 10:26:45.121 | INFO     | neomaril_codex.model:get_model:820 - Model M3aa182ff161478a97f4d3b2dc0e9b064d5a9e7330174daeb302e01586b9654c its deployed. Fetching model.
+    # >>> 2023-10-26 10:26:45.123 | INFO     | neomaril_codex.model:__init__:69 - Loading .env
+    # >>> {'pred': 0, 'proba': 0.005841062869876623}
+
+And for the **async model**:
+
+.. code:: python
+
+    async_model = model_client.get_model(group='datarisk', model_id='Maa3449c7f474567b6556614a12039d8bfdad0117fec47b2a4e03fcca90b7e7c')
+
+    PATH = './samples/asyncModel/'
+
+    execution = async_model.predict(PATH+'input.csv', preprocessing=async_preprocessing)
+    execution.wait_ready()
+    # >>> 2023-10-26 10:26:51.460 | INFO     | neomaril_codex.model:get_model:820 - Model Maa3449c7f474567b6556614a12039d8bfdad0117fec47b2a4e03fcca90b7e7c its deployed. Fetching model.
+    # >>> 2023-10-26 10:26:51.461 | INFO     | neomaril_codex.model:__init__:69 - Loading .env
+    # >>> 2023-10-26 10:26:54.532 | INFO     | neomaril_codex.preprocessing:set_token:123 - Token for group datarisk added.
+    # >>> 2023-10-26 10:26:55.955 | INFO     | neomaril_codex.preprocessing:run:177 - Execution '4' started to generate 'Db84e3baffc3457b9729f39f9f37aa1cd8aada89d3434ea0925e539cb23d7d65'. Use the id to check its status.
+    # >>> 2023-10-26 10:26:55.956 | INFO     | neomaril_codex.base:__init__:279 - Loading .env
+    # >>> 2023-10-26 10:30:12.982 | INFO     | neomaril_codex.base:download_result:413 - Output saved in ./result_preprocessing
+    # >>> 2023-10-26 10:30:14.619 | INFO     | neomaril_codex.model:predict:365 - Execution '5' started. Use the id to check its status.
+    # >>> 2023-10-26 10:30:14.620 | INFO     | neomaril_codex.base:__init__:279 - Loading .env
+
+    execution.download_result()
+    # >>> 2023-10-26 10:32:28.296 | INFO     | neomaril_codex.base:download_result:413 - Output saved in ./output.zip

@@ -1,0 +1,563 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, Datarisk
+# This file is distributed under the same license as the neomaril-codex
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: neomaril-codex \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-12-04 12:08-0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: pt_BR\n"
+"Language-Team: pt_BR <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.13.1\n"
+
+#: ../../source/preprocessing.rst:2
+msgid "Preprocessing module"
+msgstr "Módulo de preprocessamento"
+
+#: ../../source/preprocessing.rst:5
+msgid ""
+"Module with all classes and methods to manage the Preprocessing scripts "
+"deployed at Neomaril."
+msgstr ""
+"Module with all classes and methods to manage the Preprocessing scripts "
+"deployed at Neomaril."
+
+#: ../../source/preprocessing.rst:9
+msgid "neomaril\\_codex.preprocessing.NeomarilPreprocessing"
+msgstr "neomaril\\_codex.preprocessing.NeomarilPreprocessing"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing:1 of
+msgid "Bases: :py:class:`~neomaril_codex.base.BaseNeomaril`"
+msgstr "Bases: :py:class:`~neomaril_codex.base.BaseNeomaril`"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing:1 of
+msgid "Class to manage Preprocessing scripts deployed inside Neomaril"
+msgstr "Class to manage Preprocessing scripts deployed inside Neomaril"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing:5
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient:5 of
+msgid ""
+"Login for authenticating with the client. You can also use the env "
+"variable NEOMARIL_USER to set this"
+msgstr ""
+"Login for authenticating with the client. You can also use the env "
+"variable NEOMARIL_USER to set this"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient of
+msgid "type"
+msgstr "type"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing:-1
+#: neomaril_codex.preprocessing.NeomarilPreprocessing:7
+#: neomaril_codex.preprocessing.NeomarilPreprocessing:13
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient:7
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient:13
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient:19 of
+msgid "str"
+msgstr "str"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing:11
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient:11 of
+msgid ""
+"Password for authenticating with the client. You can also use the env "
+"variable NEOMARIL_PASSWORD to set this"
+msgstr ""
+"Password for authenticating with the client. You can also use the env "
+"variable NEOMARIL_PASSWORD to set this"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing:15 of
+msgid "preprocessing_id"
+msgstr "preprocessing_id"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing:16 of
+msgid "Preprocessing script id (hash) from the script you want to access"
+msgstr "Preprocessing script id (hash) from the script you want to access"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing:17 of
+msgid "group"
+msgstr "group"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing:18 of
+msgid "Group the model is inserted. Default is 'datarisk' (public group)"
+msgstr "Group the model is inserted. Default is 'datarisk' (public group)"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing:20 of
+msgid "base_url"
+msgstr "base_url"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing:20
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient:17 of
+msgid ""
+"URL to Neomaril Server. Default value is "
+"https://neomaril.staging.datarisk.net, use it to test your deployment "
+"first before changing to production. You can also use the env variable "
+"NEOMARIL_URL to set this"
+msgstr ""
+"URL to Neomaril Server. Default value is "
+"https://neomaril.staging.datarisk.net, use it to test your deployment "
+"first before changing to production. You can also use the env variable "
+"NEOMARIL_URL to set this"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing:23
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.get_logs:18
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.get_preprocessing_execution:9
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.set_token:7
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.wait_ready:4
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient:25
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.create:34
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_execution:14
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_logs:20
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_preprocessing:19
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.search_preprocessing:18
+#: of
+msgid "Example"
+msgstr "Example"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing:24 of
+msgid "Getting a model, testint its healthy and putting it to run the prediction"
+msgstr "Getting a model, testint its healthy and putting it to run the prediction"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.get_logs:1
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_logs:1 of
+msgid "Get the logs"
+msgstr "Get the logs"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.get_logs
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.get_preprocessing_execution
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.run
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.set_token
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.create
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_execution
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_logs
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_preprocessing
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.search_preprocessing
+#: of
+msgid "Parameters"
+msgstr "Parameters"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.get_logs:3
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_logs:5 of
+msgid "Date to start filter. At the format aaaa-mm-dd"
+msgstr "Date to start filter. At the format aaaa-mm-dd"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.get_logs:5
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_logs:7 of
+msgid "Date to end filter. At the format aaaa-mm-dd"
+msgstr "Date to end filter. At the format aaaa-mm-dd"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.get_logs:7 of
+msgid "Type of routine beeing executed, can assume values Host or Run"
+msgstr "Type of routine beeing executed, can assume values Host or Run"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.get_logs:9 of
+msgid ""
+"Defines the type of the logs that are going to be filtered, can assume "
+"the values Ok, Error, Debug or Warning"
+msgstr ""
+"Defines the type of the logs that are going to be filtered, can assume "
+"the values Ok, Error, Debug or Warning"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.get_logs
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.get_preprocessing_execution
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.run
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.create
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_logs
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_preprocessing
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.search_preprocessing
+#: of
+msgid "Raises"
+msgstr "Raises"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.get_logs:12
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_logs:14
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.search_preprocessing:12
+#: of
+msgid "Unexpected server error"
+msgstr "Unexpected server error"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.get_logs
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.run
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.create
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_execution
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_logs
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_preprocessing
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.search_preprocessing
+#: of
+msgid "Returns"
+msgstr "Returns"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.get_logs:14
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_logs:16 of
+msgid "Logs list"
+msgstr "Logs list"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.get_logs
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.run
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.create
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_execution
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_logs
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_preprocessing
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.search_preprocessing
+#: of
+msgid "Return type"
+msgstr "Return type"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.get_preprocessing_execution:1
+#: of
+msgid "Get a execution instance for that pre processing."
+msgstr "Get a execution instance for that pre processing."
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.get_preprocessing_execution:3
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_execution:5 of
+msgid "Execution id"
+msgstr "Execution id"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.get_preprocessing_execution:6
+#: of
+msgid "If the user tries to get a execution from a Sync pre processing"
+msgstr "If the user tries to get a execution from a Sync pre processing"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.run:1 of
+msgid "Runs a prediction from the current pre processing."
+msgstr "Runs a prediction from the current pre processing."
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.run:3 of
+msgid ""
+"The same data that is used in the source file. If Sync is a dict, the "
+"keys that are needed inside this dict are the ones in the `schema` "
+"atribute. If Async is a string with the file path with the same filename "
+"used in the source file."
+msgstr ""
+"The same data that is used in the source file. If Sync is a dict, the "
+"keys that are needed inside this dict are the ones in the `schema` "
+"atribute. If Async is a string with the file path with the same filename "
+"used in the source file."
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.run:7
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_preprocessing:7
+#: of
+msgid ""
+"Token for executing the pre processing (show when creating a group). It "
+"can be informed when getting the preprocessing or when running "
+"predictions, or using the env variable NEOMARIL_GROUP_TOKEN"
+msgstr ""
+"Token for executing the pre processing (show when creating a group). It "
+"can be informed when getting the preprocessing or when running "
+"predictions, or using the env variable NEOMARIL_GROUP_TOKEN"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.run:9 of
+msgid ""
+"Boolean that informs if a pre processing training is completed (True) or "
+"not (False). Default value is False"
+msgstr ""
+"Boolean that informs if a pre processing training is completed (True) or "
+"not (False). Default value is False"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.run:12 of
+msgid "Pre processing is not available"
+msgstr "Pre processing is not available"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.run:14 of
+msgid ""
+"The return of the scoring function in the source file for Sync pre "
+"processing or the execution class for Async pre processing."
+msgstr ""
+"The return of the scoring function in the source file for Sync pre "
+"processing or the execution class for Async pre processing."
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.set_token:1 of
+msgid "Saves the group token for this pre processing instance."
+msgstr "Saves the group token for this pre processing instance."
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.set_token:3 of
+msgid ""
+"Token for executing the pre processing (show when creating a group). You "
+"can set this using the NEOMARIL_GROUP_TOKEN env variable"
+msgstr ""
+"Token for executing the pre processing (show when creating a group). You "
+"can set this using the NEOMARIL_GROUP_TOKEN env variable"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessing.wait_ready:1 of
+msgid "Waits the pre processing to be with status 'Deployed'"
+msgstr "Waits the pre processing to be with status 'Deployed'"
+
+#: ../../source/preprocessing.rst:18
+msgid "neomaril\\_codex.preprocessing.NeomarilPreprocessingClient"
+msgstr "neomaril\\_codex.preprocessing.NeomarilPreprocessingClient"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient:1 of
+msgid "Bases: :py:class:`~neomaril_codex.base.BaseNeomarilClient`"
+msgstr "Bases: :py:class:`~neomaril_codex.base.BaseNeomarilClient`"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient:1 of
+msgid "Class for client to access Neomaril and manage Preprocessing scripts"
+msgstr "Class for client to access Neomaril and manage Preprocessing scripts"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient:21 of
+msgid "Unvalid credentials"
+msgstr "Unvalid credentials"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient:22 of
+msgid "Server unavailable"
+msgstr "Server unavailable"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient:26 of
+msgid "Example 1: Creation and managing a Synchronous Preprocess script"
+msgstr "Example 1: Creation and managing a Synchronous Preprocess script"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient:53 of
+msgid "Example 2: creation and deployment of an Asynchronous Preprocess script"
+msgstr "Example 2: creation and deployment of an Asynchronous Preprocess script"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient:85 of
+msgid "Example 3: Using preprocessing with a Synchronous model"
+msgstr "Example 3: Using preprocessing with a Synchronous model"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient:101 of
+msgid "Example 4: Using preprocessing with an Asynchronous model"
+msgstr "Example 4: Using preprocessing with an Asynchronous model"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.create:1 of
+msgid "Deploy a new preprocessing to Neomaril."
+msgstr "Deploy a new preprocessing to Neomaril."
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.create:3 of
+msgid "The name of the pre processing, in less than 32 characters"
+msgstr "The name of the pre processing, in less than 32 characters"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.create:5 of
+msgid "The name of the scoring function inside the source file"
+msgstr "The name of the scoring function inside the source file"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.create:7 of
+msgid ""
+"Path of the source file. The file must have a scoring function that "
+"accepts two parameters: data (data for the request body of the "
+"preprocessing) and preprocessing_path (absolute path of where the file is"
+" located)"
+msgstr ""
+"Path of the source file. The file must have a scoring function that "
+"accepts two parameters: data (data for the request body of the "
+"preprocessing) and preprocessing_path (absolute path of where the file is"
+" located)"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.create:9 of
+msgid ""
+"Path of the requirements file. The packages versions must be fixed eg: "
+"pandas==1.0"
+msgstr ""
+"Path of the requirements file. The packages versions must be fixed eg: "
+"pandas==1.0"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.create:11 of
+msgid ""
+"Path to a JSON or XML file with a sample of the input for the entrypoint "
+"function. A dict with the sample input can be send as well. Mandatory for"
+" Sync preprocessing"
+msgstr ""
+"Path to a JSON or XML file with a sample of the input for the entrypoint "
+"function. A dict with the sample input can be send as well. Mandatory for"
+" Sync preprocessing"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.create:13 of
+msgid "Group the pre processing is inserted. Default to 'datarisk' (public group)"
+msgstr "Group the pre processing is inserted. Default to 'datarisk' (public group)"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.create:15 of
+msgid ""
+"A optional list with additional files paths that should be uploaded. If "
+"the scoring function refer to this file they will be on the same folder "
+"as the source file"
+msgstr ""
+"A optional list with additional files paths that should be uploaded. If "
+"the scoring function refer to this file they will be on the same folder "
+"as the source file"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.create:17 of
+msgid ""
+"Flag that choose which environment (dev, staging, production) of Neomaril"
+" you are using. Default is True"
+msgstr ""
+"Flag that choose which environment (dev, staging, production) of Neomaril"
+" you are using. Default is True"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.create:19 of
+msgid ""
+"Python version for the pre processing environment. Avaliable versions are"
+" 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'"
+msgstr ""
+"Python version for the pre processing environment. Avaliable versions are"
+" 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.create:21 of
+msgid ""
+"Defines wich kind operation is beeing executed (Sync or Async). Default "
+"value is Sync"
+msgstr ""
+"Defines wich kind operation is beeing executed (Sync or Async). Default "
+"value is Sync"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.create:23 of
+msgid "The type of the input file that should be 'json', 'csv' or 'parquet'"
+msgstr "The type of the input file that should be 'json', 'csv' or 'parquet'"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.create:25 of
+msgid ""
+"Wait for preprocessing to be ready and returns a NeomarilPreprocessing "
+"instace with the new preprocessing. Defaults to True"
+msgstr ""
+"Wait for preprocessing to be ready and returns a NeomarilPreprocessing "
+"instace with the new preprocessing. Defaults to True"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.create:28 of
+msgid "Some input parameters its invalid"
+msgstr "Some input parameters its invalid"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.create:30 of
+msgid ""
+"Returns the new preprocessing, if wait_for_ready=True runs the deploy "
+"process synchronously. If its False, returns nothing after sending all "
+"the data to server and runs the deploy asynchronously"
+msgstr ""
+"Returns the new preprocessing, if wait_for_ready=True runs the deploy "
+"process synchronously. If its False, returns nothing after sending all "
+"the data to server and runs the deploy asynchronously"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_execution:1 of
+msgid "Get a execution instace (Async pre processing only)."
+msgstr "Get a execution instace (Async pre processing only)."
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_execution:3
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_logs:3 of
+msgid "Pre processing id (hash)"
+msgstr "Pre processing id (hash)"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_execution:7 of
+msgid "Group name, default value is None"
+msgstr "Group name, default value is None"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_execution:10 of
+msgid "The new execution"
+msgstr "The new execution"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_logs:9 of
+msgid ""
+"Type of routine being executed, can assume values 'Host' (for deployment "
+"logs) or 'Run' (for execution logs)"
+msgstr ""
+"Type of routine being executed, can assume values 'Host' (for deployment "
+"logs) or 'Run' (for execution logs)"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_logs:11 of
+msgid ""
+"Defines the type of the logs that are going to be filtered, can assume "
+"the values 'Ok', 'Error', 'Debug' or 'Warning'"
+msgstr ""
+"Defines the type of the logs that are going to be filtered, can assume "
+"the values 'Ok', 'Error', 'Debug' or 'Warning'"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_preprocessing:1
+#: of
+msgid "Access a pre processing using its id"
+msgstr "Access a pre processing using its id"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_preprocessing:3
+#: of
+msgid "Pre processing id (hash) that needs to be accessed"
+msgstr "Pre processing id (hash) that needs to be accessed"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_preprocessing:5
+#: of
+msgid "Group the pre processing is inserted. Default is 'datarisk' (public group)"
+msgstr "Group the pre processing is inserted. Default is 'datarisk' (public group)"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_preprocessing:9
+#: of
+msgid ""
+"If the pre processing is being deployed, wait for it to be ready instead "
+"of failing the request. Defaults to True"
+msgstr ""
+"If the pre processing is being deployed, wait for it to be ready instead "
+"of failing the request. Defaults to True"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_preprocessing:12
+#: of
+msgid "Pre processing unavailable"
+msgstr "Pre processing unavailable"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_preprocessing:13
+#: of
+msgid "Unknown return from server"
+msgstr "Unknown return from server"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.get_preprocessing:15
+#: of
+msgid ""
+"A NeomarilPreprocessing instance with the pre processing hash from "
+"`preprocessing_id`"
+msgstr ""
+"A NeomarilPreprocessing instance with the pre processing hash from "
+"`preprocessing_id`"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.search_preprocessing:1
+#: of
+msgid "Search for pre processing using the name of the pre processing"
+msgstr "Search for pre processing using the name of the pre processing"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.search_preprocessing:3
+#: of
+msgid ""
+"Text that its expected to be on the pre processing name. It runs similar "
+"to a LIKE query on SQL"
+msgstr ""
+"Text that its expected to be on the pre processing name. It runs similar "
+"to a LIKE query on SQL"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.search_preprocessing:5
+#: of
+msgid ""
+"Text that its expected to be on the state. It runs similar to a LIKE "
+"query on SQL"
+msgstr ""
+"Text that its expected to be on the state. It runs similar to a LIKE "
+"query on SQL"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.search_preprocessing:7
+#: of
+msgid ""
+"Text that its expected to be on the group name. It runs similar to a LIKE"
+" query on SQL"
+msgstr ""
+"Text that its expected to be on the group name. It runs similar to a LIKE"
+" query on SQL"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.search_preprocessing:9
+#: of
+msgid ""
+"If its True, filter only pre processing ready to be used (status == "
+"\"Deployed\"). Defaults to False"
+msgstr ""
+"If its True, filter only pre processing ready to be used (status == "
+"\"Deployed\"). Defaults to False"
+
+#: neomaril_codex.preprocessing.NeomarilPreprocessingClient.search_preprocessing:14
+#: of
+msgid ""
+"List with the pre processing data, it can works like a filter depending "
+"on the arguments values"
+msgstr ""
+"List with the pre processing data, it can works like a filter depending "
+"on the arguments values"
+
