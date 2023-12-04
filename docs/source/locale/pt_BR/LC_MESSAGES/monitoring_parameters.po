@@ -1,0 +1,74 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, Datarisk
+# This file is distributed under the same license as the neomaril-codex
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: neomaril-codex \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-12-04 12:08-0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: pt_BR\n"
+"Language-Team: pt_BR <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.13.1\n"
+
+#: ../../source/monitoring_parameters.rst:4
+msgid "Monitoring configuration"
+msgstr "Configuração do monitoramento"
+
+#: ../../source/monitoring_parameters.rst:14
+msgid "{"
+msgstr "{}"
+
+#: ../../source/monitoring_parameters.rst:8
+msgid ""
+"\"period\": \"week\", <string, Mandatory> indicates monitoring frequency "
+"running. Can be `day`, `week`, `month` or `year` \"train_data\" : {"
+msgstr ""
+"\"period\": \"week\", <string, Mandatory> indicates monitoring frequency "
+"running. Can be `day`, `week`, `month` or `year` \"train_data\" : {"
+
+#: ../../source/monitoring_parameters.rst:10
+msgid ""
+"\"NeomarilTrainingExecution\": \"1\", <string, Mandatory for model "
+"trained inside Neomaril> executionId from training promoted at Neomaril "
+"// \"train_date_col\": \"date\", <string, Mandatory if no field "
+"\"train_date_ref\" was inserted> name of the date column for the records "
+"\"train_date_ref\": \"2022-09-01\", <string, Mandatory if no field "
+"\"train_date_col\" was inserted> date the model data was acquired"
+msgstr ""
+"\"NeomarilTrainingExecution\": \"1\", <string, Mandatory for model "
+"trained inside Neomaril> executionId from training promoted at Neomaril "
+"// \"train_date_col\": \"date\", <string, Mandatory if no field "
+"\"train_date_ref\" was inserted> name of the date column for the records "
+"\"train_date_ref\": \"2022-09-01\", <string, Mandatory if no field "
+"\"train_date_col\" was inserted> date the model data was acquired"
+
+#: ../../source/monitoring_parameters.rst:13
+msgid ""
+"} \"input_cols\": [\"mean_radius\", \"mean_texture\"] , <list[string]> "
+"name of the features columns that the monitoring will run. Need to be the"
+" same of the train data in MLFlow and the output of the pre-process "
+"function \"output_cols\": [\"proba\", \"pred\"] , <list[string]> name of "
+"the output columns that the monitoring will run. Need to be the same of "
+"the output data in MLFlow and the output of the model scoring function"
+msgstr ""
+"} \"input_cols\": [\"mean_radius\", \"mean_texture\"] , <list[string]> "
+"name of the features columns that the monitoring will run. Need to be the"
+" same of the train data in MLFlow and the output of the pre-process "
+"function \"output_cols\": [\"proba\", \"pred\"] , <list[string]> name of "
+"the output columns that the monitoring will run. Need to be the same of "
+"the output data in MLFlow and the output of the model scoring function"
+
+#: ../../source/monitoring_parameters.rst:16
+msgid "}"
+msgstr "}"
+
