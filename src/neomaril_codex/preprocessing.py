@@ -11,6 +11,50 @@ from neomaril_codex.__utils import *
 from neomaril_codex.exceptions import *
 
 class NeomarilPreprocessing(BaseNeomaril):
+    """
+    Class to manage Preprocessing scripts deployed inside Neomaril
+
+    Attributes
+    ----------
+	login : str
+		Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+	password : str
+		Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+    preprocessing_id : str
+        Preprocessing script id (hash) from the script you want to access
+    group : str
+        Group the model is inserted. Default is 'datarisk' (public group)
+    base_url : str
+        URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
+
+    Example
+    --------
+    Getting a model, testint its healthy and putting it to run the prediction
+
+    .. code-block:: python
+
+        from neomaril_codex.preprocessing import NeomarilPreprocessingClient
+        from neomaril_codex.model import NeomarilModelClient
+
+        client = NeomarilPreprocessingClient()
+        PATH = './samples/syncPreprocessing/'
+
+        sync_preprocessing = client.create('Teste preprocessing Sync', # model_name
+                            'process', # name of the scoring function
+                            PATH+'app.py', # Path of the source file
+                            PATH+'requirements.txt', # Path of the requirements file, 
+                            schema=PATH+'schema.json', # Path of the schema file, but it could be a dict (only required for Sync models)
+                            python_version='3.9', # Can be 3.7 to 3.10
+                            operation="Sync", # Can be Sync or Async
+                            group='datarisk' # Model group (create one using the client)
+                            )
+
+        sync_preprocessing.set_token('TOKEN')
+
+        result = sync_preprocessing.run({'variable' : 100})
+        result
+    
+    """
 
     def __init__(self, preprocessing_id:str, login:Optional[str]=None, password:Optional[str]=None, group:str="datarisk", 
                  group_token:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/') -> None:
