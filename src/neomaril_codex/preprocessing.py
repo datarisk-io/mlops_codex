@@ -319,7 +319,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         from neomaril_codex.preprocessing import NeomarilPreprocessingClient
         from neomaril_codex.model import NeomarilModelClient
 
-        client = NeomarilPreprocessingClient()
+        client = NeomarilPreprocessingClient('123456')
         PATH = './samples/syncPreprocessing/'
 
         sync_preprocessing = client.create('Teste preprocessing Sync', # model_name
@@ -346,7 +346,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         from neomaril_codex.preprocessing import NeomarilPreprocessingClient
         from neomaril_codex.model import NeomarilModelClient
         
-        client = NeomarilPreprocessingClient()
+        client = NeomarilPreprocessingClient('123456')
         PATH = './samples/asyncPreprocessing/'
 
         async_preprocessing = client.create('Teste preprocessing Async', # model_name
@@ -367,6 +367,41 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
 
         execution.get_status()
 
+        execution.wait_ready()
+
+        execution.download_result()
+
+    Example 3: Using preprocessing with a Synchronous model
+    
+    .. code-block:: python
+        
+        from neomaril_codex.preprocessing import NeomarilPreprocessingClient
+        from neomaril_codex.model import NeomarilModelClient
+
+        # the sync preprocess script configuration presented before
+        # ...
+
+        model_client = NeomarilModelClient('123456')
+
+        sync_model = model_client.get_model(group='datarisk', model_id='M3aa182ff161478a97f4d3b2dc0e9b064d5a9e7330174daeb302e01586b9654c')
+
+        sync_model.predict(data=sync_model.schema, preprocessing=sync_preprocessing)
+
+    Example 4: Using preprocessing with an Asynchronous model
+    
+    .. code-block:: python
+        
+        from neomaril_codex.preprocessing import NeomarilPreprocessingClient
+        from neomaril_codex.model import NeomarilModelClient
+
+        # the async preprocess script configuration presented before
+        # ...
+
+        async_model = model_client.get_model(group='datarisk', model_id='Maa3449c7f474567b6556614a12039d8bfdad0117fec47b2a4e03fcca90b7e7c')
+
+        PATH = './samples/asyncModel/'
+
+        execution = async_model.predict(PATH+'input.csv', preprocessing=async_preprocessing)
         execution.wait_ready()
 
         execution.download_result()
