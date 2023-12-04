@@ -36,23 +36,11 @@ class NeomarilPreprocessing(BaseNeomaril):
         from neomaril_codex.preprocessing import NeomarilPreprocessingClient
         from neomaril_codex.model import NeomarilModelClient
 
-        client = NeomarilPreprocessingClient()
-        PATH = './samples/syncPreprocessing/'
+        client = NeomarilPreprocessingClient('123456')
+        
+        client.search_preprocessing()
 
-        sync_preprocessing = client.create('Teste preprocessing Sync', # model_name
-                            'process', # name of the scoring function
-                            PATH+'app.py', # Path of the source file
-                            PATH+'requirements.txt', # Path of the requirements file, 
-                            schema=PATH+'schema.json', # Path of the schema file, but it could be a dict (only required for Sync models)
-                            python_version='3.9', # Can be 3.7 to 3.10
-                            operation="Sync", # Can be Sync or Async
-                            group='datarisk' # Model group (create one using the client)
-                            )
-
-        sync_preprocessing.set_token('TOKEN')
-
-        result = sync_preprocessing.run({'variable' : 100})
-        result
+        preprocessing = client.get_preprocessing(preprocessing_id='S72110d87c2a4341a7ef0a0cb35e483699db1df6c5d2450f92573c093c65b062', group='ex_group')
     
     """
 
