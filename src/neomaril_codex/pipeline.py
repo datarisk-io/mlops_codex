@@ -19,7 +19,7 @@ class NeomarilPipeline:
 		Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
 	password : str
 		Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
-    group: str
+    group : str
         Group the model is inserted
 	url : str
         URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
