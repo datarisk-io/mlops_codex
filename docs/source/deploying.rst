@@ -206,7 +206,7 @@ You must first instantiate the :py:class:`neomaril_codex.base.NeomarilExecution`
     # >>> 2023-10-26 10:26:42.352 | INFO     | neomaril_codex.base:__init__:90 - Loading .env
     # >>> 2023-10-26 10:26:43.716 | INFO     | neomaril_codex.base:__init__:102 - Successfully connected to Neomaril
 
-And now you just need to run the model using the preprocess script, as created on **TBD preprocessing**.
+And now you just need to run the model using the preprocess script (check :ref:`preprocessing:Preprocessing module`).
 For the **sync model**:
 
 .. code:: python
