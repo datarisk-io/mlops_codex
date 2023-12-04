@@ -15,13 +15,13 @@ class NeomarilPipeline:
 
     Atributtes
     ----------
-	login : str
-		Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
-	password : str
-		Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+    login : str
+        Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+    password : str
+        Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
     group : str
         Group the model is inserted
-	url : str
+    url : str
         URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
     python_version : str
         Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.9'
