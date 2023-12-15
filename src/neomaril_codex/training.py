@@ -138,23 +138,32 @@ class NeomarilTrainingLogger:
         """
         self.extras = extra
 
-    def add_extra(self, filename : str, extra : Union[pd.DataFrame, str]):
+    def add_extra(self, extra : Union[pd.DataFrame, str], filename : str = None):
         """
         Add an extra file in the extra file list.
 
         Args:
             extra: A path of an extra file or a list to include in extra file list.
+            filename: A filename if the extra it's a DataFrame.
         """
         if isinstance(extra, str):
             if os.path.exists(extra):
                 self.extras.append(extra)
             else:
                 raise FileNotFoundError('Extra file path not found!')
-            
         elif isinstance(extra, pd.DataFrame):
-            self.extras.append(self.__to_parquet(filename, extra))
+            if filename:
+                self.extras.append(self.__to_parquet(filename, extra))
+            else:
+                raise InputError('Needs a filename to save the dataframe parquet.')
 
     def add_requirements(self, filename:str):
+        """
+        Add requirements file.
+
+        Args:
+            filename: The name of output filename to save.
+        """
         self.requirements = filename
 
     def __to_parquet(self, output_filename : str, input_data : pd.DataFrame):
@@ -178,7 +187,7 @@ class NeomarilTrainingLogger:
             input_data: A dictionary to save.
         """
         path = os.path.join(self.save_path, f'{output_filename}.json')
-        with open(path, "w") as f:
+        with open(path, "w", encoding='utf-8') as f:
             json.dump(input_data, f)
         return path
     
@@ -239,9 +248,11 @@ class NeomarilTrainingLogger:
             params = {**params, **hyperparameters}
 
         if len(self.y_train.value_counts()) < 10:
-            params["target_proportion"] = (
+            target_proportion = (
                 self.y_train.value_counts() / len(self.y_train)
             ).to_dict()
+            target_proportion = { str(k[0]) : v for k, v in target_proportion.items() }
+            params['target_proportion'] = target_proportion
         else:
             params["target_distribution"] = {
                 k: v
@@ -269,7 +280,7 @@ class NeomarilTrainingLogger:
         """
         Processing of everything that be logged.
         """
-        
+
         self._set_params()
         self.params = self.__to_json('params', self.params)
 
@@ -800,7 +811,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
                 upload_data += [("requirements", open(requirements_file, 'rb'))]
 
             if extra_files:
-                extra_data = [('extra', open(extra_file, 'rb')) for extra_file in extra_files]
+                extra_data = [('extra', open(path, 'rb')) for path in extra_files]
                 upload_data += extra_data
             
             if python_version:
@@ -811,10 +822,6 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
                 if env:
                     upload_data.append(("requirements", ('.txt', requirements_file)))
-
-                if extra_files:
-                    extra_data = [('extra', (c.split('/')[-1], open(c, 'rb'))) for c in extra_files]
-                    upload_data += extra_data
                 
                 if python_version:
                     form_data['python_version'] = "Python"+python_version.replace('.', '')
@@ -831,10 +838,10 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         message = response.text
 
         if response.status_code == 201:
-            print("logger.info(" + message)
+            logger.info(message)
             return re.search(patt, message).group(1)
         else:
-            print("logger.error(" + message)
+            logger.error(message)
             raise InputError('Bad input for training upload')
 
     def __execute_training(self, exec_id:str) -> None:
