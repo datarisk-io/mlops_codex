@@ -251,7 +251,7 @@ class NeomarilTrainingLogger:
             target_proportion = (
                 self.y_train.value_counts() / len(self.y_train)
             ).to_dict()
-            target_proportion = { str(k[0]) : v for k, v in target_proportion.items() }
+
             params['target_proportion'] = target_proportion
         else:
             params["target_distribution"] = {
