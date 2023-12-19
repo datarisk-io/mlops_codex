@@ -414,12 +414,21 @@ class NeomarilTrainingExecution(NeomarilExecution):
 
         if self.training_type != 'AutoML':
             form_data['model_reference'] = model_reference
+      
+            if operation=="Sync":
+                input_type = "json"
+                schema_extesion = '.json'
+            else:
+                schema_extesion = schema.split('.')[-1]
 
-            file_extesions = {'py': 'app.py'}
-        
-            upload_data = [
-                ("source", (file_extesions[source_file.split('.')[-1]], open(source_file, 'rb')))
-            ]
+                if input_type == 'json|csv|parquet':
+                    raise InputError("Choose a input type from "+input_type)
+
+
+                upload_data = [
+                    ("source", ('app.py', open(source_file, 'rb'))),
+                    ("schema", ("schema."+schema_extesion, parse_dict_or_file(schema)))
+                ]
 
             if env:
                 upload_data.append(("env", (".env", env)))
@@ -433,17 +442,6 @@ class NeomarilTrainingExecution(NeomarilExecution):
         else:
 
             input_type = 'automl'
-
-        if operation=="Sync":
-            input_type = "json"
-            if schema:
-                upload_data.append(("schema", ("schema.json", parse_dict_or_file(schema))))
-            else:
-                raise InputError("Schema file is mandatory for Sync models")
-
-        else:
-            if input_type == 'json|csv|parquet':
-                raise InputError("Choose a input type from "+input_type)
 
         form_data['input_type'] = input_type
             
