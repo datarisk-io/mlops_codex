@@ -8,6 +8,10 @@ import cloudpickle
 from typing import Union, Optional, List, Any
 from contextlib import contextmanager
 
+import plotly
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 import requests
 import pandas as pd
 import numpy as np
@@ -119,15 +123,27 @@ class NeomarilTrainingLogger:
         """
         self.requirements = requirements
 
-    def save_plot(self, plot : str):
+    def save_plot(self, plot : object, filename : str):
         """
         Save plot graphic image to the logger.
 
         Args:
-            plot: A path of plot graphic image (jpg/png).
+            plot: A Matplotlib/Plotly/Seaborn graphic object.
+            filename: A name to save the plot.
         """
-        if os.path.exists(plot):
-            self.extras.append(plot)
+        filepath = f'./{filename}.png'
+        if isinstance(plot, plotly.graph_objs.Figure):
+            image_data = plot.to_image()
+            with open(filepath, 'wb') as f:
+                f.write(image_data)
+            self.add_extra(extra=filepath)
+
+        elif isinstance(plot, sns.axisgrid.FacetGrid) or isinstance(plot, plt.Figure):
+            plot.savefig(filepath)
+            self.add_extra(extra=filepath)
+
+        else:
+            raise ValueError("The plot only accepts plots of Matplotlib/Plotly/Seaborn")
 
     def set_extra(self, extra : list):
         """
