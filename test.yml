@@ -26,6 +26,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install pipenv
           pipenv install
-      - name: Run Pipenv Check - pylint
+      - name: Run Pipenv Check
         working-directory: ./
         run: pipenv check
