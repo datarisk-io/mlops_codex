@@ -149,6 +149,8 @@ class NeomarilTrainingLogger:
                 self.save_seaborn_or_matplotlib_plot(plot, filepath)
                 return
 
+        raise ValueError("The plot only accepts plots of Matplotlib/Plotly/Seaborn")
+
     def save_plotly_plot(self, plot, filepath):
         image_data = plot.to_image()
         with open(filepath, 'wb') as f:
