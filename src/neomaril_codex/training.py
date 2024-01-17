@@ -8,10 +8,6 @@ import cloudpickle
 from typing import Union, Optional, List, Any
 from contextlib import contextmanager
 
-import plotly
-import seaborn as sns
-import matplotlib.pyplot as plt
-
 import requests
 import pandas as pd
 import numpy as np
@@ -20,6 +16,8 @@ from neomaril_codex.base import *
 from neomaril_codex.model import NeomarilModel
 from neomaril_codex.__utils import *
 from neomaril_codex.exceptions import *
+
+from lazy_imports import try_import
 
 patt = re.compile(r'(\d+)')
 
@@ -132,18 +130,34 @@ class NeomarilTrainingLogger:
             filename: A name to save the plot.
         """
         filepath = f'./{filename}.png'
-        if isinstance(plot, plotly.graph_objs.Figure):
-            image_data = plot.to_image()
-            with open(filepath, 'wb') as f:
-                f.write(image_data)
-            self.add_extra(extra=filepath)
 
-        elif isinstance(plot, sns.axisgrid.FacetGrid) or isinstance(plot, plt.Figure):
-            plot.savefig(filepath)
-            self.add_extra(extra=filepath)
+        with try_import() as plotly_import:
+            import plotly
+            if isinstance(plot, plotly.graph_objs.Figure):
+                self.save_plotly_plot(plot, filepath)
+                return
 
-        else:
-            raise ValueError("The plot only accepts plots of Matplotlib/Plotly/Seaborn")
+        with try_import() as seaborn_import:
+            import seaborn as sns 
+            if isinstance(plot, sns.axisgrid.FacetGrid):
+                self.save_seaborn_or_matplotlib_plot(plot, filepath)
+                return
+
+        with try_import() as matplotlib_import:
+            import matplotlib.pyplot as plt
+            if isinstance(plot, plt.Figure):
+                self.save_seaborn_or_matplotlib_plot(plot, filepath)
+                return
+
+    def save_plotly_plot(self, plot, filepath):
+        image_data = plot.to_image()
+        with open(filepath, 'wb') as f:
+            f.write(image_data)
+        self.add_extra(extra=filepath)
+            
+    def save_seaborn_or_matplotlib_plot(self, plot, filepath):
+        plot.savefig(filepath)
+        self.add_extra(extra=filepath)
 
     def set_extra(self, extra : list):
         """
