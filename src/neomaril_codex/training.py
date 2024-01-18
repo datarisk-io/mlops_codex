@@ -425,10 +425,10 @@ class NeomarilTrainingExecution(NeomarilExecution):
                     raise InputError("Choose a input type from "+input_type)
 
 
-                upload_data = [
-                    ("source", ('app.py', open(source_file, 'rb'))),
-                    ("schema", ("schema."+schema_extesion, parse_dict_or_file(schema)))
-                ]
+            upload_data = [
+                ("source", ('app.py', open(source_file, 'rb'))),
+                ("schema", ("schema."+schema_extesion, parse_dict_or_file(schema)))
+            ]
 
             if env:
                 upload_data.append(("env", (".env", env)))
