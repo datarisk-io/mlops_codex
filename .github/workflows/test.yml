@@ -1,0 +1,31 @@
+name: Check the python packages
+
+on:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Packages check
+    runs-on: ubuntu-22.04
+    env:
+      PyVer: "3.10"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PyVer }}
+          cache: 'pip'
+      - name: Install dependencies
+        working-directory: ./
+        run: |
+          python -m pip install --upgrade pip
+          pip install pipenv
+          pipenv install
+      - name: Run Pipenv Check
+        working-directory: ./
+        run: pipenv check
