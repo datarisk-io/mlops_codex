@@ -248,10 +248,9 @@ class NeomarilTrainingLogger:
             params = {**params, **hyperparameters}
 
         if len(self.y_train.value_counts()) < 10:
-            target_proportion = (
-                self.y_train.value_counts() / len(self.y_train)
-            ).to_dict()
-
+            target_proportion = self.y_train.value_counts() / len(self.y_train)
+            target_proportion = target_proportion.to_dict()
+            target_proportion = [ { 'target' : k, 'proportion' : v  } for k, v in target_proportion.items() ]
             params['target_proportion'] = target_proportion
         else:
             params["target_distribution"] = {
