@@ -17,6 +17,8 @@ from neomaril_codex.model import NeomarilModel
 from neomaril_codex.__utils import *
 from neomaril_codex.exceptions import *
 
+from lazy_imports import try_import
+
 patt = re.compile(r'(\d+)')
 
 class NeomarilTrainingLogger:
@@ -119,15 +121,45 @@ class NeomarilTrainingLogger:
         """
         self.requirements = requirements
 
-    def save_plot(self, plot : str):
+    def save_plot(self, plot : object, filename : str):
         """
         Save plot graphic image to the logger.
 
         Args:
-            plot: A path of plot graphic image (jpg/png).
+            plot: A Matplotlib/Plotly/Seaborn graphic object.
+            filename: A name to save the plot.
         """
-        if os.path.exists(plot):
-            self.extras.append(plot)
+        filepath = f'./{filename}.png'
+
+        with try_import() as plotly_import:
+            import plotly
+            if isinstance(plot, plotly.graph_objs.Figure):
+                self.save_plotly_plot(plot, filepath)
+                return
+
+        with try_import() as seaborn_import:
+            import seaborn as sns 
+            if isinstance(plot, sns.axisgrid.FacetGrid):
+                self.save_seaborn_or_matplotlib_plot(plot, filepath)
+                return
+
+        with try_import() as matplotlib_import:
+            import matplotlib.pyplot as plt
+            if isinstance(plot, plt.Figure):
+                self.save_seaborn_or_matplotlib_plot(plot, filepath)
+                return
+
+        raise ValueError("The plot only accepts plots of Matplotlib/Plotly/Seaborn")
+
+    def save_plotly_plot(self, plot, filepath):
+        image_data = plot.to_image()
+        with open(filepath, 'wb') as f:
+            f.write(image_data)
+        self.add_extra(extra=filepath)
+            
+    def save_seaborn_or_matplotlib_plot(self, plot, filepath):
+        plot.savefig(filepath)
+        self.add_extra(extra=filepath)
 
     def set_extra(self, extra : list):
         """
