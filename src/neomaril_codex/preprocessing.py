@@ -673,7 +673,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
                 raise InputError("Choose a input type from "+input_type)
 
         if env:
-            upload_data.append(("env", (".env", env)))
+            upload_data.append(("env", (".env", open(env, 'r'))))
         
         if extra_files:
             extra_data = [('extra', (c.split('/')[-1], open(c, 'rb'))) for c in extra_files]

@@ -462,7 +462,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
             ]
 
             if env:
-                upload_data.append(("env", (".env", env)))
+                upload_data.append(("env", (".env", open(env, 'r'))))
             if requirements_file:
                 upload_data.append(("requirements", ("requirements.txt", env)))
             if extra_files:
@@ -778,7 +778,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             ]
 
             if env:
-                upload_data.append(("env", (".env", env)))
+                upload_data.append(("env", (".env", open(env, 'r'))))
          
             if extra_files:
                 extra_data = [('extra', (c.split('/')[-1], open(c, 'rb'))) for c in extra_files]
@@ -846,14 +846,8 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             if python_version:
                 form_data['python_version'] = "Python"+python_version.replace('.', '')
 
-                if env:
-                    upload_data.append(("env", (".env", env)))
-
-                if env:
-                    upload_data.append(("requirements", ('.txt', requirements_file)))
-                
-                if python_version:
-                    form_data['python_version'] = "Python"+python_version.replace('.', '')
+            if env:
+                upload_data.append(("env", (".env", open(env, 'r'))))
 
         
         token = refresh_token(*self.__credentials, self.base_url)
