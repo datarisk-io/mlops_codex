@@ -558,17 +558,17 @@ class NeomarilModel(BaseNeomaril):
 
         if response.status_code == 200:
             message = response.json()
-            logger.info(message['Message'])
-            status = response['Status']
+
+            status = message['Status']
             if status == 'Validating':
-                print('Waiting the monitoring host.', end='')
-                sleep(30)
-                print('.', end='', flush=True)
+                logger.info('Waiting the monitoring host.')
+                sleep(15)
                 self.__host_monitoring_status(group, model_id) # recursive
             if status == 'Validated':
                 logger.info(f'Model monitoring host validated - Hash: "{model_id}"')
             if status == 'Invalidated':
-                logger.error(response['Message'])
+                res_message = message['Message']
+                logger.error(f'Model monitoring host message: {res_message}')
                 raise ExecutionError("Monitoring host failed")
         else:
             raise ServerError(response.text)
