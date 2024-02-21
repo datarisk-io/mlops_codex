@@ -562,7 +562,7 @@ class NeomarilModel(BaseNeomaril):
             status = message['Status']
             if status == 'Validating':
                 logger.info('Waiting the monitoring host.')
-                sleep(15)
+                sleep(30)
                 self.__host_monitoring_status(group, model_id) # recursive
             if status == 'Validated':
                 logger.info(f'Model monitoring host validated - Hash: "{model_id}"')
