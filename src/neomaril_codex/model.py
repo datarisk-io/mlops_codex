@@ -41,7 +41,7 @@ class NeomarilModel(BaseNeomaril):
 
     Example
     --------
-    Getting a model, testint its healthy and putting it to run the prediction
+    Getting a model, testing its health and running the prediction
 
     .. code-block:: python
         
@@ -533,6 +533,71 @@ class NeomarilModel(BaseNeomaril):
             return run
         else:
             raise ModelError("Sync models don't have executions")
+        
+    def __host_monitoring_status(self, group:str, model_id:str):
+        """
+        Get the host status for the monitoring configuration
+
+        Arguments
+        ---------
+        group : str
+            Group the model is inserted. Default is 'datarisk' (public group)
+        model_id : str
+            The uploaded model id (hash)
+
+        Raises
+        ------
+        ExecutionError
+            Monitoring host failed
+        ServerError
+            Unexpected server error
+        """
+        url = f"{self.base_url}/monitoring/status/{group}/{model_id}"
+
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
+
+        if response.status_code == 200:
+            message = response.json()
+
+            status = message['Status']
+            if status == 'Validating':
+                logger.info('Waiting the monitoring host.')
+                sleep(30)
+                self.__host_monitoring_status(group, model_id) # recursive
+            if status == 'Validated':
+                logger.info(f'Model monitoring host validated - Hash: "{model_id}"')
+            if status == 'Invalidated':
+                res_message = message['Message']
+                logger.error(f'Model monitoring host message: {res_message}')
+                raise ExecutionError("Monitoring host failed")
+        else:
+            raise ServerError(response.text)
+
+    def __host_monitoring(self, group:str, model_id:str):
+        """
+        Host the monitoring configuration
+
+        Arguments
+        ---------
+        group : str
+            Group the model is inserted. Default is 'datarisk' (public group)
+        model_id : str
+            The uploaded model id (hash)
+
+        Raises
+        ------
+        InputError
+            Monitoring host error
+        """
+        url = f"{self.base_url}/monitoring/host/{group}/{model_id}"
+
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
+        
+        if response.status_code == 200:
+            logger.info(f'Model monitoring host started - Hash: "{model_id}"')
+        else:
+            logger.error('Model monitoring host error: ' + response.text)
+            raise InputError('Monitoring host error')
 
     def register_monitoring(self, preprocess_reference:str, shap_reference:str, configuration_file:Union[str, dict], preprocess_file:Optional[str]=None,
                             requirements_file:Optional[str]=None) -> str:
@@ -600,6 +665,10 @@ class NeomarilModel(BaseNeomaril):
             data = response.json()
             model_id = data["ModelHash"]
             logger.info(f'{data["Message"]} - Hash: "{model_id}"')
+
+            self.__host_monitoring(self.group, model_id)
+            self.__host_monitoring_status(self.group, model_id)
+
             return model_id
         else:
             logger.error('Upload error: ' + response.text)
@@ -959,7 +1028,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         Raises
         ------
         InputError
-            Some input parameters its invalid
+            Some input parameters is invalid
 
         Returns
         -------
@@ -1027,7 +1096,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         Raises
         ------
         InputError
-            Some input parameters its invalid
+            Some input parameters is invalid
         """
         
         url = f"{self.base_url}/model/{operation}/host/{group}/{model_id}"
@@ -1081,7 +1150,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         Raises
         ------
         InputError
-            Some input parameters its invalid
+            Some input parameters is invalid
 
         Returns
         -------
