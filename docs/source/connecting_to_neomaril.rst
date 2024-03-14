@@ -9,9 +9,9 @@ You need the server URL and a token to access the Neomaril. The best way to do i
 
 .. code::
 
-    NEOMARIL_URL='https://neomaril.staging.datarisk.net'
-    NEOMARIL_TOKEN='123'
-
+    NEOMARIL_URL='https://neomaril.datarisk.net'
+    NEOMARIL_USER='email@email.com'
+    NEOMARIL_PASSWORD='password@123'
 
 If you create this file in the same directory your are running your code we will import it automatically
 
