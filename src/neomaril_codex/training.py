@@ -340,10 +340,10 @@ class NeomarilTrainingExecution(NeomarilExecution):
         Group the training is inserted. Default is 'datarisk' (public group)
     exec_id : str
         Executiong id for that especific training run
-	login : str
-		Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
-	password : str
-		Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+    login : str
+        Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+    password : str
+        Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
     environment : str
         Enviroment of Neomaril you are using. 
     run_data : dict
@@ -382,10 +382,6 @@ class NeomarilTrainingExecution(NeomarilExecution):
     def __init__(self, training_id:str, group:str, exec_id:str, login:Optional[str]=None, 
                  password:Optional[str]=None, url:str=None) -> None:
         super().__init__(training_id, 'Training', exec_id=exec_id, login=login, password=password, url=url, group=group)
-        load_dotenv()
-        logger.info('Loading .env')
-
-        self.__credentials = (login if login else os.getenv('NEOMARIL_USER'), password if password else os.getenv('NEOMARIL_PASSWORD'))
 
         self.training_id = training_id
         self.group = group
@@ -476,7 +472,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
 
         form_data['input_type'] = input_type
             
-        response = requests.post(url, data=form_data, files=upload_data, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
+        response = requests.post(url, data=form_data, files=upload_data, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
         
         if response.status_code == 201:
             data = response.json()
@@ -489,22 +485,22 @@ class NeomarilTrainingExecution(NeomarilExecution):
         
     def get_status(self) -> dict:
         """
-		Gets the status of the related execution.
+        Gets the status of the related execution.
 
-		Raises
-		------
-		ExecutionError
-			Execution unavailable
+        Raises
+        ------
+        ExecutionError
+            Execution unavailable
 
-		Returns
-		-------
-		dict
-			Returns the execution status.
-		"""
+        Returns
+        -------
+        dict
+            Returns the execution status.
+        """
 
         url = f"{self.base_url}/training/status/{self.group}/{self.exec_id}"
 
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
         if response.status_code not in [200, 410]:
             logger.error(response.text)
             raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
@@ -515,7 +511,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
         self.execution_data['ExecutionState'] = result['Status']
         if self.status == 'Succeeded':
             url = f"{self.base_url}/training/describe/{self.group}/{self.training_id}/{self.exec_id}"
-            response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
+            response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
             self.execution_data = response.json()['Description']
             self.run_data = self.execution_data['RunData']
             try:
@@ -544,7 +540,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
         url = f"{self.base_url}/model/{operation}/host/{self.group}/{model_id}"
         if operation == 'sync':
             url = url.replace('7070','7071')
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
         if response.status_code == 202:
             logger.info(f"Model host in process - Hash: {model_id}")
         else:
@@ -607,7 +603,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
         if model_id:
             self.__host_model(operation.lower(), model_id)
 
-            return NeomarilModel(model_id, login=self.__credentials[0], password=self.__credentials[1], 
+            return NeomarilModel(model_id, login=self.credentials[0], password=self.credentials[1], 
                                  group=self.group, url=self.base_url)
 
         
@@ -617,10 +613,10 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
     Attributes
     ----------
-	login : str
-		Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
-	password : str
-		Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+    login : str
+        Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+    password : str
+        Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
     training_id : str
         Training id (hash) from the experiment you want to access
     group : str
@@ -661,20 +657,13 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
     def __init__(self, training_id:str, login:Optional[str]=None, password:Optional[str]=None, 
                  group:str="datarisk", url:str='https://neomaril.staging.datarisk.net/') -> None:
-        super().__init__(url)
-        load_dotenv()
-        logger.info('Loading .env')
-
-        self.__credentials = (login if login else os.getenv('NEOMARIL_USER'), password if password else os.getenv('NEOMARIL_PASSWORD'))
+        super().__init__(login, password, url)
+        
         self.training_id = training_id
-        self.base_url = os.getenv('NEOMARIL_URL') if os.getenv('NEOMARIL_URL') else url
-        self.base_url = parse_url(self.base_url)
         self.group = group
 
-        try_login(*self.__credentials, self.base_url)
-        
         url = f"{self.base_url}/training/describe/{self.group}/{self.training_id}"
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
     
         if response.status_code == 404:
             raise ModelError(f'Experiment "{training_id}" not found.')
@@ -850,7 +839,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
                 upload_data.append(("env", (".env", open(env, 'r'))))
 
         
-        token = refresh_token(*self.__credentials, self.base_url)
+        token = refresh_token(*self.credentials, self.base_url)
         response = requests.post(
             url,
             data=form_data,
@@ -883,7 +872,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         """
         
         url = f"{self.base_url}/training/execute/{self.group}/{self.training_id}/{exec_id}"
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
         if response.status_code == 200:
             logger.info(f"Model training starting - Hash: {self.training_id}")
         else:
@@ -892,7 +881,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         
     def __refresh_execution_list(self):
         url = f"{self.base_url}/training/describe/{self.group}/{self.training_id}"
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
     
         if response.status_code == 404:
             raise ModelError(f'Experiment "{self.training_id}" not found.')
@@ -984,8 +973,8 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         if exec_id:
             self.__execute_training(exec_id)
             self.__refresh_execution_list()
-            run = NeomarilTrainingExecution(self.training_id, self.group, exec_id, login=self.__credentials[0], 
-                                            password=self.__credentials[1], url=self.base_url)
+            run = NeomarilTrainingExecution(self.training_id, self.group, exec_id, login=self.credentials[0], 
+                                            password=self.credentials[1], url=self.base_url)
             response = run.get_status()
             status = response['Status']
             if wait_complete:
@@ -1027,8 +1016,8 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         except:
             InputError("Unvalid execution Id informed or this training dont have a successful execution yet.")
 
-        exec = NeomarilTrainingExecution(self.training_id, self.group, exec_id, login=self.__credentials[0],
-                                         password=self.__credentials[1], url=self.base_url)
+        exec = NeomarilTrainingExecution(self.training_id, self.group, exec_id, login=self.credentials[0],
+                                         password=self.credentials[1], url=self.base_url)
         exec.get_status()
         
         return exec
@@ -1068,12 +1057,12 @@ class NeomarilTrainingClient(BaseNeomarilClient):
 
     Attributes
     ----------
-	login : str
-		Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
-	password : str
-		Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
-	url : str
-		URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
+    login : str
+        Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+    password : str
+        Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+    url : str
+        URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
 
     Raises
     ------
@@ -1093,27 +1082,7 @@ class NeomarilTrainingClient(BaseNeomarilClient):
         training = client.create_training_experiment('Training example', 'Classification',  'Custom', 'ex_group')
         print(client.get_training(training.training_id, 'ex_group').training_data)
 
-    """
-    def __init__(self, login:Optional[str]=None, password:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/') -> None:
-        """Client for acessing Neomaril and manage models
-
-        Args:
-                password (str): Password for authenticating with the client
-            url (str): URL for Neomaril server. Test your deployment first before changing to production. Default is https://neomaril.staging.datarisk.net/
-
-        Raises:
-                AuthenticationError: Unvalid credentials
-                ServerError: Server unavailable
-        """
-        load_dotenv()
-        logger.info('Loading .env')
-
-        self.__credentials = (login if login else os.getenv('NEOMARIL_USER'), password if password else os.getenv('NEOMARIL_PASSWORD'))
-        self.base_url = os.getenv('NEOMARIL_URL') if os.getenv('NEOMARIL_URL') else url
-        self.base_url = parse_url(self.base_url)
-
-        super().__init__(login=self.__credentials[0], password=self.__credentials[1], url=self.base_url)
-            
+    """     
     def __repr__(self) -> str:
             return f'NeomarilTrainingClient(url="{self.base_url}", version="{self.client_version}")'
         
@@ -1149,8 +1118,8 @@ class NeomarilTrainingClient(BaseNeomarilClient):
         >>> training = get_training('Tfb3274827a24dc39d5b78603f348aee8d3dbfe791574dc4a6681a7e2a6622fa')
         """
 
-        return NeomarilTrainingExperiment(training_id, login=self.__credentials[0], 
-                                          password=self.__credentials[1], group=group, url=self.base_url)
+        return NeomarilTrainingExperiment(training_id, login=self.credentials[0], 
+                                          password=self.credentials[1], group=group, url=self.base_url)
     
 
     def create_training_experiment(self, experiment_name:str, model_type:str, group:str='datarisk')-> NeomarilTrainingExperiment:
@@ -1203,7 +1172,7 @@ class NeomarilTrainingClient(BaseNeomarilClient):
 
         data = {'experiment_name': experiment_name, 'model_type': model_type}
 
-        response = requests.post(url, data=data, headers={'Authorization': 'Bearer ' + refresh_token(*self.__credentials, self.base_url)})
+        response = requests.post(url, data=data, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
 
         if response.status_code < 300:
             response_data = response.json()
@@ -1214,5 +1183,5 @@ class NeomarilTrainingClient(BaseNeomarilClient):
             raise ServerError('')
 
         
-        return NeomarilTrainingExperiment(training_id, login=self.__credentials[0], password=self.__credentials[1], 
+        return NeomarilTrainingExperiment(training_id, login=self.credentials[0], password=self.credentials[1], 
                                           group=group, url=self.base_url)  

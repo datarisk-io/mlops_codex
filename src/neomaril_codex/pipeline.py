@@ -39,12 +39,8 @@ class NeomarilPipeline:
         pipeline.run_monitoring('2', 'Mb29d61da4324a39a8bc2e0946f213b4959643916d354bf39940de2124f1e9d8')
     """
     def __init__(self, group:str, login:Optional[str]=None, password:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/', python_version:float=3.9) -> None:
-        load_dotenv()
-        logger.info('Loading .env')
-
-        self.__credentials = (login if login else os.getenv('NEOMARIL_USER'), password if password else os.getenv('NEOMARIL_PASSWORD'))
-        self.base_url = os.getenv('NEOMARIL_URL') if os.getenv('NEOMARIL_URL') else url
-        self.base_url = parse_url(self.base_url)
+        super().__init__(login, password, url)
+        
         self.group = group
         self.python_version = python_version
         self.train_config = None
@@ -165,7 +161,7 @@ class NeomarilPipeline:
         >>> pipeline.run_training()
         """
         logger.info('Running training')
-        client = NeomarilTrainingClient(login=self.__credentials[0], password=self.__credentials[1], url=self.base_url)
+        client = NeomarilTrainingClient(login=self.credentials[0], password=self.credentials[1], url=self.base_url)
         client.create_group(self.group, self.group)
 
         conf = self.train_config
@@ -222,8 +218,8 @@ class NeomarilPipeline:
 
         if training_id:
             logger.info('Deploying scorer from training')
-            training_run = NeomarilTrainingExecution(training_id[0], self.group, training_id[1], login=self.__credentials[0], 
-                                                     password=self.__credentials[1], url=self.base_url)
+            training_run = NeomarilTrainingExecution(training_id[0], self.group, training_id[1], login=self.credentials[0], 
+                                                     password=self.credentials[1], url=self.base_url)
 
             model_name = conf.get('name', training_run.execution_data.get('ExperimentName', ''))
 
@@ -240,7 +236,7 @@ class NeomarilPipeline:
 
         else:
             logger.info('Deploying scorer')
-            client = NeomarilModelClient(login=self.__credentials[0], password=self.__credentials[1], url=self.base_url)
+            client = NeomarilModelClient(login=self.credentials[0], password=self.credentials[1], url=self.base_url)
             client.create_group(self.group, self.group)
             
             model = client.create_model(conf.get('name'), conf['score_function'], os.path.join(PATH, conf['source']), 
@@ -287,7 +283,7 @@ class NeomarilPipeline:
                 json.dump(conf_dict, f)
                 f.truncate()
 
-        model = NeomarilModel(model_id, login=self.__credentials[0], password=self.__credentials[1], group=self.group, 
+        model = NeomarilModel(model_id, login=self.credentials[0], password=self.credentials[1], group=self.group, 
                               group_token=os.getenv('NEOMARIL_GROUP_TOKEN'), url=self.base_url)
 
         model.register_monitoring(conf['preprocess_function'], conf['shap_function'], 
