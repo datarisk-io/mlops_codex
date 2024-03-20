@@ -33,3 +33,15 @@ class InputError(Exception):
 class PipelineError(Exception):
     """Raised when the pipeline configuration is invalid"""
     pass
+
+class DataSorceError(Exception):
+    """Raised when a datasource has a problem"""
+    pass
+
+class DatasetNotFoundError(Exception):
+    """Raised when a datasource has a problem"""
+    pass
+
+class CredentialError(Exception):
+    """Raised when the datasource cloud credential it's invalid"""
+    pass
