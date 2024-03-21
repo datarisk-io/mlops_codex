@@ -278,7 +278,7 @@ class NeomarilDataSource(BaseNeomaril):
             message = response.json().get('Message')
             logger.info(message)
             
-            dataset_hash = message.split('Use ')[1].split('. If you')[0] if 'was already imported!' in message else message.split('Use ')[1].split(' on the')[0],
+            dataset_hash = message.split('Use ')[1].split('. If you')[0] if 'was already imported!' in message else message.split('Use the ')[1].split(' on the')[0]
             
             dataset = NeomarilDataset(
                 dataset_hash=dataset_hash,
