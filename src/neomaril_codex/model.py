@@ -1030,13 +1030,13 @@ class NeomarilModelClient(BaseNeomarilClient):
             ("requirements", ("requirements.txt", open(requirements_file, 'rb')))
         ]
 
+        if schema:
+            upload_data.append(("schema", ("schema.json", parse_dict_or_file(schema))))
+        else:
+            raise InputError("Schema file is mandatory for Sync models")
+            
         if operation=="Sync":
             input_type = "json"
-            if schema:
-                upload_data.append(("schema", ("schema.json", parse_dict_or_file(schema))))
-            else:
-                raise InputError("Schema file is mandatory for Sync models")
-
         else:
             if input_type == 'json|csv|parquet':
                 raise InputError("Choose a input type from "+input_type)
