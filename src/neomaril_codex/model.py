@@ -10,6 +10,7 @@ from neomaril_codex.base import *
 from neomaril_codex.__utils import *
 from neomaril_codex.exceptions import *
 from neomaril_codex.preprocessing import *
+from neomaril_codex.datasources import NeomarilDataset
 
 class NeomarilModel(BaseNeomaril):
     """
@@ -286,7 +287,7 @@ class NeomarilModel(BaseNeomaril):
         self.__token = group_token
         logger.info(f"Token for group {self.group} added.")
 
-    def predict(self, data:Optional[Union[dict, str, NeomarilExecution]] = None, dataset_hash : str = None, preprocessing: Optional[NeomarilPreprocessing]=None, 
+    def predict(self, data:Optional[Union[dict, str, NeomarilExecution]] = None, dataset : Union[str, NeomarilDataset] = None, preprocessing: Optional[NeomarilPreprocessing]=None, 
                 group_token:Optional[str]=None, wait_complete:Optional[bool]=False) -> Union[dict, NeomarilExecution]:
         """
         Runs a prediction from the current model.
@@ -307,7 +308,7 @@ class NeomarilModel(BaseNeomaril):
         ModelError
             Model is not available
         InputError
-            Model requires a dataset_hash or a data input
+            Model requires a dataset or a data input
 
         Returns
         -------
@@ -349,13 +350,14 @@ class NeomarilModel(BaseNeomaril):
                         else:
                             raise PreprocessingError("Can only use async preprocessing with async models")
 
-                    if not (data or dataset_hash):
-                        raise InputError('Invalid data input. Run training requires a data or dataset_hash')
+                    if not (data or dataset):
+                        raise InputError('Invalid data input. Run training requires a data or dataset')
 
                     form_data = {}
                     if data:
                         files = [("input", (data.split('/')[-1], open(data, "rb")))]
-                    elif dataset_hash:
+                    elif dataset:
+                        dataset_hash = dataset if isinstance(dataset, str) else dataset.dataset_hash
                         form_data['dataset_hash'] = dataset_hash
                     
                     req = requests.post(url, files=files, data=form_data,
