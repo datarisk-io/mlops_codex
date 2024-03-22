@@ -322,7 +322,7 @@ class NeomarilDataSource(BaseNeomaril):
     def delete(self):
         """
         Delete the datasource on neomaril.
-
+        Pay attention when doing this action, it is irreversible!
         Returns
         -------
         None
@@ -462,6 +462,7 @@ class NeomarilDataset(BaseNeomaril):
     def delete(self):
         """
         Delete the dataset on neomaril.
+        Pay attention when doing this action, it is irreversible!
         
         Example
         ----------
