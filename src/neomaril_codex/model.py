@@ -1044,7 +1044,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         ]
 
         if schema:
-            upload_data.append(("schema", ("schema.json", parse_dict_or_file(schema))))
+            upload_data.append(("schema", (schema, parse_dict_or_file(schema))))
         else:
             raise InputError("Schema file is mandatory for Sync models")
             

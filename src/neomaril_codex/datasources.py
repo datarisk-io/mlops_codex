@@ -25,6 +25,15 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
         Default value is https://neomaril.staging.datarisk.net,
         use it to test your deployment first before changing to production.
         You can also use the env variable NEOMARIL_URL to set this
+        
+    Raises
+    ----------
+    ServerError
+        Database produced an unexpected error.
+    AuthenticationError
+        If user is not in the master group.
+    CredentialError
+        If the Cloud Credential is Invalid
     """
     def register_datasource(self, *, datasource_name : str, provider : str, cloud_credentials : Union[dict, str], group : str):
         """
@@ -33,22 +42,17 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
         Attributes
         ----------
         group : str
-            Name of the group where the datasource will be inserted.
+            Name of the group where we will search the datasources.
         datasource_name : str
-            Name given to the datasource, should be not null, case sensitive, have between 1 and 64 characters,
-            that could be alphanumeric including accentuation (for example: 'é', à', 'ç','ñ') and space;
-        provider : str
-            Providers name, currently, Neomaril supports:
-            Azure Blob Storage as "Azure",
-            AWS S3 as "AWS",
-            Google GCP as "GCP".
-        cloud_credentials : Union[dict,str]
+            Name given previously to the datasource.
+        provider : str ("Azure" | "AWS" | "GCP")
+        cloud_credentials : str | Union[dict,str]
             Path or dict to a JSON with the credentials to access the provider.
             
         Returns
         ----------
         NeomarilDataSource
-            A NeomarilDataSource with the identifier as datasource_name.
+            A NeomarilDataSource object
             
         Example
         -------
@@ -81,7 +85,7 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
 
         form_data = {
             'name' : datasource_name,
-            'provider' : datasource.provider
+            'provider' : provider
         }
         
         files = {
@@ -122,19 +126,15 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
         return path
     
         
-    def list_datasource(self, *, provider : str, group : str):
+    def list_datasources(self, *, provider : str, group : str):
         """
-        List datasources with the provider and group.
+        List all datasources of the group with this provider type.
 
         Attributes
         ----------
         group : str
-            Name of the group where the datasource will be inserted.
-        provider : str
-            Providers name, currently, Neomaril supports:
-            Azure Blob Storage as "Azure",
-            AWS S3 as "AWS",
-            Google GCP as "GCP".
+            Name of the group where we will search the datasources
+        provider : str ("Azure" | "AWS" | "GCP")
         
         Returns
         ----------
@@ -143,7 +143,7 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
             
         Example
         -------
-        >>> client.list_datasource(provider='GCP', group='my_group')
+        >>> client.list_datasources(provider='GCP', group='my_group')
         """
         url = f"{self.base_url}/datasource/list?group={group}&provider={provider}"
 
@@ -166,26 +166,21 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
         Attributes
         ----------
         group : str
-            Name of the group where the datasource will be inserted.
+            Name of the group where we will search the datasources
         datasource_name : str
-            Name given to the datasource, should be not null, case sensitive, have between 1 and 64 characters,
-            that could be alphanumeric including accentuation (for example: 'é', à', 'ç','ñ') and space;
-        provider : str
-            Providers name, currently, Neomaril supports:
-            Azure Blob Storage as "Azure",
-            AWS S3 as "AWS",
-            Google GCP as "GCP".
+            Name given previously to the datasource.
+        provider : str ("Azure" | "AWS" | "GCP")
         
         Returns
         ----------
         NeomarilDataSource
-            A NeomarilDataSource with the identifier as datasource_name.
+            A NeomarilDataSource object
             
         Example
         -------
         >>> client.get_datasource(datasource_name='MyDataSourceName', provider='GCP', group='my_group')
         """
-        datasources = self.list_datasource(provider=provider, group=group)
+        datasources = self.list_datasources(provider=provider, group=group)
         for datasource in datasources:
             if datasource_name == datasource.get('Name'):
                 return NeomarilDataSource(
@@ -200,7 +195,7 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
 
 class NeomarilDataSource(BaseNeomaril):
     """
-    Class to do operaterations in a datasource.
+    Class to operate actions in a datasource.
 
     Attributes
     ----------
@@ -216,15 +211,14 @@ class NeomarilDataSource(BaseNeomaril):
         use it to test your deployment first before changing to production.
         You can also use the env variable NEOMARIL_URL to set this
     datasource_name : str
-        Name given to the datasource, should be not null, case sensitive, have between 1 and 64 characters,
-        that could be alphanumeric including accentuation (for example: 'é', à', 'ç','ñ') and space;
+        Name given previously to the datasource.
     provider : str
         Providers name, currently, Neomaril supports:
         Azure Blob Storage as "Azure",
         AWS S3 as "AWS",
         Google GCP as "GCP".
     group : str
-        Name of the group where the datasource will be inserted.
+        Name of the group where we will search the datasources
     """
     def __init__(self, *, datasource_name : str, provider : str, group : str, login : str, password : str, url : str) -> None:
         super().__init__(login, password, url)
@@ -240,9 +234,8 @@ class NeomarilDataSource(BaseNeomaril):
         ----------
         dataset_uri : str
             Datasource cloud URI path.
-        datasource_name : str
-            Name given to the datasource, should be not null, case sensitive, have between 1 and 64 characters,
-            that could be alphanumeric including accentuation (for example: 'é', à', 'ç','ñ') and space;
+        dataset_name : str
+            The dataset defined name
         force : bool
             Optional[boolean]: when it is true it will force the datasource download from the provider.
         
@@ -251,6 +244,11 @@ class NeomarilDataSource(BaseNeomaril):
         NeomarilDataset
             A NeomarilDataset with the identifier as dataset_hash.
             
+        Raises
+        ----------
+        InputError
+            If any data sent is invalidated on server.
+
         Example
         -------
         >>> dataset = datasource.import_dataset(
@@ -275,10 +273,8 @@ class NeomarilDataSource(BaseNeomaril):
         )
 
         if response.status_code == 200:
-            message = response.json().get('Message')
-            logger.info(message)
             
-            dataset_hash = message.split('Use ')[1].split('. If you')[0] if 'was already imported!' in message else message.split('Use the ')[1].split(' on the')[0]
+            dataset_hash = response.json().get('ExternalHash')
             
             dataset = NeomarilDataset(
                 dataset_hash=dataset_hash,
@@ -299,7 +295,7 @@ class NeomarilDataSource(BaseNeomaril):
         Attributes
         ----------
         origin : Optional[str]
-            Name of the group where the datasource will be inserted.
+            Can be an EHash or a SHash
             
         Returns
         ----------
@@ -325,7 +321,7 @@ class NeomarilDataSource(BaseNeomaril):
     
     def delete(self):
         """
-        Delete the dataset on neomaril.
+        Delete the datasource on neomaril.
 
         Returns
         -------
@@ -333,7 +329,7 @@ class NeomarilDataSource(BaseNeomaril):
         
         Example
         -------
-        >>> dataset.delete()
+        >>> datasource.delete()
         """
         url = f'{self.base_url}/datasources/{self.group}/{self.datasource_name}'
 
@@ -343,8 +339,7 @@ class NeomarilDataSource(BaseNeomaril):
             headers={'Authorization': 'Bearer ' + token},
             timeout=60
         )
-        if response.status_code == 200:
-            logger.info(response.json().get('Message'))
+        logger.info(response.json().get('Message'))
 
     def get_dataset(self, *, dataset_hash : str, origin : str = None):
         """
@@ -353,16 +348,20 @@ class NeomarilDataSource(BaseNeomaril):
         Attributes
         ----------
         dataset_hash : str
-            Name given to the datasource, should be not null, case sensitive, have between 1 and 64 characters,
-            that could be alphanumeric including accentuation (for example: 'é', à', 'ç','ñ') and space;
+            Name given previously to the datasource.
         origin : Optional[str]
-            Name of the group where the datasource will be inserted.
+            Can be an EHash or a SHash
         
         Returns
         ----------
         NeomarilDataset
             A NeomarilDataset with the identifier as dataset_hash.
-            
+        
+        Raises
+        ----------
+        DatasetNotFoundError
+            When the dataset_hash input was not found
+        
         Example
         ----------
         >>> dataset = datasource.get_dataset(dataset_hash='D589654eb26c4377b0df646e7a5675fa3c7d49575e03400b940dd5363006fc3a')
@@ -384,7 +383,7 @@ class NeomarilDataSource(BaseNeomaril):
 
 class NeomarilDataset(BaseNeomaril):
     """
-    Class to do operaterations in a dataset.
+    Class to operate actions in a dataset.
 
     Attributes
     ----------
@@ -404,10 +403,9 @@ class NeomarilDataset(BaseNeomaril):
     dataset_name : str
         The dataset defined name
     datasource_name : str
-        Name given to the datasource, should be not null, case sensitive, have between 1 and 64 characters,
-        that could be alphanumeric including accentuation (for example: 'é', à', 'ç','ñ') and space;
+        Name given previously to the datasource.
     group : str
-        Name of the group where the datasource will be inserted.
+        Name of the group where we will search the datasources
     """
     def __init__(self, *, dataset_hash : str, dataset_name : str, datasource_name : str, group : str, login : str, password : str, url : str) -> None:
         super().__init__(login, password, url)
@@ -423,10 +421,21 @@ class NeomarilDataset(BaseNeomaril):
         Returns
         ----------
         dict
+            when success
             {
                 status : 'Succeeded',
                 log : ''
             }
+            when failed
+            {
+                "status": "Failed",
+                "log": "UnexpectedError\n  \"Azure Request error! Message: Service request failed.\nStatus: 403 (Server failed to authenticate the request. Make sure the value of Authorization header is formed correctly including the signature.)\nErrorCode: AuthenticationFailed\n\nHeaders:\nTransfer-Encoding: chunked\nServer: Microsoft-HTTPAPI/2.0\nx-ms-request-id: xxxxx\nx-ms-error-code: AuthenticationFailed\nDate: Wed, 24 Jan 2024 12:00:36 GMT\n\""
+            }
+        
+        Raises
+        ----------
+        DatasetNotFound
+            When the dataset was not found
 
         Example
         ----------
@@ -447,6 +456,8 @@ class NeomarilDataset(BaseNeomaril):
             log = response.json().get('Log')
 
             return {'status' : status, 'log' : log }
+        else:
+            raise DatasetNotFoundError('Dataset not found')
 
     def delete(self):
         """
