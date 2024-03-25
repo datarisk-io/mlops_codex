@@ -10,6 +10,7 @@ from neomaril_codex.base import *
 from neomaril_codex.__utils import *
 from neomaril_codex.exceptions import *
 from neomaril_codex.preprocessing import *
+from neomaril_codex.datasources import NeomarilDataset
 
 class NeomarilModel(BaseNeomaril):
     """
@@ -286,7 +287,7 @@ class NeomarilModel(BaseNeomaril):
         self.__token = group_token
         logger.info(f"Token for group {self.group} added.")
 
-    def predict(self, data:Union[dict, str, NeomarilExecution], preprocessing: Optional[NeomarilPreprocessing]=None, 
+    def predict(self, data:Optional[Union[dict, str, NeomarilExecution]] = None, dataset : Union[str, NeomarilDataset] = None, preprocessing: Optional[NeomarilPreprocessing]=None, 
                 group_token:Optional[str]=None, wait_complete:Optional[bool]=False) -> Union[dict, NeomarilExecution]:
         """
         Runs a prediction from the current model.
@@ -306,6 +307,8 @@ class NeomarilModel(BaseNeomaril):
         ------
         ModelError
             Model is not available
+        InputError
+            Model requires a dataset or a data input
 
         Returns
         -------
@@ -347,7 +350,17 @@ class NeomarilModel(BaseNeomaril):
                         else:
                             raise PreprocessingError("Can only use async preprocessing with async models")
 
-                    req = requests.post(url, files=[("input", (data.split('/')[-1], open(data, "rb")))],
+                    if not (data or dataset):
+                        raise InputError('Invalid data input. Run training requires a data or dataset')
+
+                    form_data = {}
+                    if data:
+                        files = [("input", (data.split('/')[-1], open(data, "rb")))]
+                    elif dataset:
+                        dataset_hash = dataset if isinstance(dataset, str) else dataset.dataset_hash
+                        form_data['dataset_hash'] = dataset_hash
+                    
+                    req = requests.post(url, files=files, data=form_data,
                                                     headers={'Authorization': 'Bearer ' + group_token})
 
                     if req.status_code == 202:
@@ -1006,7 +1019,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         operation : str
             Defines wich kind operation is beeing executed (Sync or Async). Default value is Sync
         input_type : str
-            The type of the input file that should be 'json', 'csv' or 'parquet'
+            The type of the input file that should be 'json', 'csv', 'parquet', 'txt', 'xls', 'xlsx'
 
         Raises
         ------
@@ -1030,13 +1043,13 @@ class NeomarilModelClient(BaseNeomarilClient):
             ("requirements", ("requirements.txt", open(requirements_file, 'rb')))
         ]
 
+        if schema:
+            upload_data.append(("schema", (schema, parse_dict_or_file(schema))))
+        else:
+            raise InputError("Schema file is mandatory")
+            
         if operation=="Sync":
             input_type = "json"
-            if schema:
-                upload_data.append(("schema", ("schema.json", parse_dict_or_file(schema))))
-            else:
-                raise InputError("Schema file is mandatory for Sync models")
-
         else:
             if input_type == 'json|csv|parquet':
                 raise InputError("Choose a input type from "+input_type)

@@ -16,6 +16,7 @@ from neomaril_codex.base import *
 from neomaril_codex.model import NeomarilModel
 from neomaril_codex.__utils import *
 from neomaril_codex.exceptions import *
+from neomaril_codex.datasources import NeomarilDataset
 
 from lazy_imports import try_import
 
@@ -687,7 +688,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         return f'NEOMARIL training experiment "{self.experiment_name} (Group: {self.group}, Id: {self.training_id})"'
     
     def __upload_training(self, run_name:str, training_type:str='External', description:Optional[str]=None, 
-                          train_data:Optional[str]=None, training_reference:Optional[str]=None, 
+                          train_data:Optional[str]=None, dataset:Union[str, NeomarilDataset]=None, training_reference:Optional[str]=None, 
                           python_version:str='3.8', conf_dict:Optional[Union[str, dict]]=None,
                           source_file:Optional[str]=None, requirements_file:Optional[str]=None,
                           env:Optional[str]=None, X_train=None, y_train=None, model_outputs=None,
@@ -755,7 +756,11 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             form_data['description'] = description
 
         if training_type != 'External':
-            upload_data.append(("train_data", (train_data.split('/')[-1], open(train_data, "rb"))))
+            if train_data:
+                upload_data.append(("train_data", (train_data.split('/')[-1], open(train_data, "rb"))))
+            elif dataset:
+                dataset_hash = dataset if isinstance(dataset, str) else dataset.dataset_hash
+                form_data['dataset_hash'] = dataset_hash
 
         if training_type == 'Custom':
         
@@ -893,7 +898,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         self.executions = [c['Id'] for c in self.training_data['Executions']]
 
     def run_training(self, run_name:str, training_type:str='External', description:Optional[str]=None, 
-                     train_data:Optional[str]=None, training_reference:Optional[str]=None, 
+                     train_data:Optional[str]=None, dataset:Union[str, NeomarilDataset]=None, training_reference:Optional[str]=None, 
                      python_version:str='3.8', conf_dict:Optional[Union[str, dict]]=None, 
                      source_file:Optional[str]=None, requirements_file:Optional[str]=None,
                      extra_files:Optional[list]=None, env:Optional[str]=None, 
@@ -945,6 +950,10 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         -------
         >>> execution = run = training.run_training('First test', data_path+'dados.csv', training_reference='train_model', python_version='3.9', requirements_file=data_path+'requirements.txt', wait_complete=True)
         """
+        
+        if training_type != 'External' and not (train_data or dataset):
+            raise InputError('Invalid data input. Run training requires a train_data or dataset')
+        
         if python_version not in ['3.7', '3.8', '3.9', '3.10']:
             raise InputError('Invalid python version. Avaliable versions are 3.7, 3.8, 3.9, 3.10')
 
@@ -952,13 +961,13 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             raise InputError(f'Invalid training_type {training_type}. Should be one of the following: Custom, AutoML or External')
 
         if training_type == 'Custom':
-            exec_id = self.__upload_training(run_name, training_type=training_type, description=description,train_data=train_data, training_reference=training_reference,
+            exec_id = self.__upload_training(run_name, training_type=training_type, description=description, train_data=train_data, dataset=dataset, training_reference=training_reference,
                                              python_version=python_version, source_file=source_file, env=env,
                                              requirements_file=requirements_file, extra_files=extra_files)
 
         elif training_type == 'AutoML':
             exec_id = self.__upload_training(run_name, training_type=training_type, description=description, 
-                                             train_data=train_data, conf_dict=conf_dict)
+                                             train_data=train_data, dataset=dataset, conf_dict=conf_dict)
 
         elif training_type == 'External':
             exec_id = self.__upload_training(run_name, training_type=training_type, description=description,
