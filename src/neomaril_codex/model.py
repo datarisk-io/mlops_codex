@@ -1019,7 +1019,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         operation : str
             Defines wich kind operation is beeing executed (Sync or Async). Default value is Sync
         input_type : str
-            The type of the input file that should be 'json', 'csv' or 'parquet'
+            The type of the input file that should be 'json', 'csv', 'parquet', 'txt', 'xls', 'xlsx'
 
         Raises
         ------
@@ -1046,7 +1046,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         if schema:
             upload_data.append(("schema", (schema, parse_dict_or_file(schema))))
         else:
-            raise InputError("Schema file is mandatory for Sync models")
+            raise InputError("Schema file is mandatory")
             
         if operation=="Sync":
             input_type = "json"
