@@ -13,11 +13,12 @@ class BaseNeomaril:
     Super base class to initialize other variables and URLs for other Neomaril classes.
     """
 
-    def __init__(self, login:Optional[str]=None, password:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/') -> None:
+    def __init__(self, *, login:Optional[str]=None, password:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/', tenant:str) -> None:
         self.base_url = url
         
         load_dotenv()
         logger.info('Loading .env')
+        self.tenant = tenant
 
         self.credentials = (login if login else os.getenv('NEOMARIL_USER'), password if password else os.getenv('NEOMARIL_PASSWORD'))
         self.base_url = os.getenv('NEOMARIL_URL') if os.getenv('NEOMARIL_URL') else url
@@ -26,10 +27,10 @@ class BaseNeomaril:
         if self.base_url == 'https://neomaril.staging.datarisk.net/':
             logger.info("You are using the test enviroment that will have the data cleaned from time to time. If your model is ready to use change the enviroment to Production")
 
-        self.client_version = try_login(self.credentials[0], self.credentials[1], self.base_url)
+        self.client_version = try_login(self.credentials[0], self.credentials[1], self.base_url, tenant=self.tenant)
         logger.info(f"Successfully connected to Neomaril")
 
-    def _logs(self, url, creds, start:Optional[str]=None, end:Optional[str]=None, routine:Optional[str]=None, type:Optional[str]=None):
+    def _logs(self, *, url, credentials, start:Optional[str]=None, end:Optional[str]=None, routine:Optional[str]=None, type:Optional[str]=None):
        
         if not start and not end:
             end = datetime.today().strftime("%d-%m-%Y")
@@ -52,7 +53,7 @@ class BaseNeomaril:
             query['type'] = type
 
         response = requests.get(url, params=query,
-                            headers={'Authorization': 'Bearer ' + refresh_token(*creds, self.base_url)})
+                            headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*credentials, self.base_url)})
     
         if response.status_code == 200: 
             return response.json()
@@ -113,8 +114,10 @@ class BaseNeomarilClient(BaseNeomaril):
         """
 
         url = f"{self.base_url}/groups"
-        token = refresh_token(*self.credentials, self.base_url)
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + token})
+        
+        token = refresh_token(*self.credentials, self.base_url, tenant=self.tenant)
+        
+        response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + token})
 
         if response.status_code == 200:
                 results = response.json()['Results']
@@ -123,7 +126,7 @@ class BaseNeomarilClient(BaseNeomaril):
         else:
                 raise ServerError('Unexpected server error: ', response.text)
 
-    def create_group(self, name:str, description:str) -> bool:
+    def create_group(self, *, name:str, description:str) -> bool:
         """
         Create a group for multiple models of the same final client at the end if it returns TRUE, a message with the token for that group will be returned as a INFO message.
         You should keep this token information to be able to run the model of that group afterwards.
@@ -148,9 +151,10 @@ class BaseNeomarilClient(BaseNeomaril):
         data = {"name": name, "description": description}
 
         url = f"{self.base_url}/groups"
-        token = refresh_token(*self.credentials, self.base_url)
-        response = requests.post(url, data=data, headers={'Authorization': 'Bearer ' + token})
-
+        token = refresh_token(*self.credentials, self.base_url, tenant=self.tenant)
+        
+        response = requests.post(url, data=data, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + token})
+        
         if response.status_code == 201:
             logger.info(f"Group '{name}' inserted. Use the token for scoring. Carefully save it as we won't show it again.")
             return response.json()['Token']
@@ -161,7 +165,7 @@ class BaseNeomarilClient(BaseNeomaril):
         else:
             raise ServerError('Unexpected server error: ', response.text)
 
-    def refresh_group_token(self, name:str, force:bool=False) -> bool:
+    def refresh_group_token(self, *, name:str, force:bool=False) -> bool:
         """
         Refresh the group token. If the the token its still valid it wont be changed, unless you use parameter force = True.
         At the end a message with the token for that group will be returned as a INFO message.
@@ -200,10 +204,10 @@ class BaseNeomarilClient(BaseNeomaril):
         """
 
         url = f"{self.base_url}/refresh/{name}"
-        token = refresh_token(*self.credentials, self.base_url)
+        token = refresh_token(*self.credentials, self.base_url, tenant=self.tenant)
         
         response = requests.get(url, params={'force': str(force).lower()},
-                                                         headers={'Authorization': 'Bearer ' + token})
+                                                         headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + token})
 
         if response.status_code == 201:
                 logger.info(f"Group '{name}' was refreshed")
@@ -268,9 +272,9 @@ class NeomarilExecution(BaseNeomaril):
             execution.download_result()    
     """    
 
-    def __init__(self, parent_id:str, exec_type:str, group:Optional[str]=None, exec_id:Optional[str]=None, 
-                 login:Optional[str]=None, password:Optional[str]=None, url:str=None, group_token:Optional[str]=None) -> None:
-        super().__init__(login, password, url)
+    def __init__(self, *, parent_id:str, exec_type:str, group:Optional[str]=None, exec_id:Optional[str]=None, 
+                 login:Optional[str]=None, password:Optional[str]=None, url:str=None, group_token:Optional[str]=None, tenant:str) -> None:
+        super().__init__(login=login, password=password, url=url, tenant=tenant)
         load_dotenv()
         logger.info('Loading .env')
 
@@ -298,7 +302,7 @@ class NeomarilExecution(BaseNeomaril):
 
         else:
             url = f"{self.base_url}/{self.__url_path.replace('/async', '')}/describe/{group}/{parent_id}/{exec_id}"
-            response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
+            response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
 
             if response.status_code == 404:
                     raise ModelError(f'Execution "{exec_id}" not found.')
@@ -333,7 +337,7 @@ class NeomarilExecution(BaseNeomaril):
 
         url = f"{self.base_url}/{self.__url_path}/status/{self.group}/{self.exec_id}"
 
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__token})
+        response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + self.__token})
         if response.status_code not in [200, 410]:
                 logger.error(response.text)
                 raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
@@ -359,7 +363,7 @@ class NeomarilExecution(BaseNeomaril):
                 sleep(30)
                 self.status = self.get_status()['Status']
 
-    def download_result(self, path:Optional[str]='./', filename:Optional[str]='output.zip') -> dict:
+    def download_result(self, *, path:Optional[str]='./', filename:Optional[str]='output.zip') -> dict:
         """
         Gets the output of the execution.
 
@@ -386,11 +390,11 @@ class NeomarilExecution(BaseNeomaril):
         if self.exec_type in ['AsyncModel', 'AsyncPreprocessing']:
             token = self.__token
         elif self.exec_type == 'Training':
-            token = refresh_token(*self.credentials, self.base_url)
+            token = refresh_token(*self.credentials, self.base_url, tenant=self.tenant)
 
         if self.status == 'Succeeded':
             url = f"{self.base_url}/{self.__url_path}/result/{self.group}/{self.exec_id}"
-            response = requests.get(url, headers={'Authorization': 'Bearer ' + token})
+            response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + token})
             if response.status_code not in [200, 410]:
                     logger.error(response.text)
                     raise ExecutionError(f'Execution "{self.exec_id}" unavailable')

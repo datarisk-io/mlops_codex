@@ -19,14 +19,14 @@ def parse_url(url):
         url = (url+'/api')
     return url
 
-def try_login(login:str, password:str, base_url:str) -> bool:
+def try_login(login:str, password:str, base_url:str, tenant:str) -> bool:
 
-    response = requests.get(f"{base_url}/health")
+    response = requests.get(f"{base_url}/health", headers={'X-TenantName': tenant})
 
     server_status = response.status_code
 
     if server_status == 200:
-      token = refresh_token(login, password, base_url)
+      token = refresh_token(login, password, base_url, tenant=tenant)
       return token
     elif server_status == 401:
       raise AuthenticationError('Invalid credentials.')
@@ -35,8 +35,9 @@ def try_login(login:str, password:str, base_url:str) -> bool:
       raise ServerError('Neomaril server unavailable at the moment.')
     
 @ttl_cache
-def refresh_token(login:str, password:str, base_url:str):
-  respose = requests.post(f'{base_url}/login', data={'user': login, 'password': password})
+def refresh_token(login:str, password:str, base_url:str, tenant:str):
+  
+  respose = requests.post(f'{base_url}/login', data={'user': login, 'password': password}, headers={'X-TenantName': tenant})
   
   if respose.status_code == 200:
     return respose.json()['Token']
