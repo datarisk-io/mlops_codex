@@ -64,7 +64,7 @@ Maintainers
 
 - Manuella Dias Cruz: https://github.com/ManuDiasCruz
 - Jonathan Carvalho: https://github.com/johnrc90
-
+- Guilherme Cardoso: https://github.com/gkardoso
 
 Indices and tables
 ==================
