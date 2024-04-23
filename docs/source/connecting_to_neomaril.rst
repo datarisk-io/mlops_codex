@@ -56,18 +56,20 @@ To create a group you can use any client, we just need its name. But we also cou
 
     model_client = NeomarilModelClient()
 
-    model_client.create_group(name='nb_demo', # Group name
-                    description='Group for the demo' # A small description
-                    )
+    model_client.create_group(
+        name='nb_demo', # Group name
+        description='Group for the demo' # A small description
+    )
 
     #>>> 2023-05-24 10:58:25.634 | INFO     | neomaril_codex.base:create_group:155 - Group 'nb_demo' inserted. Use the following token for scoring: 'f376c18092314246a432a2882c3cc8fd'. Carefully save it as we won't show it again.' 
 
     # We create a separate group token to be used in model predictions, so it can be shared with the clients
     # This token has a 1 year expiration date, to generate a new one use the refresh method
 
-    model_client.refresh_group_token(name='nb_demo', # Group name
-                                force=True # To force creating a new token even if the old is valid
-                                )
+    model_client.refresh_group_token(
+        name='nb_demo', # Group name
+        force=True # To force creating a new token even if the old is valid
+    )
 
 Add your group token to the *.env* file:
 
