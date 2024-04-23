@@ -26,6 +26,11 @@ Modules
 .. toctree::
    :maxdepth: 5
 
+   datasource
+
+.. toctree::
+   :maxdepth: 5
+
    preprocessing
 
 .. toctree::
