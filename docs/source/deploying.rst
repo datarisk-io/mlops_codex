@@ -209,8 +209,10 @@ Next, you can manually run the monitoring process, calling the method :py:meth:`
 
 .. code:: python
     pipeline = NeomarilPipeline.from_config_file('./samples/pipeline-just-model.yml')
-    pipeline.register_monitoring_config(directory = "./samples/monitoring", preprocess = "preprocess_async.py", preprocess_function = "score", 
-                                        shap_function = "score", config = "configuration.json", packages = "requirements.txt")
+    pipeline.register_monitoring_config(
+        directory = "./samples/monitoring", preprocess = "preprocess_async.py", preprocess_function = "score", 
+        shap_function = "score", config = "configuration.json", packages = "requirements.txt"
+    )
     pipeline.start()
 
     # >>> 2023-10-25 16:13:01.706 | INFO     | neomaril_codex.pipeline:from_config_file:124 - Loading .env
