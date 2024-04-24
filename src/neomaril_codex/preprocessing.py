@@ -224,7 +224,7 @@ class NeomarilPreprocessing(BaseNeomaril):
                         response = run.get_status()
                         status = response['Status']
                         if wait_complete:
-                            print('Wating the training run.', end='')
+                            print('Waiting the training run.', end='')
                             while status in ['Running', 'Requested']:
                                 sleep(30)
                                 print('.', end='', flush=True)
@@ -502,7 +502,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         
         if status == 'Building':
             if wait_for_ready:
-                print('Wating for deploy to be ready.', end='')
+                print('Waiting for deploy to be ready.', end='')
                 while status == 'Building':
                     response = self.__get_preprocessing_status(preprocessing_id=preprocessing_id, group=group)
                     status = response['Status']

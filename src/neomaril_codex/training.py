@@ -427,7 +427,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
         requirements_file : str, optional
             Path of the requirements file. This will override the requirements used in trainning. The packages versions must be fixed eg: pandas==1.0
         env : str, optional
-            Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
+            Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is None
         operation : str
             Defines wich kind operation is beeing executed (Sync or Async). Default value is Sync
         input_type : str
@@ -451,35 +451,31 @@ class NeomarilTrainingExecution(NeomarilExecution):
 
         if self.training_type != 'AutoML':
             form_data['model_reference'] = model_reference
+            upload_data = [
+                ("source", ('app.py', open(source_file, 'rb')))
+            ]
+
+            if env:
+                upload_data.append(("env", (".env", open(env, 'rb'))))
+            if requirements_file:
+                upload_data.append(("requirements", ("requirements.txt", open(requirements_file, 'rb'))))
+            if extra_files:
+                extra_data = [('extra', (c.split('/')[-1], open(c, 'rb'))) for c in extra_files]
+                
+                upload_data += extra_data
+            
         else:
             input_type = 'AutoML'
       
-        if operation=="Sync":
-            input_type = "json"
-            schema_extesion = '.json'
-        else:
+        schema_extesion = '.json'
+        input_type = "json"
+        if operation=="Async":
             schema_extesion = schema.split('.')[-1]
 
             if input_type == 'json|csv|parquet':
                 raise InputError("Choose a input type from "+input_type)
 
-
-        upload_data = [
-            ("source", ('app.py', open(source_file, 'rb'))),
-            ("schema", ("schema."+schema_extesion, parse_dict_or_file(schema)))
-        ]
-
-        print(f'env: {env}')
-        print(bool(env))
-        if env:
-            upload_data.append(("env", (".env", open(env, 'r'))))
-        if requirements_file:
-            upload_data.append(("requirements", ("requirements.txt", env)))
-        if extra_files:
-            extra_data = [('extra', (c.split('/')[-1], open(c, 'rb'))) for c in extra_files]
-            
-            upload_data += extra_data
-        
+        upload_data += [("schema", ("schema."+schema_extesion, parse_dict_or_file(schema)))]
 
         form_data['input_type'] = input_type
         
@@ -643,9 +639,6 @@ class NeomarilTrainingExecution(NeomarilExecution):
         
         if self.status != 'Succeeded':
             raise TrainingError("Training execution must be Succeeded to be promoted, current status is "+self.status)
-        
-        print(f'env: {env}')
-        print(bool(env))
 
         model_id = self.__upload_model(
             model_name=model_name,
@@ -1117,7 +1110,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             response = run.get_status()
             status = response['Status']
             if wait_complete:
-                print('Wating the training run.', end='')
+                print('Waiting the training run.', end='')
                 while status in ['Running', 'Requested']:
                     sleep(30)
                     print('.', end='', flush=True)

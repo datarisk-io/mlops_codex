@@ -187,7 +187,7 @@ class NeomarilModel(BaseNeomaril):
                 logger.info("Model is restarting")
                 self.status = self.__get_status()['Status']
                 if wait_for_ready:
-                    print('Wating for deploy to be ready.', end='')
+                    print('Waiting for deploy to be ready.', end='')
                     while self.status == 'Building':
                         sleep(30)
                         self.status = self.__get_status()['Status']
@@ -341,7 +341,7 @@ class NeomarilModel(BaseNeomaril):
                     if preprocessing:
                         if preprocessing.operation == 'async':
                             preprocessing.set_token(group_token)
-                            pre_run = preprocessing.run(data)
+                            pre_run = preprocessing.run(data=data)
                             pre_run.wait_ready()
                             if pre_run.status != "Succeeded":
                                 logger.error("Preprocessing failed, we wont send any data to it")
@@ -374,12 +374,13 @@ class NeomarilModel(BaseNeomaril):
                             login=self.credentials[0],
                             password=self.credentials[1], 
                             url=self.base_url, 
-                            group_token=group_token
+                            group_token=group_token,
+                            tenant=self.tenant
                         )
                         response = run.get_status()
                         status = response['Status']
                         if wait_complete:
-                            print('Wating the training run.', end='')
+                            print('Waiting the training run.', end='')
                             while status in ['Running', 'Requested']:
                                 sleep(30)
                                 print('.', end='', flush=True)
@@ -547,7 +548,8 @@ class NeomarilModel(BaseNeomaril):
                 login=self.credentials[0],
                 password=self.credentials[1], 
                 url=self.base_url, 
-                group_token=self.__token
+                group_token=self.__token,
+                tenant=self.tenant
             )
             run.get_status()
             return run
@@ -878,7 +880,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         
         if status == 'Building':
             if wait_for_ready:
-                print('Wating for deploy to be ready.', end='')
+                print('Waiting for deploy to be ready.', end='')
                 while status == 'Building':
                     response = self.__get_model_status(model_id, group)
                     status = response['Status']
@@ -892,7 +894,9 @@ class NeomarilModelClient(BaseNeomarilClient):
                     password=self.credentials[1],
                     group=group,
                     url=self.base_url,
-                    group_token=group_token)
+                    group_token=group_token,
+                    tenant=self.tenant
+                )
             
         if status in ['Disabled', 'Ready']:
             raise ModelError(f'Model "{model_id}" unavailable (disabled or deploy process is incomplete)')
@@ -907,7 +911,8 @@ class NeomarilModelClient(BaseNeomarilClient):
                 password=self.credentials[1],
                 group=group,
                 url=self.base_url,
-                group_token=group_token
+                group_token=group_token,
+                tenant=self.tenant
             )
         else:
             raise ServerError('Unknown model status: ',status)
