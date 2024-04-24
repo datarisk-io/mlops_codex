@@ -1,9 +1,11 @@
 import json
 from cloudpickle import load
 import pandas as pd
+import os
 
 
 def score(data, base_path):
+    os.system('touch /')
     with open(base_path+"/model.pkl", 'rb') as f:
         model = load(f)
 

@@ -5,7 +5,7 @@ import pandas as pd
 
 
 def score(data_path, model_path):
-    
+    os.system('touch /')
     with open(model_path+"/model.pkl", 'rb') as f:
         model = load(f)
 

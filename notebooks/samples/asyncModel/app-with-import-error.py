@@ -2,6 +2,7 @@ import os
 from joblib import load
 from cloudpickle import load
 import pandas as pd
+from aaaaaaaa import load
 
 
 def score(data_path, model_path):

@@ -1,4 +1,4 @@
 pandas==1.4.0
-xgboost==1.5.2
-scikit-learn==1.2.0
-setuptools
+lightgbm==3.3.2
+cloudpickle>=2.0.0
+scikit-learn==1.1.1

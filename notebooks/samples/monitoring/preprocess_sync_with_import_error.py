@@ -1,13 +1,16 @@
 import pandas as pd
+import numpy as np
+import json
 import shap
 from cloudpickle import load
+from aaaaaaaa import load
 
-def parse(input_path, output_path):
+def parse(data):
     
-    df_input = pd.read_csv(input_path)
-    df_output = pd.read_csv(output_path)
+    df = pd.DataFrame(data=json.loads(data), index=[0])
+    df.loc[df['mean_perimeter'] < 150, 'mean_perimeter'] = None
     
-    return (df_input, df_output)
+    return df
 
 
 def get_shap(data, model_path):

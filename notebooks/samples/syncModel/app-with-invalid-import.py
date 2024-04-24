@@ -1,6 +1,7 @@
 import json
 from cloudpickle import load
 import pandas as pd
+from aaaaaaaa import load
 
 
 def score(data, base_path):
