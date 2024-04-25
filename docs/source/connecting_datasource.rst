@@ -1,7 +1,9 @@
 Data Source
 ===========
 
-It is possible to connect a cloud provider to Neomaril. Currently, Neomaril supports the following providers:
+It is possible to connect a cloud provider to Neomaril. The cloud provider is a source of data, where you can store and get the data that is saved data to create/perform models.
+
+Currently, Neomaril supports the following providers:
 * Google GCP 
 * AWS S3
 * Azure Blob Storage
