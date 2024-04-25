@@ -134,6 +134,65 @@ For the AutoML we just need the data and the configuration parameters. You can c
         wait_complete=True
     )
 
+See the example below, using a python script to perform and save an External training:
+
+.. code:: python
+    from neomaril_codex.training import NeomarilTrainingClient
+    import pandas as pd
+    from lightgbm import LGBMClassifier
+    from sklearn.impute import SimpleImputer
+    from sklearn.pipeline import make_pipeline
+    from sklearn.model_selection import cross_val_score
+    import matplotlib.pyplot as plt
+
+    # Start the model client
+    client = NeomarilTrainingClient()
+
+    # Create an experiment
+    training = client.create_training_experiment('Teste', 'Classification', group='datarisk')
+
+    # Your variables
+    base_path = './samples/train/'
+    df = pd.read_csv(base_path+"/dados.csv")
+    X = df.drop(columns=['target'])
+    y = df[["target"]]
+
+
+    plt.scatter(df["mean_radius"], df["mean_texture"])
+
+    # Graph Title
+    plt.title("Relação entre mean_radius e mean_texture")
+
+    # Config axis
+    plt.xlabel("mean_radius")
+    plt.ylabel("mean_texture")
+
+    fig = plt.gcf()
+
+    # Plot
+    plt.show()
+
+    # Build a pipeline
+    pipe = make_pipeline(SimpleImputer(), LGBMClassifier(force_col_wise=True))
+
+    # log the model and save the metrics and model output
+    with training.log_train('Teste 1', X, y) as logger:
+        pipe.fit(X, y)
+        logger.save_model(pipe)
+
+        logger.add_extra('./extra.txt')
+
+        logger.save_and_add_plot(fig, 'graphic1')
+        model_output = pd.DataFrame({"pred": pipe.predict(X), "proba": pipe.predict_proba(X)[:,1]})
+        logger.save_model_output(model_output)
+
+        auc = cross_val_score(pipe, X, y, cv=5, scoring="roc_auc")
+        f_score = cross_val_score(pipe, X, y, cv=5, scoring="f1")
+        logger.save_metric(name='auc', value=auc.mean())
+        logger.save_metric(name='f1_score', value=f_score.mean())
+
+        logger.set_python_version('3.10')
+
 
 Checking the execution results
 ------------------------------
