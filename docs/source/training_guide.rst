@@ -107,16 +107,17 @@ Then we can call the :py:meth:`neomaril_codex.training.NeomarilTrainingExperimen
     # With the experiment class we can create multiple model runs
     PATH = './samples/train/'
 
-    run1 = training.run_training(run_name='First test', # Run name
-                                train_data=PATH+'dados.csv', # Path to the file with training data
-                                training_type='Custom', # Training type. Can be External, Custom or AutoML
-                                source_file=PATH+'app.py', # Path of the source file
-                                requirements_file=PATH+'requirements.txt', # Path of the requirements file, 
-    #                           env=PATH+'.env'  #  File for env variables (this will be encrypted in the server)
-    #                           extra_files=[PATH+'utils.py'], # List with extra files paths that should be uploaded along (they will be all in the same folder)
-                                training_reference='train_model', # The name of the entrypoint function that is going to be called inside the source file 
-                                python_version='3.9', # Can be 3.7 to 3.10
-                                wait_complete=True
+    run1 = training.run_training(
+        run_name='First test', # Run name
+        train_data=PATH+'dados.csv', # Path to the file with training data
+        training_type='Custom', # Training type. Can be External, Custom or AutoML
+        source_file=PATH+'app.py', # Path of the source file
+        requirements_file=PATH+'requirements.txt', # Path of the requirements file, 
+        #env=PATH+'.env'  #  File for env variables (this will be encrypted in the server)
+        #extra_files=[PATH+'utils.py'], # List with extra files paths that should be uploaded along (they will be all in the same folder)
+        training_reference='train_model', # The name of the entrypoint function that is going to be called inside the source file 
+        python_version='3.9', # Can be 3.7 to 3.10
+        wait_complete=True
     )
 
 For the AutoML we just need the data and the configuration parameters. You can check the :doc:`automl_parameters` for more details. 
