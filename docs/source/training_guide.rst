@@ -64,7 +64,7 @@ For the custom experiment you need a entrypoint function like this:
 
         ## Environment variable loaded from Neomaril with database name (used alternatively to line 61)
         # df = pd.read_csv(base_path+'/'+os.getenv('inputFileName'))
-        df = pd.read_csv(base_path+"/dados.csv")    # Load the database (data.csv) which must have the same name
+        df = pd.read_csv(base_path+"/data.csv")    # Load the database (data.csv) which must have the same name
                                                     # file sent to Neomaril in the 'train_data' field
         
         # The data sent must be the complete data for training and validation (excluding the validation sample),
