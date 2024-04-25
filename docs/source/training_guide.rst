@@ -15,7 +15,7 @@ First we need to create a training experiment. We aggregate multiple train runs 
 
 **AutoML:** Is when the training is pre defined using the AutoML module. The required files are the training data and some configuration parameters for the package.
 
-**External:** Is when training information of models that have been trained externally in your local machine.
+**External:** Is when you perform the model training on your machine or any other place, external to Neomaril. You need to bring it if you want to monitor your model in our environment.
 
 Creating the training experiment
 --------------------------------
