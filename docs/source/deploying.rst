@@ -15,31 +15,31 @@ The entrypoint function should look like this:
 
 .. code:: python
 
-    # Função que descreve os passos para o Neomaril executar o modelo treinado.
-    # Os parâmetros de entrada são:
-    #   data : str
-    #       Os dados que serão usados pelo modelo que deverão chegar no formato string
-    #   base_path : str
-    #       O caminho para o arquivo do modelo e outros arquivos complementares
-    def score(data:str, base_path:str): # O nome da função (score) é que deve ser passado no campo 'model_reference'
+    # Function that describes the steps for Neomaril to execute the trained model.
+    # The input parameters are:
+    #   data:str
+    #       The data that will be used by the model must arrive in string format
+    #   base_path:str
+    #       The path to the template file and other supplementary files
+    def score(data:str, base_path:str): # It is the name of the function (score) that must be passed in the 'model_reference' field
 
-        ## Variáveis de ambiente carregadas de um arquivo fornecido pelo usuário no campo 'env'
+        # Environment variables loaded from a user-supplied file in the 'env' field
         # my_var = os.getenv('MY_VAR')
         # if my_var is None:
-        #    raise Exception("Could not find `env` variable")
+        #   raise Exception("Could not find `env` variable")
 
-        ## Variável de ambiente do Neomaril com nome do arquivo do modelo
+        ## Neomaril environment variable with model file name
         # with open(base_path+os.getenv('modelFileName'), 'rb') as f:
 
-        # Carrega o modelo já treinado para ser executado com base no arquivo de modelo passado como parâmetro
+        # Loads the already trained model to be run based on the model file passed as a parameter
         with open(base_path+"/model.pkl", 'rb') as f:
             model = load(f)
 
-        # Constrói um DataFrame com os dados de entrada. Os dados chegam como um JSON string então temos que tranforma-los em um dicionário
+        # Build a DataFrame with the input data. The data arrives as a JSON string so we have to transform it into a dictionary
         df = pd.DataFrame(data=json.loads(data), index=[0])
         
-        # Retorna os resultados da execução do modelo como um dicionário
-        # Importante que nesse caso como vamos converter para um JSON não podemos usar os tipos do numpy, então convertemos para int e float puros.
+        # Returns the results of running the model as a dictionary
+        # It's important to note that in this case, as we're converting to JSON, we can't use numpy types, so we convert to pure int and float.
         return {"pred": int(model.predict(df)), "proba": float(model.predict_proba(df)[0,1])}
 
 The first parameter is the JSON data that will be sent to the model (this comes as a JSON string, so you should parse it the way you want).
@@ -53,43 +53,43 @@ The entrypoint function should look like this:
 
 .. code:: python
 
-    # Função que descreve os passos para o Neomaril executar o modelo treinado.
-    # Os parâmetros de entrada são:
-    #   data_path : str
-    #       O caminho para os dados que serão usados pelo modelo que deverão chegar no formato string
-    #   model_path : str
-    #       O caminho para o arquivo do modelo e outros arquivos complementares
-    def score(data_path:str, model_path:str):## Variáveis de ambiente carregadas de um arquivo fornecido pelo usuário no campo 'env'
+    # Function that describes the steps for Neomaril to run the trained model.
+    # The input parameters are:
+        # data_path : str
+            # The path to the data that will be used by the model, which should arrive in string format
+        # model_path : str
+            # The path to the model file and other complementary files
+    def score(data_path:str, model_path:str):## Environment variables loaded from a file supplied by the user in the 'env' field
 
         # my_var = os.getenv('MY_VAR')
         # if my_var is None:
         #    raise Exception("Could not find `env` variable")
 
-        ## Variável de ambiente carregada do Neomaril com nome do arquivo do modelo
+        ## Environment variable loaded from Neomaril with model file name
         # with open(base_path+os.getenv('modelFileName'), 'rb') as f:
 
-        # Carrega o modelo já treinado para ser executado com base no arquivo de modelo passado como parâmetro
+        # Loads the already trained model to be run based on the model file passed as a parameter
         with open(model_path+"/model.pkl", 'rb') as f:
             model = load(f)
 
-        ## Variável de ambiente carregada do Neomaril com nome da base de dados
+        ## Environment variable loaded from Neomaril with database name
         # X = pd.read_csv(data_path+'/'+os.getenv('inputFileName'))
 
-        # Carrega os dados da base de entrada do arquivo para um DataFrame
+        # Loads the input base data from the file into a DataFrame
         X = pd.read_csv(data_path+"/dados.csv")
 
-        df = X.copy()   # Cria uma cópia do DataFrame com os dados de entrada
+        df = X.copy()   # Creates a copy of the DataFrame with the input data
 
-        df['proba'] = model.predict_proba(X)[:,1]   # Calcula a predição de cada entrada da tabela de dados
-        df['pred'] = model.predict(X)               # Calcula a probabilidade de cada entrada da tabela de dados
+        df['proba'] = model.predict_proba(X)[:,1]   # Calculates the prediction for each entry in the data table
+        df['pred'] = model.predict(X)               # Calculates the probability of each entry in the data table
 
-        # Cria o caminho com o nome do arquivo de output, nesse caso 'output.csv'. Importante que esse arquivo deve ser salvo no mesmo caminho que os dados que foram enviados.
+        # Create the path with the name of the output file, in this case 'output.csv'. It is important that this file is saved in the same path as the data that was sent.
         output = data_path+'/output.csv'
 
-        # Transforma o DataFrame, com a predição e a probabilidade, para csv colocando no arquivo do caminho do output
+        # Transform the DataFrame, with the prediction and probability, to csv by placing it in the output path file
         df.to_csv(output, index=False)
 
-        # Retorna o caminho com o arquivo com os resultados da execução do modelo
+        # Returns the path to the file with the results of the model run
         return output
 
 The first parameter is now also a path for the data. We have different path parameter because each async model execution is saved in a different place. And the files uploaded when deploying the model are kept the same every time.
@@ -107,18 +107,20 @@ With all files ready we can deploy the model in two ways.
 .. code:: python
 
     # Promoting a custom training execution
-    model = custom_run.promote_model('Teste notebook promoted custom', # model_name
-                                    'score', # name of the scoring function
-                                    PATH+'app.py', # Path of the source file
-                                    schema=PATH+'schema.json', # Path of the schema file, but it could be a dict (only required for Sync models)
-        #                           env=PATH+'.env'  #  File for env variables (this will be encrypted in the server)
-        #                           extra_files=[PATH+'utils.py'], # List with extra files paths that should be uploaded along (they will be all in the same folder)
-                                    operation="Sync" # Can be Sync or Async
+    model = custom_run.promote_model(
+        model_name='Teste notebook promoted custom', # model_name
+        model_reference='score', # name of the scoring function
+        source_file=PATH+'app.py', # Path of the source file
+        schema=PATH+'schema.json', # Path of the schema file, but it could be a dict (only required for Sync models)
+        # env=PATH+'.env'  #  File for env variables (this will be encrypted in the server)
+        # extra_files=[PATH+'utils.py'], # List with extra files paths that should be uploaded along (they will be all in the same folder)
+        operation="Sync" # Can be Sync or Async
     )
 
     # Promoting an AutoML training execution
-    model = automl_run.promote_model('Teste notebook promoted autoML', # model_name
-                                     operation="Async" # Can be Sync or Async
+    model = automl_run.promote_model(
+        model_name='Teste notebook promoted autoML', # model_name
+        operation="Async" # Can be Sync or Async
     )
 
 
@@ -128,19 +130,19 @@ With all files ready we can deploy the model in two ways.
 .. code:: python
     
     # Deploying a new model
-    model = client.create_model('Teste notebook Sync', # model_name
-                                'score', # name of the scoring function
-                                PATH+'app.py', # Path of the source file
-                                PATH+'model.pkl', # Path of the model pkl file, 
-                                PATH+'requirements.txt', # Path of the requirements file, 
-                                schema=PATH+'schema.json', # Path of the schema file, but it could be a dict (only required for Sync models)
-    #                           env=PATH+'.env'  #  File for env variables (this will be encrypted in the server)
-    #                           extra_files=[PATH+'utils.py'], # List with extra files paths that should be uploaded along (they will be all in the same folder)
-                                python_version='3.9', # Can be 3.7 to 3.10
-                                operation="Sync", # Can be Sync or Async
-                                group='datarisk' # Model group (create one using the client)
-                                )
-
+    model = client.create_model(
+        model_name='Teste notebook Sync', # model_name
+        model_reference='score', # name of the scoring function
+        source_file=PATH+'app.py', # Path of the source file
+        model_file=PATH+'model.pkl', # Path of the model pkl file, 
+        requirements_file=PATH+'requirements.txt', # Path of the requirements file, 
+        schema=PATH+'schema.json', # Path of the schema file, but it could be a dict (only required for Sync models)
+        # env=PATH+'.env'  #  File for env variables (this will be encrypted in the server)
+        # extra_files=[PATH+'utils.py'], # List with extra files paths that should be uploaded along (they will be all in the same folder)
+        python_version='3.9', # Can be 3.7 to 3.10
+        operation="Sync", # Can be Sync or Async
+        group='datarisk' # Model group (create one using the client)
+    )
 
 
 As you can see deploying a model already trained in Neomaril requires less information (the AutoML models require only 2 parameters).
@@ -157,10 +159,10 @@ We can use the same :py:class:`neomaril_codex.model.NeomarilModel` instance to c
 
 .. code:: python
 
-    sync_model.predict({'key': 'value'})
+    sync_model.predict(data={'key': 'value'})
     # >>> {'pred': 0, 'proba': 0.005841062869876623}
     
-    execution = async_model.predict(PATH+'input.csv')
+    execution = async_model.predict(data=PATH+'input.csv')
     # >>> 2023-05-26 12:04:14.714 | INFO     | neomaril_codex.model:predict:344 - Execution 5 started. Use the id to check its status.
 
 
@@ -189,7 +191,47 @@ The production data is saved raw, and the training data is not (check :ref:`trai
 
 The first method you need to call is :py:meth:`neomaril_codex.pipeline.NeomarilPipeline.register_monitoring_config`, which is responsible for registering the monitoring configuration at the database.
 
+.. code:: python
+    # # We can also add a monitoring configuration for the model
+
+    PATH = './samples/monitoring/'
+
+    model.register_monitoring(
+        preprocess_reference='parse', # name of the preprocess function
+        shap_reference='get_shap', # name of the preprocess function
+        configuration_file=PATH+'configuration.json', # Path of the configuration file, but it could be a dict
+        preprocess_file=PATH+'preprocess_sync.py', # Path of the preprocess script
+        requirements_file=PATH+'requirements.txt' # Path of the requirements file                        
+    )
+    # >>> 2023-10-26 09:18:46.940 | INFO     | neomaril_codex.model:register_monitoring:604 - Monitoring created - Hash: "M3aa182ff161478a97f4d3b2dc0e9b064d5a9e7330174daeb302e01586b9654c"
+
 Next, you can manually run the monitoring process, calling the method :py:meth:`neomaril_codex.pipeline.NeomarilPipeline.run_monitoring`.
+
+.. code:: python
+    pipeline = NeomarilPipeline.from_config_file('./samples/pipeline-just-model.yml')
+    pipeline.register_monitoring_config(
+        directory = "./samples/monitoring", preprocess = "preprocess_async.py", preprocess_function = "score", 
+        shap_function = "score", config = "configuration.json", packages = "requirements.txt"
+    )
+    pipeline.start()
+
+    # >>> 2023-10-25 16:13:01.706 | INFO     | neomaril_codex.pipeline:from_config_file:124 - Loading .env
+    # >>> 2023-10-25 16:13:01.708 | INFO     | neomaril_codex.pipeline:__init__:43 - Loading .env
+    # >>> 2023-10-25 16:13:01.709 | INFO     | neomaril_codex.pipeline:run_deploy:242 - Deploying scorer
+    # >>> 2023-10-25 16:13:01.711 | INFO     | neomaril_codex.model:__init__:722 - Loading .env
+    # >>> 2023-10-25 16:13:01.712 | INFO     | neomaril_codex.base:__init__:90 - Loading .env
+    # >>> 2023-10-25 16:13:03.455 | INFO     | neomaril_codex.base:__init__:102 - Successfully connected to Neomaril
+    # >>> 2023-10-25 16:13:04.849 | ERROR    | neomaril_codex.base:create_group:162 - {"Error":{"Type":"BadInput","Message":"Detail redacted as it may contain sensitive data. Specify \u0027Include Error Detail\u0027 in the connection string to include this information."}}
+    # >>> 2023-10-25 16:13:04.850 | ERROR    | neomaril_codex.base:create_group:163 - Group already exist, nothing was changed.
+    # >>> 2023-10-25 16:13:08.274 | INFO     | neomaril_codex.model:__upload_model:1015 - Model 'Teste' inserted - Hash: "Mc4f6403c5ab466f911c1cc6d2f22390fc5ab572337b42a7944fcc5d478849be"
+    # >>> 2023-10-25 16:13:10.002 | INFO     | neomaril_codex.model:__host_model:1046 - Model host in process - Hash: Mc4f6403c5ab466f911c1cc6d2f22390fc5ab572337b42a7944fcc5d478849be
+    # Wating for deploy to be ready.............
+    # >>> 2023-10-25 16:15:28.933 | INFO     | neomaril_codex.model:get_model:820 - Model Mc4f6403c5ab466f911c1cc6d2f22390fc5ab572337b42a7944fcc5d478849be its deployed. Fetching model.
+    # >>> 2023-10-25 16:15:28.936 | INFO     | neomaril_codex.model:__init__:69 - Loading .env
+    # >>> 2023-10-25 16:15:33.139 | INFO     | neomaril_codex.pipeline:run_deploy:257 - Model deployement finished
+    # >>> 2023-10-25 16:15:33.140 | INFO     | neomaril_codex.pipeline:run_monitoring:277 - Configuring monitoring
+    # >>> 2023-10-25 16:15:33.142 | INFO     | neomaril_codex.model:__init__:69 - Loading .env
+    # >>> 2023-10-25 16:15:37.849 | INFO     | neomaril_codex.model:register_monitoring:604 - Monitoring created - Hash: "Mc4f6403c5ab466f911c1cc6d2f22390fc5ab572337b42a7944fcc5d478849be"
 
 
 Using with preprocess script
@@ -226,7 +268,7 @@ And for the **async model**:
 
     PATH = './samples/asyncModel/'
 
-    execution = async_model.predict(PATH+'input.csv', preprocessing=async_preprocessing)
+    execution = async_model.predict(data=PATH+'input.csv', preprocessing=async_preprocessing)
     execution.wait_ready()
     # >>> 2023-10-26 10:26:51.460 | INFO     | neomaril_codex.model:get_model:820 - Model Maa3449c7f474567b6556614a12039d8bfdad0117fec47b2a4e03fcca90b7e7c its deployed. Fetching model.
     # >>> 2023-10-26 10:26:51.461 | INFO     | neomaril_codex.model:__init__:69 - Loading .env

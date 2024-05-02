@@ -15,6 +15,8 @@ First we need to create a training experiment. We aggregate multiple train runs 
 
 **AutoML:** Is when the training is pre defined using the AutoML module. The required files are the training data and some configuration parameters for the package.
 
+**External:** Is when you perform the model training on your machine or any other place, external to Neomaril. You need to upload it, if you want to monitor your model in our environment.
+
 Creating the training experiment
 --------------------------------
 
@@ -22,11 +24,15 @@ We can create the experiment using the :py:meth:`neomaril_codex.training.Neomari
 
 .. code:: python
 
+    # Start the client
+    training_client =  NeomarilTrainingClient()
+
     # Creating a new training experiment
-    training = training_client.create_training_experiment('Teste notebook', # Experiment name, this is how you find your model in MLFLow
-                                            'Classification', # Model type. Can be Classification, Regression or Unsupervised
-                                            group='datarisk' # This is the default group. Create a new one when using for a new project
-                                            )
+    training = training_client.create_training_experiment(
+        experiment_name='Teste notebook', # Experiment name, this is how you find your model in MLFLow
+        model_type='Classification', # Model type. Can be Classification, Regression or Unsupervised
+        group='datarisk' # This is the default group. Create a new one when using for a new project
+    )
 
 
 The return of the method is a :py:class:`neomaril_codex.training.NeomarilTrainingExperiment`, where you can create multiple executions that works like versions of the main experiment.
@@ -45,38 +51,38 @@ For the custom experiment you need a entrypoint function like this:
     from sklearn.model_selection import cross_val_score
     import os
     
-    # Função que fornece os passos para treinar o modelo com base em um conjunto de dados fornecido. 
-    # Seu nome (train_model) deve ser passado no campo 'training_reference'
-    # O seu parâmetro (base_path) deve conter o caminho de pastas para os arquivos que serão usados. 
-    # Um exemplo para o seu valor é: "/path/to/treino/customizado/experimento1"
+    # Function that provides the steps to train the model based on a given dataset.
+    # Its name (train_model) must be passed in the 'training_reference' field
+    # Its parameter (base_path) must contain the folder path for the files that will be used.
+    # An example for its value is: "/path/to/treino/customizado/experimento1"
     def train_model(base_path): 
 
-        ## Variáveis de ambiente carregadas de um arquivo fornecido pelo usuário no campo 'env'
+        # Environment variables loaded from a user-supplied file in the 'env' field
         # my_var = os.getenv('MY_VAR')
         # if my_var is None:
-        #    raise Exception("Could not find `env` variable")
+        #   raise Exception("Could not find `env` variable")
 
-        ## Variável de ambiente carregada do Neomaril com nome da base de dados (usado em alternativa a linha 61)
+        ## Environment variable loaded from Neomaril with database name (used alternatively to line 61)
         # df = pd.read_csv(base_path+'/'+os.getenv('inputFileName'))
-        df = pd.read_csv(base_path+"/dados.csv")    # Carrega a base de dados (dados.csv) que precisa ter o mesmo nome
-                                                    # arquivo enviado para o Neomaril no campo 'train_data'
+        df = pd.read_csv(base_path+"/data.csv")    # Load the database (data.csv) which must have the same name
+                                                    # file sent to Neomaril in the 'train_data' field
         
-        # Os dados enviados devem ser os dados completos para treino e validação (excluída a amostra de validação), 
-        # ficando a critério do usuário como tratar os dados aqui
-        X = df.drop(columns=['target'])             # Separa a base de dados da coluna com os targets
-        y = df[["target"]]                          # Salva os targets num DataFrame
+        # The data sent must be the complete data for training and validation (excluding the validation sample),
+        # it is at the user's discretion how to treat the data here
+        X = df.drop(columns=['target'])             # Separates the database from the column with the targets
+        y = df[["target"]]                          # Saves the target in a dataframe
         
-        pipe = make_pipeline(SimpleImputer(), LGBMClassifier())     # Define quais serão os passos para treinar o modelo
+        pipe = make_pipeline(SimpleImputer(), LGBMClassifier())     # Define the steps to train the model
         
-        # Nesse exemplo usamos a validação cruzada, mas isso fica a critério do usuário
-        auc = cross_val_score(pipe, X, y, cv=5, scoring="roc_auc")  # Validação dos resultados usando a métrica 'auc'
-        f_score = cross_val_score(pipe, X, y, cv=5, scoring="f1")   # Validação dos resultados usando a métrica 'f1'
-        pipe.fit(X, y)  # Treina o modelo
+        # In this example we used cross-validation, but this is at the user's discretion
+        auc = cross_val_score(pipe, X, y, cv=5, scoring="roc_auc")  # Validation of results using the 'auc' metric
+        f_score = cross_val_score(pipe, X, y, cv=5, scoring="f1")   # Validation of results using the 'f1' metric
+        pipe.fit(X, y)  # Train the model
 
-        # Constrói o DataFrame com os resultados
+        # Build the DataFrame with the results
         results = pd.DataFrame({"pred": pipe.predict(X), "proba": pipe.predict_proba(X)[:,1]})  
         
-        # Retorna os resultados do treino segundo os parâmetros esperados pelo Neomaril
+        # Returns the training results according to the parameters expected by Neomaril
         return {"X_train": X, "y_train": y, "model_output": results, "pipeline": pipe, 
                 "metrics": {"auc": auc.mean(), "f1_score": f_score.mean()}}
 
@@ -101,16 +107,17 @@ Then we can call the :py:meth:`neomaril_codex.training.NeomarilTrainingExperimen
     # With the experiment class we can create multiple model runs
     PATH = './samples/train/'
 
-    run1 = training.run_training('First test', # Run name
-                                train_data=PATH+'dados.csv', # Path to the file with training data
-                                training_type='Custom', # Training type. Can be External, Custom or AutoML
-                                source_file=PATH+'app.py', # Path of the source file
-                                requirements_file=PATH+'requirements.txt', # Path of the requirements file, 
-    #                           env=PATH+'.env'  #  File for env variables (this will be encrypted in the server)
-    #                           extra_files=[PATH+'utils.py'], # List with extra files paths that should be uploaded along (they will be all in the same folder)
-                                training_reference='train_model', # The name of the entrypoint function that is going to be called inside the source file 
-                                python_version='3.9', # Can be 3.7 to 3.10
-                                wait_complete=True
+    run1 = training.run_training(
+        run_name='First test', # Run name
+        train_data=PATH+'dados.csv', # Path to the file with training data
+        training_type='Custom', # Training type. Can be External, Custom or AutoML
+        source_file=PATH+'app.py', # Path of the source file
+        requirements_file=PATH+'requirements.txt', # Path of the requirements file, 
+        #env=PATH+'.env'  #  File for env variables (this will be encrypted in the server)
+        #extra_files=[PATH+'utils.py'], # List with extra files paths that should be uploaded along (they will be all in the same folder)
+        training_reference='train_model', # The name of the entrypoint function that is going to be called inside the source file 
+        python_version='3.9', # Can be 3.7 to 3.10
+        wait_complete=True
     )
 
 For the AutoML we just need the data and the configuration parameters. You can check the :doc:`automl_parameters` for more details. 
@@ -119,13 +126,72 @@ For the AutoML we just need the data and the configuration parameters. You can c
 
     PATH = './samples/autoML/'
 
-    run2 = training.run_training('First test', # Run name
-                                training_type='Custom', # Training type. Can be External, Custom or AutoML
-                                train_data=PATH+'dados.csv', # Path to the file with training data
-                                conf_dict=PATH+'conf.json', # Path of the configuration file
-                                wait_complete=True
+    run2 = training.run_training(
+        run_name='First test', # Run name
+        training_type='Custom', # Training type. Can be External, Custom or AutoML
+        train_data=PATH+'dados.csv', # Path to the file with training data
+        conf_dict=PATH+'conf.json', # Path of the configuration file
+        wait_complete=True
     )
 
+See the example below, using a python script to perform and save an External training:
+
+.. code:: python
+    from neomaril_codex.training import NeomarilTrainingClient
+    import pandas as pd
+    from lightgbm import LGBMClassifier
+    from sklearn.impute import SimpleImputer
+    from sklearn.pipeline import make_pipeline
+    from sklearn.model_selection import cross_val_score
+    import matplotlib.pyplot as plt
+
+    # Start the model client
+    client = NeomarilTrainingClient()
+
+    # Create an experiment
+    training = client.create_training_experiment('Teste', 'Classification', group='datarisk')
+
+    # Your variables
+    base_path = './samples/train/'
+    df = pd.read_csv(base_path+"/dados.csv")
+    X = df.drop(columns=['target'])
+    y = df[["target"]]
+
+
+    plt.scatter(df["mean_radius"], df["mean_texture"])
+
+    # Graph Title
+    plt.title("Relação entre mean_radius e mean_texture")
+
+    # Config axis
+    plt.xlabel("mean_radius")
+    plt.ylabel("mean_texture")
+
+    fig = plt.gcf()
+
+    # Plot
+    plt.show()
+
+    # Build a pipeline
+    pipe = make_pipeline(SimpleImputer(), LGBMClassifier(force_col_wise=True))
+
+    # log the model and save the metrics and model output
+    with training.log_train('Teste 1', X, y) as logger:
+        pipe.fit(X, y)
+        logger.save_model(pipe)
+
+        logger.add_extra('./extra.txt')
+
+        logger.save_and_add_plot(fig, 'graphic1')
+        model_output = pd.DataFrame({"pred": pipe.predict(X), "proba": pipe.predict_proba(X)[:,1]})
+        logger.save_model_output(model_output)
+
+        auc = cross_val_score(pipe, X, y, cv=5, scoring="roc_auc")
+        f_score = cross_val_score(pipe, X, y, cv=5, scoring="f1")
+        logger.save_metric(name='auc', value=auc.mean())
+        logger.save_metric(name='f1_score', value=f_score.mean())
+
+        logger.set_python_version('3.10')
 
 
 Checking the execution results
