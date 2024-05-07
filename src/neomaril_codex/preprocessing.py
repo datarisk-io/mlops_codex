@@ -46,15 +46,15 @@ class NeomarilPreprocessing(BaseNeomaril):
     """
 
     def __init__(self, *, preprocessing_id:str, login:Optional[str]=None, password:Optional[str]=None, group:str="datarisk", 
-                 group_token:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/', tenant:str) -> None:
+                 group_token:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/') -> None:
 
-        super().__init__(login=login, password=password, url=url, tenant=tenant)
+        super().__init__(login=login, password=password, url=url)
         self.preprocessing_id = preprocessing_id
         self.group = group
         self.__token = group_token if group_token else os.getenv('NEOMARIL_GROUP_TOKEN')
         
         url = f"{self.base_url}/preprocessing/list"
-        response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
 
         results = response.json()
         for result in results.get('Results'):
@@ -65,7 +65,7 @@ class NeomarilPreprocessing(BaseNeomaril):
         response = self.__get_status()
         self.status = response.get('Status')
         
-        self.tenant = tenant
+        
         
         self.__preprocessing_ready = self.status == "Deployed"
 
@@ -194,7 +194,7 @@ class NeomarilPreprocessing(BaseNeomaril):
                             "Input": data
                     }
 
-                    req = requests.post(url, data=json.dumps(preprocessing_input), headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + group_token})
+                    req = requests.post(url, data=json.dumps(preprocessing_input), headers={'Authorization': 'Bearer ' + group_token})
 
                     return req.json()
 
@@ -204,7 +204,7 @@ class NeomarilPreprocessing(BaseNeomaril):
                         'dataset': open(data, 'rb'),
                     }
 
-                    req = requests.post(url, files=files, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + group_token})
+                    req = requests.post(url, files=files, headers={'Authorization': 'Bearer ' + group_token})
 
                     if req.status_code == 202:
                         message = req.json()
@@ -219,7 +219,7 @@ class NeomarilPreprocessing(BaseNeomaril):
                             url=self.base_url,
                             group=self.group,
                             group_token=group_token,
-                            tenant=self.tenant
+                            
                         )
                         response = run.get_status()
                         status = response['Status']
@@ -241,7 +241,7 @@ class NeomarilPreprocessing(BaseNeomaril):
         return run
         # else:
         #     url = f"{self.base_url}/preprocessing/describe/{self.group}/{self.preprocessing_id}"
-        #     response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + self.credentials}).json()['Description']
+        #     response = requests.get(url, headers={'Authorization': 'Bearer ' + self.credentials}).json()['Description']
         #     if response['Status'] == "Deployed":
         #         self.preprocessing_data = response
         #         self.status = response['Status']
@@ -279,7 +279,7 @@ class NeomarilPreprocessing(BaseNeomaril):
                 url=self.base_url,
                 group_token=self.__token,
                 group=self.group,
-                tenant=self.tenant
+                
             )
         else:
             raise PreprocessingError("Sync pre processing don't have executions")
@@ -300,7 +300,7 @@ class NeomarilPreprocessing(BaseNeomaril):
 
         """
         url = f"{self.base_url}/preprocessing/status/{self.group}/{self.preprocessing_id}"
-        response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
         if response.status_code < 300:
             return response.json()
         else:
@@ -422,8 +422,8 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
 
         execution.download_result()
     """
-    def __init__(self, *, login:Optional[str]=None, password:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/', tenant:str) -> None:
-        super().__init__(login=login, password=password, url=url, tenant=tenant)
+    def __init__(self, *, login:Optional[str]=None, password:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/') -> None:
+        super().__init__(login=login, password=password, url=url)
         
     def __get_preprocessing_status(self, *, preprocessing_id:str, group:str) -> dict:
         """
@@ -450,10 +450,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         url = f"{self.base_url}/preprocessing/status/{group}/{preprocessing_id}"
         response = requests.get(
             url=url,
-            headers={
-                'X-TenantName':self.tenant,
-                'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)
-            },
+            headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)},
             timeout=60
         )
         
@@ -517,7 +514,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
                     group=group,
                     url=self.base_url,
                     group_token=group_token,
-                    tenant=self.tenant
+                    
                 )
             
         if status in ['Disabled', 'Ready']:
@@ -534,7 +531,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
                 group=group,
                 url=self.base_url,
                 group_token=group_token,
-                tenant=self.tenant
+                
             )
         else:
             raise ServerError('Unknown preprocessing status: ',status)
@@ -584,7 +581,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         if only_deployed:
             query['state'] = 'Deployed'
 
-        response = requests.get(url, params=query, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
+        response = requests.get(url, params=query, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
         
         if response.status_code == 200:
             results = response.json()['Results']
@@ -709,7 +706,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
             
         form_data = {'name': preprocessing_name, 'script_reference': preprocessing_reference, 'operation': operation, 'python_version': "Python"+python_version.replace('.', '')}
             
-        response = requests.post(url, data=form_data, files=upload_data, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
+        response = requests.post(url, data=form_data, files=upload_data, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
 
         if response.status_code == 201:
             data = response.json()
@@ -743,7 +740,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         if operation == 'sync':
             url = url.replace('localhost:7070', 'localhost:7071')
 
-        response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
 
         if response.status_code == 202:
             logger.info(f"Preprocessing host in process - Hash: {preprocessing_id}")

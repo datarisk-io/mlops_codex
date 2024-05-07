@@ -246,7 +246,7 @@ class NeomarilPipeline(BaseNeomaril):
                 login=self.credentials[0], 
                 password=self.credentials[1],
                 url=self.base_url,
-                tenant=self.tenant
+                
             )
 
             model_name = conf.get('name', training_run.execution_data.get('ExperimentName', ''))
@@ -271,7 +271,7 @@ class NeomarilPipeline(BaseNeomaril):
                 login=self.credentials[0],
                 password=self.credentials[1],
                 url=self.base_url,
-                tenant=self.tenant
+                
             )
             client.create_group(name=self.group, description=self.group)
             
@@ -333,7 +333,7 @@ class NeomarilPipeline(BaseNeomaril):
             group=self.group, 
             group_token=os.getenv('NEOMARIL_GROUP_TOKEN'),
             url=self.base_url,
-            tenant=self.tenant
+            
         )
 
         model.register_monitoring(

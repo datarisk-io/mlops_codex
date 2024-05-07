@@ -381,7 +381,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
     """
 
     def __init__(self, *, training_id:str, group:str, exec_id:str, login:Optional[str]=None, 
-                 password:Optional[str]=None, url:str=None, tenant:str) -> None:
+                 password:Optional[str]=None, url:str=None) -> None:
         super().__init__(
             parent_id=training_id,
             exec_type='Training',
@@ -389,7 +389,6 @@ class NeomarilTrainingExecution(NeomarilExecution):
             login=login,
             password=password,
             url=url,
-            tenant=tenant,
             group=group
         )
 
@@ -483,7 +482,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
             url,
             data=form_data,
             files=upload_data,
-            headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)}
+            headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)}
         )
 
         if response.status_code == 201:
@@ -512,7 +511,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
 
         url = f"{self.base_url}/training/status/{self.group}/{self.exec_id}"
 
-        response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
         if response.status_code not in [200, 410]:
             logger.error(response.text)
             raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
@@ -523,7 +522,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
         self.execution_data['ExecutionState'] = result['Status']
         if self.status == 'Succeeded':
             url = f"{self.base_url}/training/describe/{self.group}/{self.training_id}/{self.exec_id}"
-            response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
+            response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
             self.execution_data = response.json()['Description']
             self.run_data = self.execution_data['RunData']
             try:
@@ -552,7 +551,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
         url = f"{self.base_url}/model/{operation}/host/{self.group}/{model_id}"
         if operation == 'sync':
             url = url.replace('7070','7071')
-        response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
         if response.status_code == 202:
             logger.info(f"Model host in process - Hash: {model_id}")
         else:
@@ -661,7 +660,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
                 password=self.credentials[1], 
                 group=self.group,
                 url=self.base_url,
-                tenant=self.tenant
+                
             )
 
         
@@ -714,14 +713,14 @@ class NeomarilTrainingExperiment(BaseNeomaril):
     """
 
     def __init__(self, *, training_id:str, login:Optional[str]=None, password:Optional[str]=None, 
-                 group:str="datarisk", url:str='https://neomaril.staging.datarisk.net/', tenant:str) -> None:
-        super().__init__(login=login, password=password, url=url, tenant=tenant)
+                 group:str="datarisk", url:str='https://neomaril.staging.datarisk.net/') -> None:
+        super().__init__(login=login, password=password, url=url)
         
         self.training_id = training_id
         self.group = group
 
         url = f"{self.base_url}/training/describe/{self.group}/{self.training_id}"
-        response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
     
         if response.status_code == 404:
             raise ModelError(f'Experiment "{training_id}" not found.')
@@ -901,12 +900,12 @@ class NeomarilTrainingExperiment(BaseNeomaril):
                 upload_data.append(("env", (".env", open(env, 'r'))))
 
         
-        token = refresh_token(*self.credentials, self.base_url, tenant=self.tenant)
+        token = refresh_token(*self.credentials, self.base_url)
         response = requests.post(
             url,
             data=form_data,
             files=upload_data, 
-            headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + token}
+            headers={'Authorization': 'Bearer ' + token}
         )
 
         message = response.text
@@ -934,7 +933,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         """
         
         url = f"{self.base_url}/training/execute/{self.group}/{self.training_id}/{exec_id}"
-        response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
         if response.status_code == 200:
             logger.info(f"Model training starting - Hash: {self.training_id}")
         else:
@@ -943,7 +942,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         
     def __refresh_execution_list(self):
         url = f"{self.base_url}/training/describe/{self.group}/{self.training_id}"
-        response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
     
         if response.status_code == 404:
             raise ModelError(f'Experiment "{self.training_id}" not found.')
@@ -1105,7 +1104,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
                 login=self.credentials[0],
                 password=self.credentials[1],
                 url=self.base_url,
-                tenant=self.tenant
+                
             )
             response = run.get_status()
             status = response['Status']
@@ -1152,7 +1151,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             login=self.credentials[0],
             password=self.credentials[1],
             url=self.base_url,
-            tenant=self.tenant
+            
         )
         exec.get_status()
         
@@ -1274,7 +1273,7 @@ class NeomarilTrainingClient(BaseNeomarilClient):
             login=self.credentials[0], 
             password=self.credentials[1],
             group=group, url=self.base_url,
-            tenant=self.tenant
+            
         )
     
 
@@ -1328,7 +1327,7 @@ class NeomarilTrainingClient(BaseNeomarilClient):
 
         data = {'experiment_name': experiment_name, 'model_type': model_type}
 
-        response = requests.post(url, data=data, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
+        response = requests.post(url, data=data, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
 
         if response.status_code < 300:
             response_data = response.json()
@@ -1345,5 +1344,5 @@ class NeomarilTrainingClient(BaseNeomarilClient):
             password=self.credentials[1],
             group=group,
             url=self.base_url,
-            tenant=self.tenant
+            
         )

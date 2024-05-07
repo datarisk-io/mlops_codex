@@ -70,8 +70,7 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
             group=group,
             login=self.credentials[0],
             password=self.credentials[1],
-            url=self.base_url,
-            tenant=self.tenant
+            url=self.base_url
         )
         
         url = f"{self.base_url}/datasource/register/{group}"
@@ -92,16 +91,13 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
         files = {
             'credentials' : (cloud_credentials.split('/')[-1], open(credential_path, "rb"))
         }
-        token = refresh_token(*self.credentials, self.base_url, tenant=self.tenant)
+        token = refresh_token(*self.credentials, self.base_url)
 
         response = requests.post(
             url=url,
             data=form_data,
             files=files,
-            headers={
-                'Authorization': 'Bearer ' + token,
-                'X-TenantName': self.tenant
-            },
+            headers={'Authorization': 'Bearer ' + token},
             timeout=60
         )
 
@@ -151,14 +147,11 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
         """
         url = f"{self.base_url}/datasource/list?group={group}&provider={provider}"
 
-        token = refresh_token(*self.credentials, self.base_url, tenant=self.tenant)
+        token = refresh_token(*self.credentials, self.base_url)
 
         response = requests.get(
             url=url,
-            headers={
-                'Authorization': 'Bearer ' + token,
-                'X-TenantName': self.tenant
-            },
+            headers={'Authorization': 'Bearer ' + token},
             timeout=60
         )
         if response.status_code == 200:
@@ -197,7 +190,7 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
                     login=self.credentials[0],
                     password=self.credentials[1],
                     url=self.base_url,
-                    tenant=self.tenant
+                    
                 )
         raise InputError("Datasource not found!")
 
@@ -271,15 +264,12 @@ class NeomarilDataSource(BaseNeomaril):
 
         force = str(force).lower()
 
-        token = refresh_token(*self.credentials, self.base_url, tenant=self.tenant)
+        token = refresh_token(*self.credentials, self.base_url)
         url = f"{self.base_url}/datasource/import/{self.group}/{self.datasource_name}?force={force}"
         response = requests.post(
             url=url,
             data=form_data,
-            headers={
-                'Authorization': 'Bearer ' + token,
-                'X-TenantName': self.tenant
-            },
+            headers={'Authorization': 'Bearer ' + token},
             timeout=60
         )
 
@@ -295,7 +285,7 @@ class NeomarilDataSource(BaseNeomaril):
                 login=self.credentials[0],
                 password=self.credentials[1],
                 url=self.base_url,
-                tenant=self.tenant
+                
             )
             return dataset
         raise InputError('An error ocurred. Verify the data sent')
@@ -321,14 +311,11 @@ class NeomarilDataSource(BaseNeomaril):
         url = f"{self.base_url}/datasets/list?datasource={self.datasource_name}"
         url += f'origin={origin}' if origin else ''
 
-        token = refresh_token(*self.credentials, self.base_url, tenant=self.tenant)
+        token = refresh_token(*self.credentials, self.base_url)
 
         response = requests.get(
             url=url,
-            headers={
-                'Authorization': 'Bearer ' + token,
-                'X-TenantName': self.tenant
-            },
+            headers={'Authorization': 'Bearer ' + token},
             timeout=60
         )
 
@@ -348,7 +335,7 @@ class NeomarilDataSource(BaseNeomaril):
         """
         url = f'{self.base_url}/datasources/{self.group}/{self.datasource_name}'
 
-        token = refresh_token(*self.credentials, self.base_url, tenant=self.tenant)
+        token = refresh_token(*self.credentials, self.base_url)
         response = requests.delete(
             url=url,
             headers={'Authorization': 'Bearer ' + token},
@@ -393,7 +380,7 @@ class NeomarilDataSource(BaseNeomaril):
                     login=self.credentials[0],
                     password=self.credentials[1],
                     url=self.base_url,
-                    tenant=self.tenant
+                    
                 )
         raise DatasetNotFoundError('Dataset hash not found!')
 
@@ -459,14 +446,11 @@ class NeomarilDataset(BaseNeomaril):
         """
         url = f'{self.base_url}/datasets/status/{self.group}/{self.dataset_hash}'
 
-        token = refresh_token(*self.credentials, self.base_url, tenant=self.tenant)
+        token = refresh_token(*self.credentials, self.base_url)
 
         response = requests.get(
             url=url,
-            headers={
-                'Authorization': 'Bearer ' + token,
-                'X-TenantName': self.tenant  
-            },
+            headers={'Authorization': 'Bearer ' + token},
             timeout=60
         )
 
@@ -489,7 +473,7 @@ class NeomarilDataset(BaseNeomaril):
         """
         url = f'{self.base_url}/datasets/{self.group}/{self.dataset_hash}'
 
-        token = refresh_token(*self.credentials, self.base_url, tenant=self.tenant)
+        token = refresh_token(*self.credentials, self.base_url)
         response = requests.delete(
             url=url,
             headers={'Authorization': 'Bearer ' + token},

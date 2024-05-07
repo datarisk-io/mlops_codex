@@ -64,15 +64,15 @@ class NeomarilModel(BaseNeomaril):
     
     """
 
-    def __init__(self, *, model_id:str, login:Optional[str]=None, password:Optional[str]=None, group:str="datarisk", group_token:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/', tenant:str) -> None:
-        super().__init__(login=login, password=password, url=url, tenant=tenant)
+    def __init__(self, *, model_id:str, login:Optional[str]=None, password:Optional[str]=None, group:str="datarisk", group_token:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/') -> None:
+        super().__init__(login=login, password=password, url=url)
 
         self.model_id = model_id
         self.group = group
         self.__token = group_token if group_token else os.getenv('NEOMARIL_GROUP_TOKEN')
         
         url = f"{self.base_url}/model/describe/{self.group}/{self.model_id}"
-        response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
     
         if response.status_code == 404:
             raise ModelError(f'Model "{model_id}" not found.')
@@ -116,7 +116,7 @@ class NeomarilModel(BaseNeomaril):
 
         """
         url = f"{self.base_url}/model/status/{self.group}/{self.model_id}"
-        response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
         if response.status_code < 300:
             return response.json()
         else:
@@ -153,14 +153,14 @@ class NeomarilModel(BaseNeomaril):
         """
         if self.operation == 'async':
             try:
-                try_login(*self.credentials, self.base_url, tenant=self.tenant)
+                try_login(*self.credentials, self.base_url, )
                 return 'OK'
             except Exception as e:
                 logger.error('Server error: '+e)
                 return 'NOK'
         elif self.operation == 'sync':
             url = f"{self.base_url.replace('localhost:7070', 'localhost:7071')}/model/sync/health/{self.group}/{self.model_id}"
-            response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + self.__token})
+            response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__token})
             if response.status_code == 200:
                 return response.json()['Message']
             else:
@@ -182,7 +182,7 @@ class NeomarilModel(BaseNeomaril):
         """
         if (self.operation == "sync") and (self.status == "Deployed"):
             url = f"{self.base_url.replace('localhost:7070', 'localhost:7071')}/model/sync/restart/{self.group}/{self.model_id}"
-            response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
+            response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
             if response.status_code < 300:
                 logger.info("Model is restarting")
                 self.status = self.__get_status()['Status']
@@ -252,12 +252,12 @@ class NeomarilModel(BaseNeomaril):
         >>> model.delete()
         """
         if self.__model_ready:
-            token = refresh_token(*self.credentials, self.base_url, tenant=self.tenant)
-            req = requests.delete(f"{self.base_url}/model/delete/{self.group}/{self.model_id}", headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + token})
+            token = refresh_token(*self.credentials, self.base_url)
+            req = requests.delete(f"{self.base_url}/model/delete/{self.group}/{self.model_id}", headers={'Authorization': 'Bearer ' + token})
         
             if req.status_code == 200:
                 response = requests.get(f"{self.base_url}/model/describe/{self.group}/{self.model_id}", 
-                                            headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + token})
+                                            headers={'Authorization': 'Bearer ' + token})
             
                 self.model_data = response.json()['Description']
                 self.status = self.model_data['Status']
@@ -333,7 +333,7 @@ class NeomarilModel(BaseNeomaril):
                     if preprocessing:
                         model_input['ScriptHash'] = preprocessing.preprocessing_id
 
-                    req = requests.post(url, data=json.dumps(model_input), headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + group_token})
+                    req = requests.post(url, data=json.dumps(model_input), headers={'Authorization': 'Bearer ' + group_token})
 
                     return req.json()
 
@@ -360,7 +360,7 @@ class NeomarilModel(BaseNeomaril):
                         form_data['dataset_hash'] = dataset_hash
                     
                     req = requests.post(url, files=files, data=form_data,
-                                                    headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + group_token})
+                                                    headers={'Authorization': 'Bearer ' + group_token})
 
                     if req.status_code == 202:
                         message = req.json()
@@ -375,7 +375,7 @@ class NeomarilModel(BaseNeomaril):
                             password=self.credentials[1], 
                             url=self.base_url, 
                             group_token=group_token,
-                            tenant=self.tenant
+                            
                         )
                         response = run.get_status()
                         status = response['Status']
@@ -397,7 +397,7 @@ class NeomarilModel(BaseNeomaril):
                 raise AuthenticationError("Group token not informed")
         else:
             url = f"{self.base_url}/model/describe/{self.group}/{self.model_id}"
-            response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)}).json()['Description']
+            response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)}).json()['Description']
             if response['Status'] == "Deployed":
                 self.model_data = response
                 self.status = response['Status']
@@ -549,7 +549,7 @@ class NeomarilModel(BaseNeomaril):
                 password=self.credentials[1], 
                 url=self.base_url, 
                 group_token=self.__token,
-                tenant=self.tenant
+                
             )
             run.get_status()
             return run
@@ -576,7 +576,7 @@ class NeomarilModel(BaseNeomaril):
         """
         url = f"{self.base_url}/monitoring/status/{group}/{model_id}"
 
-        response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
 
         if response.status_code == 200:
             message = response.json()
@@ -613,7 +613,7 @@ class NeomarilModel(BaseNeomaril):
         """
         url = f"{self.base_url}/monitoring/host/{group}/{model_id}"
 
-        response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
         
         if response.status_code == 200:
             logger.info(f'Model monitoring host started - Hash: "{model_id}"')
@@ -681,7 +681,7 @@ class NeomarilModel(BaseNeomaril):
             upload_data.append(("requirements", ('requirements.txt', open(requirements_file, 'rb'))))
 
         response = requests.post(url, data=form_data, files=upload_data, 
-                                 headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
+                                 headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
         
         if response.status_code == 201:
             data = response.json()
@@ -834,7 +834,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         """
 
         url = f"{self.base_url}/model/status/{group}/{model_id}"
-        response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
         if response.status_code not in [200, 410]:
             raise ModelError(f'Model "{model_id}" not found')
         
@@ -895,7 +895,7 @@ class NeomarilModelClient(BaseNeomarilClient):
                     group=group,
                     url=self.base_url,
                     group_token=group_token,
-                    tenant=self.tenant
+                    
                 )
             
         if status in ['Disabled', 'Ready']:
@@ -912,7 +912,7 @@ class NeomarilModelClient(BaseNeomarilClient):
                 group=group,
                 url=self.base_url,
                 group_token=group_token,
-                tenant=self.tenant
+                
             )
         else:
             raise ServerError('Unknown model status: ',status)
@@ -963,13 +963,14 @@ class NeomarilModelClient(BaseNeomarilClient):
             query['state'] = 'Deployed'
 
         response = requests.get(url, params=query,
-                                                        headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
+                                                        headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
         
         if response.status_code == 200:
             results = response.json()['Results']
             parsed_results = []
             for r in results:
-                r['Schema'] = json.loads(r['Schema'])
+                if schema := r.get('Schema'):
+                    r['Schema'] = json.loads(schema)
                 parsed_results.append(r)
 
             return parsed_results
@@ -1096,7 +1097,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         form_data = {'name': model_name, 'model_reference': model_reference, 'operation': operation, 'input_type': input_type,
                                  'python_version': "Python"+python_version.replace('.', '')}
             
-        response = requests.post(url, data=form_data, files=upload_data, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
+        response = requests.post(url, data=form_data, files=upload_data, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
         
         if response.status_code == 201:
             data = response.json()
@@ -1130,7 +1131,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         if operation == 'sync':
             url = url.replace('localhost:7070', 'localhost:7071')
 
-        response = requests.get(url, headers={'X-TenantName':self.tenant,'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url, tenant=self.tenant)})
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
         if response.status_code == 202:
             logger.info(f"Model host in process - Hash: {model_id}")
         else:
