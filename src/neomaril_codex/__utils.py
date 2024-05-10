@@ -36,6 +36,7 @@ def try_login(login:str, password:str, base_url:str) -> bool:
     
 @ttl_cache
 def refresh_token(login:str, password:str, base_url:str):
+  
   respose = requests.post(f'{base_url}/login', data={'user': login, 'password': password})
   
   if respose.status_code == 200:

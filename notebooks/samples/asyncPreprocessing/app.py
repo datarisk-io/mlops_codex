@@ -1,55 +1,68 @@
-import os
+import re, os
+import numpy as np
 import pandas as pd
 
+def check_2dig(x: str):
+  if x and re.match(r"^[0-9]{2}$", x):
+    return x
+  else:
+    return np.nan
 
-def process(data_path:str):  # O nome da função (process) é que deve ser passado no campo 'preprocess_reference'
-    """
-    Função usada para fazer o pré-processamento da base de dados
-    Essa função deve estruturar os passos que o Neomaril executará para transformar a base de dados de entrada
-    em uma nova base de dados operações de pré-processamento, sejam elas filtragens, extração de features, etc
+
+def cria_variaveis_e_ajusta(df):
+
+    df = df.copy()
+
+    df['DATA_PAGAMENTO'] = pd.to_datetime(df.DATA_PAGAMENTO)
+    df['DATA_VENCIMENTO'] = pd.to_datetime(df.DATA_VENCIMENTO)
+
+    # Criação de Variáveis
+    df['RZ_RENDA_FUNC'] = df[['RENDA_MES_ANTERIOR','NO_FUNCIONARIOS']].apply(lambda x: x[0]/x[1] if x[1]> 0 else np.nan, axis=1)
+    df['VL_TAXA'] = df[['TAXA','VALOR_A_PAGAR']].apply(lambda x: (x[0]/100)*x[1] if x[1]> 0 else np.nan, axis=1)
+
+    # Ajustes de Variáveis
+    df['DDD'] = df['DDD'].astype(str).apply(check_2dig)
+    df['SEGMENTO_INDUSTRIAL'] = df['SEGMENTO_INDUSTRIAL'].astype(str).map({'Serviços':'SERVICOS','Comércio':'COMERCIO','Indústria':'INDUSTRIA'})
+    df['DOMINIO_EMAIL'] = df['DOMINIO_EMAIL'].astype(str).map({'YAHOO':'YAHOO','HOTMAIL':'HOTMAIL','OUTLOOK':'OUTLOOK','GMAIL':'GMAIL','BOL':'BOL','AOL':'AOL'})
+    df['PORTE'] = df['PORTE'].astype(str).map({'PEQUENO':'PEQUENO','MEDIO':'MEDIO','GRANDE':'GRANDE'})
+    df['CEP_2_DIG'] = df['CEP_2_DIG'].astype(str).apply(check_2dig)
+
+    # Preenchimento de nulos nas variáveis categóricas
+    variaveis_categoricas =  ['DDD', 'SEGMENTO_INDUSTRIAL', 'DOMINIO_EMAIL', 'PORTE', 'CEP_2_DIG']
+
+    df[variaveis_categoricas] = df[variaveis_categoricas].fillna('MISSING')
+    return df
+
+def build_df(data_path, extra_path=None):
+
+    variaveis_numericas = ['VALOR_A_PAGAR', 'TAXA', 'RENDA_MES_ANTERIOR', 'NO_FUNCIONARIOS', 'RZ_RENDA_FUNC', 'VL_TAXA']
+    variaveis_categoricas = ['DDD', 'SEGMENTO_INDUSTRIAL', 'DOMINIO_EMAIL', 'PORTE', 'CEP_2_DIG']
+
+    features = variaveis_numericas + variaveis_categoricas
+
+    df = pd.read_csv(data_path+'/'+os.getenv('inputFileName'))
+
+    base_completa = (
+        # Cruzamento das bases
+        df
+        # Remove as amostras que são pessoas físicas
+        .query('FLAG_PF.isna()')
+        # Cria e ajusta as variáveis
+        .pipe(cria_variaveis_e_ajusta)
+        # Cria a variável target
+        .assign(
+            DIAS_DE_ATRASO = lambda df_: (df_['DATA_PAGAMENTO'] - df_['DATA_VENCIMENTO']).dt.days,
+            FLAG_MAU = lambda df_: (df_['DIAS_DE_ATRASO']>=5).astype(int)
+        )
+    )
+
+    variaveis_numericas = ['VALOR_A_PAGAR', 'TAXA', 'RENDA_MES_ANTERIOR', 'NO_FUNCIONARIOS', 'RZ_RENDA_FUNC', 'VL_TAXA']
+    variaveis_categoricas = ['DDD', 'SEGMENTO_INDUSTRIAL', 'DOMINIO_EMAIL', 'PORTE', 'CEP_2_DIG']
+
+    features = variaveis_numericas + variaveis_categoricas
+
+    output = data_path+'/base_preprocessada.csv'
+
+    base_completa[['FLAG_MAU', 'SAFRA_REF', 'ID_CLIENTE']+features].to_csv(output, index=False)
     
-    Caso não queira deixar o nome da base de dados fixo, o Neomaril carrega o nome desse arquivo
-    na variável de ambiente (exemplo nas linhas 25-26):
-    inputFileName : str
-        Que contém o nome do arquivo da base de dados que foi feito upload
-
-    Parâmetros
-    ---------
-    data : str
-        Os dados que serão usados pelo modelo que deverão chegar no formato string
-
-    Retorno
-    -------
-    str:
-        O caminho com o(s) arquivo(s) com a base de dados transformada
-    """
-
-    ## Variável de ambiente carregada do Neomaril com nome da base de dados (usado em alternativa a linha 51)
-    # X = pd.read_csv(data_path+'/'+os.getenv('inputFileName'))
-    
-    # Carrega os dados da base de entrada do arquivo para um DataFrame
-    df = pd.read_csv(data_path+'/input.csv')
-
-    # Cria uma lista com os parâmetros da base de dados que devem ser mantidos
-    parameters_to_keep = [
-        'mean_radius', 'mean_texture', 'mean_perimeter', 'mean_area',
-        'mean_smoothness', 'mean_compactness', 'mean_concavity', 'mean_concave_points',
-        'mean_symmetry', 'mean_fractal_dimension', 'radius_error', 'texture_error',
-        'perimeter_error', 'area_error', 'smoothness_error', 'compactness_error',
-        'concavity_error', 'concave_points_error', 'symmetry_error', 'fractal_dimension_error',
-        'worst_radius', 'worst_texture', 'worst_perimeter', 'worst_area', 'worst_smoothness',
-        'worst_compactness', 'worst_concavity', 'worst_concave_points', 'worst_symmetry',
-        'worst_fractal_dimension'
-    ]
-
-    #Cria um DataFrame com os parâmetros que devem ser mantidos
-    final_df = df[parameters_to_keep]
-
-    # Cria o caminho com o nome do arquivo de output, nesse caso 'output.csv' 
-    csv_filename = data_path + '/output.csv'
-
-    # Transforma o DataFrame, com a predição e a probabilidade, para csv colocando no arquivo do caminho do output
-    final_df.to_csv(csv_filename, index=False)
-
-    # Retorna o caminho com o arquivo com os resultados da execução do modelo
-    return csv_filename
+    return output

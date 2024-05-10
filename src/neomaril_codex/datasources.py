@@ -189,7 +189,8 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
                     group=datasource.get('Group'),
                     login=self.credentials[0],
                     password=self.credentials[1],
-                    url=self.base_url
+                    url=self.base_url,
+                    
                 )
         raise InputError("Datasource not found!")
 
@@ -283,7 +284,8 @@ class NeomarilDataSource(BaseNeomaril):
                 group=self.group,
                 login=self.credentials[0],
                 password=self.credentials[1],
-                url=self.base_url
+                url=self.base_url,
+                
             )
             return dataset
         raise InputError('An error ocurred. Verify the data sent')
@@ -377,7 +379,8 @@ class NeomarilDataSource(BaseNeomaril):
                     group=self.group,
                     login=self.credentials[0],
                     password=self.credentials[1],
-                    url=self.base_url
+                    url=self.base_url,
+                    
                 )
         raise DatasetNotFoundError('Dataset hash not found!')
 
