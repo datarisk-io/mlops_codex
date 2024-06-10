@@ -28,4 +28,4 @@ jobs:
           pipenv install
       - name: Run Pipenv Check
         working-directory: ./
-        run: pipenv check
+        run: pipenv check --use-installed
