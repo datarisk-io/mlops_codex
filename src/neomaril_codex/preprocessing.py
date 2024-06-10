@@ -189,7 +189,6 @@ class NeomarilPreprocessing(BaseNeomaril):
                 if group_token and not self.__token:
                     self.__token = group_token
                 if self.operation == 'sync':
-                    url = url.replace('localhost:7070', 'localhost:7071')
                     preprocessing_input = {
                             "Input": data
                     }
@@ -737,8 +736,6 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         """
         
         url = f"{self.base_url}/preprocessing/{operation}/host/{group}/{preprocessing_id}"
-        if operation == 'sync':
-            url = url.replace('localhost:7070', 'localhost:7071')
 
         response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
 
