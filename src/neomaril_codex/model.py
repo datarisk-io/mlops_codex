@@ -1,16 +1,20 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import io, os
-from typing import Union, Optional
-from time import sleep
-import requests
+import io
 import json
-from neomaril_codex.base import *
+import os
+from time import sleep
+from typing import Optional, Union
+
+import requests
+
 from neomaril_codex.__utils import *
+from neomaril_codex.base import *
+from neomaril_codex.datasources import NeomarilDataset
 from neomaril_codex.exceptions import *
 from neomaril_codex.preprocessing import *
-from neomaril_codex.datasources import NeomarilDataset
+
 
 class NeomarilModel(BaseNeomaril):
     """
@@ -32,7 +36,7 @@ class NeomarilModel(BaseNeomaril):
         URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
     docs : str
         URL for the model Swagger page
-    
+
     Raises
     ------
     ModelError
@@ -45,7 +49,7 @@ class NeomarilModel(BaseNeomaril):
     Getting a model, testing its health and running the prediction
 
     .. code-block:: python
-        
+
         from neomaril_codex.model import NeomarilModelClient
         from neomaril_codex.model import NeomarilModel
 
@@ -53,7 +57,7 @@ class NeomarilModel(BaseNeomaril):
 
         model = client.get_model(model_id='M9c3af308c754ee7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4',
                                  group='ex_group')
-        
+
         if model.health() = 'OK':
             model.wait_ready()
             model.predict(model.schema)
@@ -61,31 +65,47 @@ class NeomarilModel(BaseNeomaril):
             model.restart_model(False)
             model.wait_ready()
             model.predict(model.schema)
-    
+
     """
 
-    def __init__(self, *, model_id:str, login:Optional[str]=None, password:Optional[str]=None, group:str="datarisk", group_token:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/') -> None:
+    def __init__(
+        self,
+        *,
+        model_id: str,
+        login: Optional[str] = None,
+        password: Optional[str] = None,
+        group: str = "datarisk",
+        group_token: Optional[str] = None,
+        url: str = "https://neomaril.staging.datarisk.net/",
+    ) -> None:
         super().__init__(login=login, password=password, url=url)
 
         self.model_id = model_id
         self.group = group
-        self.__token = group_token if group_token else os.getenv('NEOMARIL_GROUP_TOKEN')
-        
+        self.__token = group_token if group_token else os.getenv("NEOMARIL_GROUP_TOKEN")
+
         url = f"{self.base_url}/model/describe/{self.group}/{self.model_id}"
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
-    
+        response = requests.get(
+            url,
+            headers={
+                "Authorization": "Bearer "
+                + refresh_token(*self.credentials, self.base_url)
+            },
+        )
+
         if response.status_code == 404:
             raise ModelError(f'Model "{model_id}" not found.')
-    
-        
+
         elif response.status_code >= 500:
             raise ModelError(f'Unable to retrive model "{model_id}"')
-    
-        self.model_data = response.json()['Description']
-        self.name = self.model_data['Name']
-        self.status = self.model_data['Status']
-        self.operation = self.model_data['Operation'].lower()
-        self.docs = f'{self.base_url}/model/{self.operation}/docs/{self.group}/{self.model_id}'
+
+        self.model_data = response.json()["Description"]
+        self.name = self.model_data["Name"]
+        self.status = self.model_data["Status"]
+        self.operation = self.model_data["Operation"].lower()
+        self.docs = (
+            f"{self.base_url}/model/{self.operation}/docs/{self.group}/{self.model_id}"
+        )
         self.__model_ready = self.status == "Deployed"
 
     def __repr__(self) -> str:
@@ -96,7 +116,9 @@ class NeomarilModel(BaseNeomaril):
                                 )"""
 
     def __str__(self):
-        return f'NEOMARIL model "{self.name} (Group: {self.group}, Id: {self.model_id})"'
+        return (
+            f'NEOMARIL model "{self.name} (Group: {self.group}, Id: {self.model_id})"'
+        )
 
     def __get_status(self):
         """
@@ -114,8 +136,14 @@ class NeomarilModel(BaseNeomaril):
 
         """
         url = f"{self.base_url}/model/status/{self.group}/{self.model_id}"
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
-        if response.status_code < 300:
+        response = requests.get(
+            url,
+            headers={
+                "Authorization": "Bearer "
+                + refresh_token(*self.credentials, self.base_url)
+            },
+        )
+        if response.status_code == 200:
             return response.json()
         else:
             raise ModelError(response.text)
@@ -123,16 +151,16 @@ class NeomarilModel(BaseNeomaril):
     def wait_ready(self):
         """
         Waits the model to be with status 'Deployed'
-        
+
         Example
         -------
         >>> model.wait_ready()
         """
-        if self.status in ['Ready', 'Building']:
-            self.status = self.__get_status()['Status']
-            while self.status == 'Building':
+        if self.status in ["Ready", "Building"]:
+            self.status = self.__get_status()["Status"]
+            while self.status == "Building":
                 sleep(30)
-                self.status = self.__get_status()['Status']
+                self.status = self.__get_status()["Status"]
 
     def health(self) -> str:
         """
@@ -143,31 +171,36 @@ class NeomarilModel(BaseNeomaril):
         str
             OK - if the it is possible to get the health state
             NOK - if an exception occurs
-        
+
         Example
         -------
         >>> model.health()
          'OK'
         """
-        if self.operation == 'async':
+        if self.operation == "async":
             try:
-                try_login(*self.credentials, self.base_url, )
-                return 'OK'
+                try_login(
+                    *self.credentials,
+                    self.base_url,
+                )
+                return "OK"
             except Exception as e:
-                logger.error('Server error: '+e)
-                return 'NOK'
-        elif self.operation == 'sync':
+                logger.error("Server error: " + e)
+                return "NOK"
+        elif self.operation == "sync":
             url = f"{self.base_url}/model/sync/health/{self.group}/{self.model_id}"
-            response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__token})
+            response = requests.get(
+                url, headers={"Authorization": "Bearer " + self.__token}
+            )
             if response.status_code == 200:
-                return response.json()['Message']
+                return response.json()["Message"]
             else:
-                logger.error('Server error: '+response.text)
-                return 'NOK'
+                logger.error("Server error: " + response.text)
+                return "NOK"
 
-    def restart_model(self, *, wait_for_ready:bool=True):
+    def restart_model(self, *, wait_for_ready: bool = True):
         """
-        Restart a model deployment process health state. 
+        Restart a model deployment process health state.
 
         Parameters
         -----------
@@ -180,20 +213,33 @@ class NeomarilModel(BaseNeomaril):
         """
         if (self.operation == "sync") and (self.status == "Deployed"):
             url = f"{self.base_url}/model/sync/restart/{self.group}/{self.model_id}"
-            response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
-            if response.status_code < 300:
+            response = requests.get(
+                url,
+                headers={
+                    "Authorization": "Bearer "
+                    + refresh_token(*self.credentials, self.base_url)
+                },
+            )
+            if response.status_code == 200:
                 logger.info("Model is restarting")
-                self.status = self.__get_status()['Status']
+                self.status = self.__get_status()["Status"]
                 if wait_for_ready:
-                    print('Waiting for deploy to be ready.', end='')
-                    while self.status == 'Building':
+                    print("Waiting for deploy to be ready.", end="")
+                    while self.status == "Building":
                         sleep(30)
-                        self.status = self.__get_status()['Status']
-                        print('.', end='', flush=True)
+                        self.status = self.__get_status()["Status"]
+                        print(".", end="", flush=True)
 
-    def get_logs(self, *, start:Optional[str]=None, end:Optional[str]=None, routine:Optional[str]=None, type:Optional[str]=None):
+    def get_logs(
+        self,
+        *,
+        start: Optional[str] = None,
+        end: Optional[str] = None,
+        routine: Optional[str] = None,
+        type: Optional[str] = None,
+    ):
         """
-        Get the logs 
+        Get the logs
 
         Parameters
         -----------
@@ -208,18 +254,18 @@ class NeomarilModel(BaseNeomaril):
 
         Raises
         ------
-        ServerError    
+        ServerError
             Unexpected server error
 
         Returns
         -------
         json
             Logs list
-        
+
         Example
         -------
         >>> model.get_logs(start='2023-01-31', end='2023-02-24', routine='Run', type='Error')
-         {'Results': 
+         {'Results':
             [{'ModelHash': 'M9c3af308c754ee7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4',
                 'RegisteredAt': '2023-01-31T16:06:45.5955220Z',
                 'OutputType': 'Error',
@@ -228,8 +274,15 @@ class NeomarilModel(BaseNeomaril):
          }
         """
         url = f"{self.base_url}/model/logs/{self.group}/{self.model_id}"
-        return self._logs(url=url, credentials=self.credentials, start=start, end=end, routine=routine, type=type)
-    
+        return self._logs(
+            url=url,
+            credentials=self.credentials,
+            start=start,
+            end=end,
+            routine=routine,
+            type=type,
+        )
+
     def delete(self):
         """
         Deletes the current model.
@@ -251,24 +304,29 @@ class NeomarilModel(BaseNeomaril):
         """
         if self.__model_ready:
             token = refresh_token(*self.credentials, self.base_url)
-            req = requests.delete(f"{self.base_url}/model/delete/{self.group}/{self.model_id}", headers={'Authorization': 'Bearer ' + token})
-        
+            req = requests.delete(
+                f"{self.base_url}/model/delete/{self.group}/{self.model_id}",
+                headers={"Authorization": "Bearer " + token},
+            )
+
             if req.status_code == 200:
-                response = requests.get(f"{self.base_url}/model/describe/{self.group}/{self.model_id}", 
-                                            headers={'Authorization': 'Bearer ' + token})
-            
-                self.model_data = response.json()['Description']
-                self.status = self.model_data['Status']
+                response = requests.get(
+                    f"{self.base_url}/model/describe/{self.group}/{self.model_id}",
+                    headers={"Authorization": "Bearer " + token},
+                )
+
+                self.model_data = response.json()["Description"]
+                self.status = self.model_data["Status"]
                 self.__model_ready = False
-        
+
                 return req.json()
             else:
-                raise ServerError('Model deleting failed')
-      
+                raise ServerError("Model deleting failed")
+
         else:
-            return 'Model is '+self.status
-  
-    def set_token(self, group_token:str) -> None:
+            return "Model is " + self.status
+
+    def set_token(self, group_token: str) -> None:
         """
         Saves the group token for this model instance.
 
@@ -276,7 +334,7 @@ class NeomarilModel(BaseNeomaril):
         ---------
         group_token : str
             Token for executing the model (show when creating a group). You can set this using the NEOMARIL_GROUP_TOKEN env variable
-        
+
         Example
         -------
         >>> model.set_token('6cb64889a45a45ea8749881e30c136df')
@@ -285,17 +343,24 @@ class NeomarilModel(BaseNeomaril):
         self.__token = group_token
         logger.info(f"Token for group {self.group} added.")
 
-    def predict(self, *, data:Optional[Union[dict, str, NeomarilExecution]] = None, dataset : Union[str, NeomarilDataset] = None, preprocessing: Optional[NeomarilPreprocessing]=None, 
-                group_token:Optional[str]=None, wait_complete:Optional[bool]=False) -> Union[dict, NeomarilExecution]:
+    def predict(
+        self,
+        *,
+        data: Optional[Union[dict, str, NeomarilExecution]] = None,
+        dataset: Union[str, NeomarilDataset] = None,
+        preprocessing: Optional[NeomarilPreprocessing] = None,
+        group_token: Optional[str] = None,
+        wait_complete: Optional[bool] = False,
+    ) -> Union[dict, NeomarilExecution]:
         """
         Runs a prediction from the current model.
 
         Arguments
         ---------
         data : Union[dict, str]
-            The same data that is used in the source file. 
+            The same data that is used in the source file.
             If Sync is a dict, the keys that are needed inside this dict are the ones in the `schema` atribute.
-            If Async is a string with the file path with the same filename used in the source file. 
+            If Async is a string with the file path with the same filename used in the source file.
         group_token : str, optional
             Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable NEOMARIL_GROUP_TOKEN
         wait_complete: bool, optional
@@ -314,7 +379,9 @@ class NeomarilModel(BaseNeomaril):
             The return of the scoring function in the source file for Sync models or the execution class for Async models.
         """
         if not (data or dataset):
-            raise InputError('Invalid data input. Run training requires a data or dataset')
+            raise InputError(
+                "Invalid data input. Run training requires a data or dataset"
+            )
         if self.__model_ready:
             if (group_token is not None) | (self.__token is not None):
                 url = f"{self.base_url}/model/{self.operation}/run/{self.group}/{self.model_id}"
@@ -322,89 +389,116 @@ class NeomarilModel(BaseNeomaril):
                     group_token = self.__token
                 if group_token and not self.__token:
                     self.__token = group_token
-                if self.operation == 'sync':
-                    model_input = {
-                            "Input": data
-                    }
+                if self.operation == "sync":
+                    model_input = {"Input": data}
 
                     if preprocessing:
-                        model_input['ScriptHash'] = preprocessing.preprocessing_id
+                        model_input["ScriptHash"] = preprocessing.preprocessing_id
 
-                    req = requests.post(url, data=json.dumps(model_input), headers={'Authorization': 'Bearer ' + group_token})
+                    req = requests.post(
+                        url,
+                        data=json.dumps(model_input),
+                        headers={"Authorization": "Bearer " + group_token},
+                    )
 
                     return req.json()
 
-                elif self.operation == 'async':
+                elif self.operation == "async":
                     if preprocessing:
-                        if preprocessing.operation == 'async':
+                        if preprocessing.operation == "async":
                             preprocessing.set_token(group_token)
                             pre_run = preprocessing.run(data=data)
                             pre_run.wait_ready()
                             if pre_run.status != "Succeeded":
-                                logger.error("Preprocessing failed, we wont send any data to it")
+                                logger.error(
+                                    "Preprocessing failed, we wont send any data to it"
+                                )
                                 logger.info("Returning Preprocessing run instead.")
                                 return pre_run
-                            data = './result_preprocessing'
-                            pre_run.download_result(path='./', filename='result_preprocessing')
+                            data = "./result_preprocessing"
+                            pre_run.download_result(
+                                path="./", filename="result_preprocessing"
+                            )
                         else:
-                            raise PreprocessingError("Can only use async preprocessing with async models")
+                            raise PreprocessingError(
+                                "Can only use async preprocessing with async models"
+                            )
 
                     form_data = {}
                     if data:
-                        files = [("input", (data.split('/')[-1], open(data, "rb")))]
+                        files = [("input", (data.split("/")[-1], open(data, "rb")))]
                     elif dataset:
-                        dataset_hash = dataset if isinstance(dataset, str) else dataset.dataset_hash
-                        form_data['dataset_hash'] = dataset_hash
-                    
-                    req = requests.post(url, files=files, data=form_data,
-                                                    headers={'Authorization': 'Bearer ' + group_token})
+                        dataset_hash = (
+                            dataset
+                            if isinstance(dataset, str)
+                            else dataset.dataset_hash
+                        )
+                        form_data["dataset_hash"] = dataset_hash
+
+                    req = requests.post(
+                        url,
+                        files=files,
+                        data=form_data,
+                        headers={"Authorization": "Bearer " + group_token},
+                    )
 
                     if req.status_code == 202:
                         message = req.json()
-                        logger.info(message['Message'])
-                        exec_id = message['ExecutionId']
+                        logger.info(message["Message"])
+                        exec_id = message["ExecutionId"]
                         run = NeomarilExecution(
-                            parent_id=self.model_id, 
-                            exec_type='AsyncModel', 
-                            group=self.group, 
-                            exec_id=exec_id, 
+                            parent_id=self.model_id,
+                            exec_type="AsyncModel",
+                            group=self.group,
+                            exec_id=exec_id,
                             login=self.credentials[0],
-                            password=self.credentials[1], 
-                            url=self.base_url, 
+                            password=self.credentials[1],
+                            url=self.base_url,
                             group_token=group_token,
-                            
                         )
                         response = run.get_status()
-                        status = response['Status']
+                        status = response["Status"]
                         if wait_complete:
-                            print('Waiting the training run.', end='')
-                            while status in ['Running', 'Requested']:
+                            print("Waiting the training run.", end="")
+                            while status in ["Running", "Requested"]:
                                 sleep(30)
-                                print('.', end='', flush=True)
+                                print(".", end="", flush=True)
                                 response = run.get_status()
-                                status = response['Status']
-                        if status == 'Failed':
-                            logger.error(response['Message'])
+                                status = response["Status"]
+                        if status == "Failed":
+                            logger.error(response["Message"])
                             raise ExecutionError("Training execution failed")
                         return run
                     else:
                         raise ServerError(req.text)
-                
+
             else:
                 raise AuthenticationError("Group token not informed")
         else:
             url = f"{self.base_url}/model/describe/{self.group}/{self.model_id}"
-            response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)}).json()['Description']
-            if response['Status'] == "Deployed":
+            response = requests.get(
+                url,
+                headers={
+                    "Authorization": "Bearer "
+                    + refresh_token(*self.credentials, self.base_url)
+                },
+            ).json()["Description"]
+            if response["Status"] == "Deployed":
                 self.model_data = response
-                self.status = response['Status']
+                self.status = response["Status"]
                 self.__model_ready = True
-                return self.predict(data=data, dataset=dataset, preprocessing=preprocessing, group_token=group_token, wait_complete=wait_complete)
-    
+                return self.predict(
+                    data=data,
+                    dataset=dataset,
+                    preprocessing=preprocessing,
+                    group_token=group_token,
+                    wait_complete=wait_complete,
+                )
+
             else:
-                raise ModelError('Model is not available to predictions')
-            
-    def generate_predict_code(self, *, language:str='curl') -> str:
+                raise ModelError("Model is not available to predictions")
+
+    def generate_predict_code(self, *, language: str = "curl") -> str:
         """
         Generates predict code for the model to be used outside Neomaril Codex
 
@@ -423,20 +517,20 @@ class NeomarilModel(BaseNeomaril):
         str
             The generated code.
         """
-        if language not in ['curl', 'python', 'javascript']:
+        if language not in ["curl", "python", "javascript"]:
             raise InputError("Suported languages are curl, python or javascript")
 
-        if self.operation == 'sync':
-            payload = json.dumps({"Input": {'DATA': 'DATA'}})
+        if self.operation == "sync":
+            payload = json.dumps({"Input": {"DATA": "DATA"}})
             base_url = self.base_url
-            if language == 'curl':
+            if language == "curl":
                 return f"""curl --request POST \\
                     --url {base_url}/model/sync/run/{self.group}/{self.model_id} \\
                     --header 'Authorization: Bearer TOKEN' \\
                     --header 'Content-Type: application/json' \\
                     --data '{payload}'
                 """
-            if language == 'python':
+            if language == "python":
                 return f"""
                     import requests
 
@@ -452,7 +546,7 @@ class NeomarilModel(BaseNeomaril):
 
                     print(response.text)
                 """
-            if language == 'javascript':
+            if language == "javascript":
                 return f"""
                     const options = {{
                     method: 'POST',
@@ -466,8 +560,8 @@ class NeomarilModel(BaseNeomaril):
                     .catch(err => console.error(err));
 
                 """
-        if self.operation == 'async':
-            if language == 'curl':
+        if self.operation == "async":
+            if language == "curl":
                 return f"""
                     curl --request POST \
                     --url {self.base_url}/model/async/run/{self.group}/{self.model_id} \\
@@ -475,7 +569,7 @@ class NeomarilModel(BaseNeomaril):
                     --header 'Content-Type: multipart/form-data' \\
                     --form "input=@/path/to/file"
                 """
-            if language == 'python':
+            if language == "python":
                 return f"""
                     import requests
 
@@ -494,7 +588,7 @@ class NeomarilModel(BaseNeomaril):
 
                     print(response.text)
                 """
-            if language == 'javascript':
+            if language == "javascript":
                 return f"""
                     const form = new FormData();
                     form.append("input", "/path/to/file");
@@ -518,7 +612,7 @@ class NeomarilModel(BaseNeomaril):
     def __call__(self, data: dict) -> dict:
         return self.predict(data=data)
 
-    def get_model_execution(self, exec_id:str) -> None:
+    def get_model_execution(self, exec_id: str) -> None:
         """
         Get a execution instace for that model.
 
@@ -530,30 +624,29 @@ class NeomarilModel(BaseNeomaril):
         Raises
         ------
         ModelError
-            If the user tries to get a execution from a Sync model 
+            If the user tries to get a execution from a Sync model
 
         Example
         -------
         >>> model.get_model_execution('1')
         """
-        if self.operation == 'async':
+        if self.operation == "async":
             run = NeomarilExecution(
-                parent_id=self.model_id, 
-                exec_type='AsyncModel', 
-                group=self.group, 
-                exec_id=exec_id, 
+                parent_id=self.model_id,
+                exec_type="AsyncModel",
+                group=self.group,
+                exec_id=exec_id,
                 login=self.credentials[0],
-                password=self.credentials[1], 
-                url=self.base_url, 
+                password=self.credentials[1],
+                url=self.base_url,
                 group_token=self.__token,
-                
             )
             run.get_status()
             return run
         else:
             raise ModelError("Sync models don't have executions")
-        
-    def __host_monitoring_status(self, *, group:str, model_id:str):
+
+    def __host_monitoring_status(self, *, group: str, model_id: str):
         """
         Get the host status for the monitoring configuration
 
@@ -573,26 +666,34 @@ class NeomarilModel(BaseNeomaril):
         """
         url = f"{self.base_url}/monitoring/status/{group}/{model_id}"
 
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
+        response = requests.get(
+            url,
+            headers={
+                "Authorization": "Bearer "
+                + refresh_token(*self.credentials, self.base_url)
+            },
+        )
 
         if response.status_code == 200:
             message = response.json()
 
-            status = message['Status']
-            if status == 'Validating':
-                logger.info('Waiting the monitoring host.')
+            status = message["Status"]
+            if status == "Validating":
+                logger.info("Waiting the monitoring host.")
                 sleep(30)
-                self.__host_monitoring_status(group=group, model_id=model_id) # recursive
-            if status == 'Validated':
+                self.__host_monitoring_status(
+                    group=group, model_id=model_id
+                )  # recursive
+            if status == "Validated":
                 logger.info(f'Model monitoring host validated - Hash: "{model_id}"')
-            if status == 'Invalidated':
-                res_message = message['Message']
-                logger.error(f'Model monitoring host message: {res_message}')
+            if status == "Invalidated":
+                res_message = message["Message"]
+                logger.error(f"Model monitoring host message: {res_message}")
                 raise ExecutionError("Monitoring host failed")
         else:
             raise ServerError(response.text)
 
-    def __host_monitoring(self, *, group:str, model_id:str):
+    def __host_monitoring(self, *, group: str, model_id: str):
         """
         Host the monitoring configuration
 
@@ -610,16 +711,29 @@ class NeomarilModel(BaseNeomaril):
         """
         url = f"{self.base_url}/monitoring/host/{group}/{model_id}"
 
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
-        
+        response = requests.get(
+            url,
+            headers={
+                "Authorization": "Bearer "
+                + refresh_token(*self.credentials, self.base_url)
+            },
+        )
+
         if response.status_code == 200:
             logger.info(f'Model monitoring host started - Hash: "{model_id}"')
         else:
-            logger.error('Model monitoring host error: ' + response.text)
-            raise InputError('Monitoring host error')
+            logger.error("Model monitoring host error: " + response.text)
+            raise InputError("Monitoring host error")
 
-    def register_monitoring(self, *, preprocess_reference:str, shap_reference:str, configuration_file:Union[str, dict], preprocess_file:Optional[str]=None,
-                            requirements_file:Optional[str]=None) -> str:
+    def register_monitoring(
+        self,
+        *,
+        preprocess_reference: str,
+        shap_reference: str,
+        configuration_file: Union[str, dict],
+        preprocess_file: Optional[str] = None,
+        requirements_file: Optional[str] = None,
+    ) -> str:
         """
         Register the model monitoring configuration at the database
 
@@ -641,7 +755,7 @@ class NeomarilModel(BaseNeomaril):
         ------
         InputError
             Invalid parameters for model creation
-        
+
         Returns
         -------
         str
@@ -652,9 +766,9 @@ class NeomarilModel(BaseNeomaril):
         >>> model.register_monitoring('parse', 'get_shap', configuration_file=PATH+'configuration.json', preprocess_file=PATH+'preprocess.py', requirements_file=PATH+'requirements.txt')
         """
         url = f"{self.base_url}/monitoring/register/{self.group}/{self.model_id}"
-    
+
         if isinstance(configuration_file, str):
-            conf = open(configuration_file, 'rb')
+            conf = open(configuration_file, "rb")
         elif isinstance(configuration_file, dict):
             conf = json.dumps(configuration_file)
 
@@ -662,24 +776,44 @@ class NeomarilModel(BaseNeomaril):
             ("configuration", ('configuration.json', conf)),
         ]
 
-        form_data = {'preprocess_reference': preprocess_reference, 'shap_reference': shap_reference}
+        form_data = {
+            "preprocess_reference": preprocess_reference,
+            "shap_reference": shap_reference,
+        }
 
         if preprocess_file:
-            upload_data.append(("source", ('preprocess.'+preprocess_file.split('.')[-1], open(preprocess_file, 'rb'))))
-            
-            if preprocess_file.endswith('py'):
-                form_data['type'] = 'PythonScript'
-            elif preprocess_file.endswith('ipynb'):
-                form_data['type'] = 'PythonNotebook'
-        else:
-            form_data['type'] = 'ModelScript'
-            
-        if requirements_file:
-            upload_data.append(("requirements", ('requirements.txt', open(requirements_file, 'rb'))))
+            upload_data.append(
+                (
+                    "source",
+                    (
+                        "preprocess." + preprocess_file.split(".")[-1],
+                        open(preprocess_file, "rb"),
+                    ),
+                )
+            )
 
-        response = requests.post(url, data=form_data, files=upload_data, 
-                                 headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
-        
+            if preprocess_file.endswith("py"):
+                form_data["type"] = "PythonScript"
+            elif preprocess_file.endswith("ipynb"):
+                form_data["type"] = "PythonNotebook"
+        else:
+            form_data["type"] = "ModelScript"
+
+        if requirements_file:
+            upload_data.append(
+                ("requirements", ("requirements.txt", open(requirements_file, "rb")))
+            )
+
+        response = requests.post(
+            url,
+            data=form_data,
+            files=upload_data,
+            headers={
+                "Authorization": "Bearer "
+                + refresh_token(*self.credentials, self.base_url)
+            },
+        )
+
         if response.status_code == 201:
             data = response.json()
             model_id = data["ModelHash"]
@@ -690,8 +824,9 @@ class NeomarilModel(BaseNeomaril):
 
             return model_id
         else:
-            logger.error('Upload error: ' + response.text)
-            raise InputError('Invalid parameters for model creation')
+            logger.error("Upload error: " + response.text)
+            raise InputError("Invalid parameters for model creation")
+
 
 class NeomarilModelClient(BaseNeomarilClient):
     """
@@ -718,28 +853,28 @@ class NeomarilModelClient(BaseNeomarilClient):
     Example 1: Creation and managing a Synchronous Model
 
     .. code-block:: python
-        
+
         from neomaril_codex.model import NeomarilModelClient
         from neomaril_codex.model import NeomarilModel
-    
+
         def new_sync_model(client, group, data_path):
             model = client.create_model('Model Example Sync',
-                                'score', 
-                                data_path+'app.py', 
-                                data_path+'model.pkl', 
+                                'score',
+                                data_path+'app.py',
+                                data_path+'model.pkl',
                                 data_path+'requirements.txt',
-                                data_path+'schema.json', 
+                                data_path+'schema.json',
                                 group=group,
-                                operation="Sync" 
+                                operation="Sync"
                                 )
-                                
+
             model.register_monitoring('parse',
                             'get_shap',
                             configuration_file=data_path+'configuration.json',
                             preprocess_file=data_path+'preprocess.py',
                             requirements_file=data_path+'requirements.txt'
                             )
-            
+
             return model.model_id
 
         client = NeomarilModelClient('123456')
@@ -762,12 +897,12 @@ class NeomarilModelClient(BaseNeomarilClient):
         print(model.get_logs(routine='Run'))
 
     Example 2: creation and deployment of a Asynchronous Model
-    
+
     .. code-block:: python
-        
+
         from neomaril_codex.model import NeomarilModelClient
         from neomaril_codex.model import NeomarilModel
-        
+
         def new_async_model(client, group, data_path):
             model = client.create_model('Teste notebook Async',
                             'score',
@@ -779,16 +914,16 @@ class NeomarilModelClient(BaseNeomarilClient):
                             operation="Async",
                             input_type='csv'
                             )
-            
+
             return model.model_id
-        
+
         def run_model(client, model_id, data_path):
             model = client.get_model(model_id, 'ex_group')
 
             execution = model.predict(data_path+'input.csv')
-            
+
             return execution
-        
+
         client = NeomarilModelClient('123456')
         client.create_group('ex_group', 'Group for example purpose')
 
@@ -797,18 +932,19 @@ class NeomarilModelClient(BaseNeomarilClient):
         model_id = new_async_model(client, 'ex_group', data_path)
 
         execution = run_model(client, model_id, data_path)
-        
+
         execution.get_status()
 
         execution.download_result()
-    """            
+    """
+
     def __repr__(self) -> str:
-            return f'NeomarilModelClient(url="{self.base_url}", version="{self.client_version}")'
-        
+        return f'NeomarilModelClient(url="{self.base_url}", version="{self.client_version}")'
+
     def __str__(self):
         return f"NEOMARIL {self.base_url} Model client:{self.client_version}"
-        
-    def __get_model_status(self, model_id:str, group:str) -> dict:
+
+    def __get_model_status(self, model_id: str, group: str) -> dict:
         """
         Gets the status of the model with the hash equal to `model_id`
 
@@ -831,13 +967,26 @@ class NeomarilModelClient(BaseNeomarilClient):
         """
 
         url = f"{self.base_url}/model/status/{group}/{model_id}"
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
+        response = requests.get(
+            url,
+            headers={
+                "Authorization": "Bearer "
+                + refresh_token(*self.credentials, self.base_url)
+            },
+        )
         if response.status_code not in [200, 410]:
             raise ModelError(f'Model "{model_id}" not found')
-        
+
         return response.json()
-    
-    def get_model(self, *, model_id:str, group:str="datarisk", group_token:Optional[str]=None, wait_for_ready:bool=True) -> NeomarilModel:
+
+    def get_model(
+        self,
+        *,
+        model_id: str,
+        group: str = "datarisk",
+        group_token: Optional[str] = None,
+        wait_for_ready: bool = True,
+    ) -> NeomarilModel:
         """
         Acess a model using its id
 
@@ -863,25 +1012,25 @@ class NeomarilModelClient(BaseNeomarilClient):
         -------
         NeomarilModel
             A NeomarilModel instance with the model hash from `model_id`
-        
+
         Example
         -------
         >>> model.get_model(model_id='M9c3af308c754ee7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4', group='ex_group')
-        """        
+        """
         try:
             response = self.__get_model_status(model_id, group)
         except KeyError:
             raise ModelError("Model not found")
-        
-        status = response['Status']
-        
-        if status == 'Building':
+
+        status = response["Status"]
+
+        if status == "Building":
             if wait_for_ready:
-                print('Waiting for deploy to be ready.', end='')
-                while status == 'Building':
+                print("Waiting for deploy to be ready.", end="")
+                while status == "Building":
                     response = self.__get_model_status(model_id, group)
-                    status = response['Status']
-                    print('.', end='', flush=True)
+                    status = response["Status"]
+                    print(".", end="", flush=True)
                     sleep(10)
             else:
                 logger.info("Returning model, but model is not ready.")
@@ -892,16 +1041,19 @@ class NeomarilModelClient(BaseNeomarilClient):
                     group=group,
                     url=self.base_url,
                     group_token=group_token,
-                    
                 )
-            
-        if status in ['Disabled', 'Ready']:
-            raise ModelError(f'Model "{model_id}" unavailable (disabled or deploy process is incomplete)')
-        elif status == 'Failed':
-            logger.error(str(response['Message']))
-            raise ModelError(f'Model "{model_id}" deploy failed, so model is unavailable.')
-        elif status == 'Deployed': 
-            logger.info(f'Model {model_id} its deployed. Fetching model.')
+
+        if status in ["Disabled", "Ready"]:
+            raise ModelError(
+                f'Model "{model_id}" unavailable (disabled or deploy process is incomplete)'
+            )
+        elif status == "Failed":
+            logger.error(str(response["Message"]))
+            raise ModelError(
+                f'Model "{model_id}" deploy failed, so model is unavailable.'
+            )
+        elif status == "Deployed":
+            logger.info(f"Model {model_id} its deployed. Fetching model.")
             return NeomarilModel(
                 model_id=model_id,
                 login=self.credentials[0],
@@ -909,13 +1061,18 @@ class NeomarilModelClient(BaseNeomarilClient):
                 group=group,
                 url=self.base_url,
                 group_token=group_token,
-                
             )
         else:
-            raise ServerError('Unknown model status: ',status)
-    
-    def search_models(self, *, name:Optional[str]=None, state:Optional[str]=None, 
-                                        group:Optional[str]=None, only_deployed:bool=False) -> list:
+            raise ServerError("Unknown model status: ", status)
+
+    def search_models(
+        self,
+        *,
+        name: Optional[str] = None,
+        state: Optional[str] = None,
+        group: Optional[str] = None,
+        only_deployed: bool = False,
+    ) -> list:
         """
         Search for models using the name of the model
 
@@ -948,36 +1105,50 @@ class NeomarilModelClient(BaseNeomarilClient):
         query = {}
 
         if name:
-            query['name'] = name
+            query["name"] = name
 
         if state:
-            query['state'] = state
+            query["state"] = state
 
         if group:
-            query['group'] = group
+            query["group"] = group
 
         if only_deployed:
-            query['state'] = 'Deployed'
+            query["state"] = "Deployed"
 
-        response = requests.get(url, params=query,
-                                                        headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
-        
+        response = requests.get(
+            url,
+            params=query,
+            headers={
+                "Authorization": "Bearer "
+                + refresh_token(*self.credentials, self.base_url)
+            },
+        )
+
         if response.status_code == 200:
-            results = response.json()['Results']
+            results = response.json()["Results"]
             parsed_results = []
             for r in results:
-                if schema := r.get('Schema'):
-                    r['Schema'] = json.loads(schema)
+                if schema := r.get("Schema"):
+                    r["Schema"] = json.loads(schema)
                 parsed_results.append(r)
 
             return parsed_results
-        
-        else:
-            raise ServerError('Unexpected server error: ', response.text)
 
-    def get_logs(self, *, model_id, start:Optional[str]=None, end:Optional[str]=None, routine:Optional[str]=None, type:Optional[str]=None):
+        else:
+            raise ServerError("Unexpected server error: ", response.text)
+
+    def get_logs(
+        self,
+        *,
+        model_id,
+        start: Optional[str] = None,
+        end: Optional[str] = None,
+        routine: Optional[str] = None,
+        type: Optional[str] = None,
+    ):
         """
-        Get the logs 
+        Get the logs
 
         Parameters
         ----------
@@ -994,18 +1165,18 @@ class NeomarilModelClient(BaseNeomarilClient):
 
         Raises
         ------
-        ServerError    
+        ServerError
             Unexpected server error
 
         Returns
         -------
         json
             Logs list
-        
+
         Example
         -------
         >>> model.get_logs(routine='Run')
-         {'Results': 
+         {'Results':
             [{'ModelHash': 'B4c3af308c3e452e7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4',
                 'RegisteredAt': '2023-02-03T16:06:45.5955220Z',
                 'OutputType': 'Ok',
@@ -1014,12 +1185,31 @@ class NeomarilModelClient(BaseNeomarilClient):
          }
         """
         url = f"{self.base_url}/model/logs/{model_id}"
-        return self._logs(url=url, credentials=self.credentials, start=start, end=end, routine=routine, type=type)
-            
-    def __upload_model(self, *, model_name:str, model_reference:str, source_file:str, 
-                            model_file:str, requirements_file:str, schema:Optional[Union[str, dict]]=None, 
-                            group:Optional[str]=None, extra_files:Optional[list]=None, env:Optional[str]=None, 
-                            python_version:str='3.8', operation:str='Sync', input_type:str=None) -> str:
+        return self._logs(
+            url=url,
+            credentials=self.credentials,
+            start=start,
+            end=end,
+            routine=routine,
+            type=type,
+        )
+
+    def __upload_model(
+        self,
+        *,
+        model_name: str,
+        model_reference: str,
+        source_file: str,
+        model_file: str,
+        requirements_file: str,
+        schema: Optional[Union[str, dict]] = None,
+        group: Optional[str] = None,
+        extra_files: Optional[list] = None,
+        env: Optional[str] = None,
+        python_version: str = "3.8",
+        operation: str = "Sync",
+        input_type: str = None,
+    ) -> str:
         """
         Upload the files to the server
 
@@ -1060,52 +1250,69 @@ class NeomarilModelClient(BaseNeomarilClient):
         str
             The new model id (hash)
         """
-        
+
         url = f"{self.base_url}/model/upload/{group}"
-        
-        file_extesions = {'py': 'script.py', 'ipynb': "notebook.ipynb"}
-        
-     
+
+        file_extesions = {"py": "script.py", "ipynb": "notebook.ipynb"}
+
         upload_data = [
-            ("source", (file_extesions[source_file.split('.')[-1]], open(source_file, 'rb'))),
-            ("model", (model_file.split('/')[-1], open(model_file, "rb"))),
-            ("requirements", ("requirements.txt", open(requirements_file, 'rb')))
+            (
+                "source",
+                (file_extesions[source_file.split(".")[-1]], open(source_file, "rb")),
+            ),
+            ("model", (model_file.split("/")[-1], open(model_file, "rb"))),
+            ("requirements", ("requirements.txt", open(requirements_file, "rb"))),
         ]
 
         if schema:
             upload_data.append(("schema", (schema, parse_dict_or_file(schema))))
         else:
             raise InputError("Schema file is mandatory")
-            
-        if operation=="Sync":
+
+        if operation == "Sync":
             input_type = "json"
         else:
-            if input_type == 'json|csv|parquet':
-                raise InputError("Choose a input type from "+input_type)
+            if input_type == "json|csv|parquet":
+                raise InputError("Choose a input type from " + input_type)
 
         if env:
-            upload_data.append(("env", (".env", open(env, 'r'))))
-        
+            upload_data.append(("env", (".env", open(env, "r"))))
+
         if extra_files:
-            extra_data = [('extra', (c.split('/')[-1], open(c, 'rb'))) for c in extra_files]
-            
+            extra_data = [
+                ("extra", (c.split("/")[-1], open(c, "rb"))) for c in extra_files
+            ]
+
             upload_data += extra_data
-            
-        form_data = {'name': model_name, 'model_reference': model_reference, 'operation': operation, 'input_type': input_type,
-                                 'python_version': "Python"+python_version.replace('.', '')}
-            
-        response = requests.post(url, data=form_data, files=upload_data, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
-        
+
+        form_data = {
+            "name": model_name,
+            "model_reference": model_reference,
+            "operation": operation,
+            "input_type": input_type,
+            "python_version": "Python" + python_version.replace(".", ""),
+        }
+
+        response = requests.post(
+            url,
+            data=form_data,
+            files=upload_data,
+            headers={
+                "Authorization": "Bearer "
+                + refresh_token(*self.credentials, self.base_url)
+            },
+        )
+
         if response.status_code == 201:
             data = response.json()
             model_id = data["ModelHash"]
             logger.info(f'{data["Message"]} - Hash: "{model_id}"')
             return model_id
         else:
-            logger.error('Upload error: ' + response.text)
-            raise InputError('Invalid parameters for model creation')
+            logger.error("Upload error: " + response.text)
+            raise InputError("Invalid parameters for model creation")
 
-    def __host_model(self, *, operation:str, model_id:str, group:str) -> None:
+    def __host_model(self, *, operation: str, model_id: str, group: str) -> None:
         """
         Builds the model execution environment
 
@@ -1123,21 +1330,39 @@ class NeomarilModelClient(BaseNeomarilClient):
         InputError
             Some input parameters is invalid
         """
-        
+
         url = f"{self.base_url}/model/{operation}/host/{group}/{model_id}"
 
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
+        response = requests.get(
+            url,
+            headers={
+                "Authorization": "Bearer "
+                + refresh_token(*self.credentials, self.base_url)
+            },
+        )
         if response.status_code == 202:
             logger.info(f"Model host in process - Hash: {model_id}")
         else:
             logger.error(response.text)
-            raise InputError('Invalid parameters for model creation')
+            raise InputError("Invalid parameters for model creation")
 
-    def create_model(self, *, model_name:str, model_reference:str, source_file:str, 
-                                     model_file:str, requirements_file:str, schema:Optional[Union[str, dict]]=None, 
-                                     group:str=None, extra_files:Optional[list]=None, env:Optional[str]=None,
-                                     python_version:str='3.8', operation='Sync', input_type:str='json|csv|parquet', 
-                                     wait_for_ready:bool=True)-> Union[NeomarilModel, str]:
+    def create_model(
+        self,
+        *,
+        model_name: str,
+        model_reference: str,
+        source_file: str,
+        model_file: str,
+        requirements_file: str,
+        schema: Optional[Union[str, dict]] = None,
+        group: str = None,
+        extra_files: Optional[list] = None,
+        env: Optional[str] = None,
+        python_version: str = "3.8",
+        operation="Sync",
+        input_type: str = "json|csv|parquet",
+        wait_for_ready: bool = True,
+    ) -> Union[NeomarilModel, str]:
         """
         Deploy a new model to Neomaril.
 
@@ -1179,28 +1404,35 @@ class NeomarilModelClient(BaseNeomarilClient):
         -------
         Union[NeomarilModel, str]
             Returns the new model, if wait_for_ready=True runs the deploy process synchronously. If its False, returns nothing after sending all the data to server and runs the deploy asynchronously
-        
+
         Example
         -------
         >>> model = client.create_model('Model Example Sync', 'score',  './samples/syncModel/app.py', './samples/syncModel/'model.pkl', './samples/syncModel/requirements.txt','./samples/syncModel/schema.json', group=group, operation="Sync")
         """
-        
-        if python_version not in ['3.7', '3.8', '3.9', '3.10']:
-            raise InputError('Invalid python version. Avaliable versions are 3.7, 3.8, 3.9, 3.10')
-        
+
+        if python_version not in ["3.7", "3.8", "3.9", "3.10"]:
+            raise InputError(
+                "Invalid python version. Avaliable versions are 3.7, 3.8, 3.9, 3.10"
+            )
+
         if group:
-            group = group.lower().strip().replace(" ", "_").replace(".", "_").replace("-", "_")
+            group = (
+                group.lower()
+                .strip()
+                .replace(" ", "_")
+                .replace(".", "_")
+                .replace("-", "_")
+            )
 
             groups = [g.get("Name") for g in self.list_groups()]
 
             if group not in groups:
-
-                raise GroupError('Group dont exist. Create a group first.')
+                raise GroupError("Group dont exist. Create a group first.")
 
         else:
-            group = 'datarisk'
+            group = "datarisk"
             logger.info("Group not informed, using default 'datarisk' group")
-        
+
         model_id = self.__upload_model(
             model_name=model_name,
             model_reference=model_reference,
@@ -1210,17 +1442,21 @@ class NeomarilModelClient(BaseNeomarilClient):
             schema=schema,
             group=group,
             extra_files=extra_files,
-            python_version=python_version,env=env,
+            python_version=python_version,
+            env=env,
             operation=operation,
-            input_type=input_type
+            input_type=input_type,
         )
-                
-        self.__host_model(operation=operation.lower(), model_id=model_id, group=group)
-        
-        return self.get_model(model_id=model_id, group=group, wait_for_ready=wait_for_ready)
-   
 
-    def get_model_execution(self, *, model_id:str, exec_id:str, group:Optional[str]=None) -> NeomarilExecution:
+        self.__host_model(operation=operation.lower(), model_id=model_id, group=group)
+
+        return self.get_model(
+            model_id=model_id, group=group, wait_for_ready=wait_for_ready
+        )
+
+    def get_model_execution(
+        self, *, model_id: str, exec_id: str, group: Optional[str] = None
+    ) -> NeomarilExecution:
         """
         Get a execution instace (Async model only).
 
@@ -1237,9 +1473,11 @@ class NeomarilModelClient(BaseNeomarilClient):
         -------
         NeomarilExecution
             The new execution
-        
+
         Example
         -------
         >>> model.get_model_execution( model_id='M9c3af308c754ee7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4', exec_id = '1')
         """
-        return self.get_model(model_id=model_id, group=group).get_model_execution(exec_id)
+        return self.get_model(model_id=model_id, group=group).get_model_execution(
+            exec_id
+        )
