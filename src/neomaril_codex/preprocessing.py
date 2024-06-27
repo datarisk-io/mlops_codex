@@ -662,8 +662,15 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         if response.status_code == 200:
             results = response.json()["Results"]
             return results
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+        elif response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Server Error")
         else:
-            raise ServerError("Unexpected server error: ", response.text)
+            logger.error(response.text)
+            raise PreprocessingError("Could not search the preprocessing script")
 
     def get_logs(
         self,
@@ -833,6 +840,12 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
                 f'{data["Message"]} - Hash: "{preprocessing_id}" with response {response.text}'
             )
             return preprocessing_id
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+        elif response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Server Error")
         else:
             logger.error("Upload error: " + response.text)
             raise InputError("Invalid parameters for preprocessing creation")
@@ -872,6 +885,12 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
 
         if response.status_code == 202:
             logger.info(f"Preprocessing host in process - Hash: {preprocessing_id}")
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+        elif response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Server Error")
         else:
             logger.error(response.text)
             raise InputError("Invalid parameters for preprocessing creation")

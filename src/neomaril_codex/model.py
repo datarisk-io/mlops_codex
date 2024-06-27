@@ -93,11 +93,15 @@ class NeomarilModel(BaseNeomaril):
             },
         )
 
-        if response.status_code == 404:
+        if response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+        elif response.status_code == 404:
+            logger.error(response.text)
             raise ModelError(f'Model "{model_id}" not found.')
-
         elif response.status_code >= 500:
-            raise ModelError(f'Unable to retrive model "{model_id}"')
+            logger.error(response.text)
+            raise ServerError("Server Error")
 
         self.model_data = response.json()["Description"]
         self.name = self.model_data["Name"]
@@ -145,8 +149,15 @@ class NeomarilModel(BaseNeomaril):
         )
         if response.status_code == 200:
             return response.json()
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+        elif response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Server Error")
         else:
-            raise ModelError(response.text)
+            logger.error(response.text)
+            raise ModelError("Could not get the status of the model")
 
     def wait_ready(self):
         """
@@ -194,9 +205,15 @@ class NeomarilModel(BaseNeomaril):
             )
             if response.status_code == 200:
                 return response.json()["Message"]
+            elif response.status_code == 401:
+                logger.error(response.text)
+                raise AuthenticationError("Login not authorized")
+            elif response.status_code >= 500:
+                logger.error(response.text)
+                raise ServerError("Server Error")
             else:
-                logger.error("Server error: " + response.text)
-                return "NOK"
+                logger.error(response.text)
+                raise ModelError("Could not get the health of the model")
 
     def restart_model(self, *, wait_for_ready: bool = True):
         """
@@ -229,6 +246,15 @@ class NeomarilModel(BaseNeomaril):
                         sleep(30)
                         self.status = self.__get_status()["Status"]
                         print(".", end="", flush=True)
+            elif response.status_code == 401:
+                logger.error(response.text)
+                raise AuthenticationError("Login not authorized")
+            elif response.status_code >= 500:
+                logger.error(response.text)
+                raise ServerError("Server Error")
+            else:
+                logger.error(response.text)
+                raise ModelError("Could not restart the model")
 
     def get_logs(
         self,
@@ -320,8 +346,15 @@ class NeomarilModel(BaseNeomaril):
                 self.__model_ready = False
 
                 return req.json()
+            elif req.status_code == 401:
+                logger.error(req.text)
+                raise AuthenticationError("Login not authorized")
+            elif req.status_code >= 500:
+                logger.error(req.text)
+                raise ServerError("Server Error")
             else:
-                raise ServerError("Model deleting failed")
+                logger.error(req.text)
+                raise ModelError("Could not delete the model")
 
         else:
             return "Model is " + self.status
@@ -469,11 +502,14 @@ class NeomarilModel(BaseNeomaril):
                             logger.error(response["Message"])
                             raise ExecutionError("Training execution failed")
                         return run
+                    elif req.status_code >= 500:
+                        raise ServerError("Unexpected server error: ", req.text)
                     else:
-                        raise ServerError(req.text)
+                        logger.error(req.text)
+                        raise ServerError("Server Error")
 
             else:
-                raise AuthenticationError("Group token not informed")
+                raise InputError("Group token not informed")
         else:
             url = f"{self.base_url}/model/describe/{self.group}/{self.model_id}"
             response = requests.get(
@@ -690,8 +726,15 @@ class NeomarilModel(BaseNeomaril):
                 res_message = message["Message"]
                 logger.error(f"Model monitoring host message: {res_message}")
                 raise ExecutionError("Monitoring host failed")
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+        elif response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Server Error")
         else:
-            raise ServerError(response.text)
+            logger.error(response.text)
+            raise ModelError("Could not get host monitoring status")
 
     def __host_monitoring(self, *, group: str, model_id: str):
         """
@@ -721,6 +764,12 @@ class NeomarilModel(BaseNeomaril):
 
         if response.status_code == 200:
             logger.info(f'Model monitoring host started - Hash: "{model_id}"')
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+        elif response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Server Error")
         else:
             logger.error("Model monitoring host error: " + response.text)
             raise InputError("Monitoring host error")
@@ -823,6 +872,12 @@ class NeomarilModel(BaseNeomaril):
             self.__host_monitoring_status(group=self.group, model_id=model_id)
 
             return model_id
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+        elif response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Server Error")
         else:
             logger.error("Upload error: " + response.text)
             raise InputError("Invalid parameters for model creation")
@@ -1134,9 +1189,15 @@ class NeomarilModelClient(BaseNeomarilClient):
                 parsed_results.append(r)
 
             return parsed_results
-
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+        elif response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Server Error")
         else:
-            raise ServerError("Unexpected server error: ", response.text)
+            logger.error(response.text)
+            raise ModelError("Could not search the model")
 
     def get_logs(
         self,
@@ -1308,6 +1369,12 @@ class NeomarilModelClient(BaseNeomarilClient):
             model_id = data["ModelHash"]
             logger.info(f'{data["Message"]} - Hash: "{model_id}"')
             return model_id
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+        elif response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Server Error")
         else:
             logger.error("Upload error: " + response.text)
             raise InputError("Invalid parameters for model creation")
@@ -1342,6 +1409,12 @@ class NeomarilModelClient(BaseNeomarilClient):
         )
         if response.status_code == 202:
             logger.info(f"Model host in process - Hash: {model_id}")
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+        elif response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Server Error")
         else:
             logger.error(response.text)
             raise InputError("Invalid parameters for model creation")

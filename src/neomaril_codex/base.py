@@ -91,8 +91,15 @@ class BaseNeomaril:
 
         if response.status_code == 200:
             return response.json()
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+        elif response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Unexpected server error:")
         else:
-            raise ServerError("Unexpected server error: ", response.text)
+            logger.error(response.text)
+            raise InputError("Bad Input. Client error")
 
 
 class BaseNeomarilClient(BaseNeomaril):
@@ -157,8 +164,15 @@ class BaseNeomarilClient(BaseNeomaril):
         if response.status_code == 200:
             results = response.json()["Results"]
             return results
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+        elif response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Server Error")
         else:
-            raise ServerError("Unexpected server error: ", response.text)
+            logger.error(response.text)
+            raise InputError("Bad Input. Client error")
 
     def create_group(self, *, name: str, description: str) -> bool:
         """
@@ -200,8 +214,15 @@ class BaseNeomarilClient(BaseNeomaril):
             logger.error(response.text)
             logger.error("Group already exist, nothing was changed.")
             return False
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+        elif response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Server Error")
         else:
-            raise ServerError("Unexpected server error: ", response.text)
+            logger.error(response.text)
+            raise InputError("Bad Input. Client error")
 
     def refresh_group_token(self, *, name: str, force: bool = False) -> bool:
         """
@@ -253,8 +274,15 @@ class BaseNeomarilClient(BaseNeomaril):
         if response.status_code == 201:
             logger.info(f"Group '{name}' was refreshed")
             return response.json()["Token"]
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+        elif response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Server Error")
         else:
-            raise ServerError("Unexpected server error: ", response.text)
+            logger.error(response.text)
+            raise InputError("Bad Input. Client error")
 
 
 class NeomarilExecution(BaseNeomaril):
@@ -363,11 +391,15 @@ class NeomarilExecution(BaseNeomaril):
                 },
             )
 
-            if response.status_code == 404:
+            if response.status_code == 401:
+                logger.error(response.text)
+                raise AuthenticationError("Login not authorized")
+            elif response.status_code == 404:
+                logger.error(f'Unable to retrive execution "{exec_id}"\n{response.text}')
                 raise ModelError(f'Execution "{exec_id}" not found.')
-
             elif response.status_code >= 500:
-                raise ModelError(f'Unable to retrive execution "{exec_id}"')
+                logger.error(response.text)
+                raise ServerError("Server Error")
 
             self.execution_data = response.json()["Description"]
 

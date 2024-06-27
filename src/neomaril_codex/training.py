@@ -619,6 +619,12 @@ class NeomarilTrainingExecution(NeomarilExecution):
         )
         if response.status_code == 202:
             logger.info(f"Model host in process - Hash: {model_id}")
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+        elif response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Server Error")
         else:
             logger.error(response.text)
             raise InputError("Invalid parameters for model creation")
@@ -802,9 +808,12 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
         if response.status_code == 404:
             raise ModelError(f'Experiment "{training_id}" not found.')
-
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
         elif response.status_code >= 500:
-            raise ModelError(f'Unable to retrive experiment "{training_id}"')
+            logger.error(response.text)
+            raise ServerError(f'Unable to retrive experiment "{training_id}"')
 
         self.training_data = response.json()["Description"]
         self.model_type = self.training_data["ModelType"]
@@ -1006,6 +1015,12 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         if response.status_code == 201:
             logger.info(message)
             return re.search(patt, message).group(1)
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+        elif response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Server Error")
         else:
             logger.error(message)
             raise InputError("Bad input for training upload")
@@ -1035,6 +1050,12 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         )
         if response.status_code == 200:
             logger.info(f"Model training starting - Hash: {self.training_id}")
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+        elif response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Server Error")
         else:
             logger.error(response.text)
             raise InputError("Invalid parameters for training execution")
@@ -1051,9 +1072,12 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
         if response.status_code == 404:
             raise ModelError(f'Experiment "{self.training_id}" not found.')
-
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
         elif response.status_code >= 500:
-            raise ModelError(f'Unable to retrive experiment "{self.training_id}"')
+            logger.error(response.text)
+            raise ServerError(f'Unable to retrive experiment "{self.training_id}"')
 
         self.training_data = response.json()["Description"]
         self.executions = [c["Id"] for c in self.training_data["Executions"]]
