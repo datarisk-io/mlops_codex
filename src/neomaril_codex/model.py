@@ -86,8 +86,6 @@ class NeomarilModel(BaseNeomaril):
         self.status = self.model_data['Status']
         self.operation = self.model_data['Operation'].lower()
         self.docs = f'{self.base_url}/model/{self.operation}/docs/{self.group}/{self.model_id}'
-        if self.operation == 'sync':
-            self.docs = self.docs.replace('localhost:7070', 'localhost:7071') 
         self.__model_ready = self.status == "Deployed"
 
     def __repr__(self) -> str:
@@ -159,7 +157,7 @@ class NeomarilModel(BaseNeomaril):
                 logger.error('Server error: '+e)
                 return 'NOK'
         elif self.operation == 'sync':
-            url = f"{self.base_url.replace('localhost:7070', 'localhost:7071')}/model/sync/health/{self.group}/{self.model_id}"
+            url = f"{self.base_url}/model/sync/health/{self.group}/{self.model_id}"
             response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__token})
             if response.status_code == 200:
                 return response.json()['Message']
@@ -181,7 +179,7 @@ class NeomarilModel(BaseNeomaril):
         >>> model.restart_model()
         """
         if (self.operation == "sync") and (self.status == "Deployed"):
-            url = f"{self.base_url.replace('localhost:7070', 'localhost:7071')}/model/sync/restart/{self.group}/{self.model_id}"
+            url = f"{self.base_url}/model/sync/restart/{self.group}/{self.model_id}"
             response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
             if response.status_code < 300:
                 logger.info("Model is restarting")
@@ -325,7 +323,6 @@ class NeomarilModel(BaseNeomaril):
                 if group_token and not self.__token:
                     self.__token = group_token
                 if self.operation == 'sync':
-                    url = url.replace('localhost:7070', 'localhost:7071')
                     model_input = {
                             "Input": data
                     }
@@ -431,7 +428,7 @@ class NeomarilModel(BaseNeomaril):
 
         if self.operation == 'sync':
             payload = json.dumps({"Input": {'DATA': 'DATA'}})
-            base_url = self.base_url.replace('localhost:7070', 'localhost:7071') 
+            base_url = self.base_url
             if language == 'curl':
                 return f"""curl --request POST \\
                     --url {base_url}/model/sync/run/{self.group}/{self.model_id} \\
@@ -662,7 +659,7 @@ class NeomarilModel(BaseNeomaril):
             conf = json.dumps(configuration_file)
 
         upload_data = [
-            ("configuration", ('conf.json', conf)),
+            ("configuration", ('configuration.json', conf)),
         ]
 
         form_data = {'preprocess_reference': preprocess_reference, 'shap_reference': shap_reference}
@@ -1128,8 +1125,6 @@ class NeomarilModelClient(BaseNeomarilClient):
         """
         
         url = f"{self.base_url}/model/{operation}/host/{group}/{model_id}"
-        if operation == 'sync':
-            url = url.replace('localhost:7070', 'localhost:7071')
 
         response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
         if response.status_code == 202:
