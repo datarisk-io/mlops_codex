@@ -1,63 +1,105 @@
-import requests, os
-from time import sleep
+import os
 from datetime import datetime, timedelta
+from time import sleep
 from typing import Optional
-from loguru import logger
+
+import requests
 from dotenv import load_dotenv
+from loguru import logger
 
 from neomaril_codex.__utils import *
 from neomaril_codex.exceptions import *
+
 
 class BaseNeomaril:
     """
     Super base class to initialize other variables and URLs for other Neomaril classes.
     """
 
-    def __init__(self, *, login:Optional[str]=None, password:Optional[str]=None, url:str='https://neomaril.staging.datarisk.net/') -> None:
+    def __init__(
+        self,
+        *,
+        login: Optional[str] = None,
+        password: Optional[str] = None,
+        url: str = "https://neomaril.staging.datarisk.net/",
+    ) -> None:
         self.base_url = url
-        
-        load_dotenv()
-        logger.info('Loading .env')
 
-        self.credentials = (login if login else os.getenv('NEOMARIL_USER'), password if password else os.getenv('NEOMARIL_PASSWORD'))
-        self.base_url = os.getenv('NEOMARIL_URL') if os.getenv('NEOMARIL_URL') else url
+        load_dotenv()
+        logger.info("Loading .env")
+
+        self.credentials = (
+            login if login else os.getenv("NEOMARIL_USER"),
+            password if password else os.getenv("NEOMARIL_PASSWORD"),
+        )
+        self.base_url = os.getenv("NEOMARIL_URL") if os.getenv("NEOMARIL_URL") else url
         self.base_url = parse_url(self.base_url)
 
-        if self.base_url == 'https://neomaril.staging.datarisk.net/':
-            logger.info("You are using the test enviroment that will have the data cleaned from time to time. If your model is ready to use change the enviroment to Production")
+        if self.base_url == "https://neomaril.staging.datarisk.net/":
+            logger.info(
+                "You are using the test enviroment that will have the data cleaned from time to time. If your model is ready to use change the enviroment to Production"
+            )
 
-        self.client_version = try_login(self.credentials[0], self.credentials[1], self.base_url, )
+        self.client_version = try_login(
+            self.credentials[0],
+            self.credentials[1],
+            self.base_url,
+        )
         logger.info(f"Successfully connected to Neomaril")
 
-    def _logs(self, *, url, credentials, start:Optional[str]=None, end:Optional[str]=None, routine:Optional[str]=None, type:Optional[str]=None):
-       
+    def _logs(
+        self,
+        *,
+        url,
+        credentials,
+        start: Optional[str] = None,
+        end: Optional[str] = None,
+        routine: Optional[str] = None,
+        type: Optional[str] = None,
+    ):
         if not start and not end:
             end = datetime.today().strftime("%d-%m-%Y")
             start = (datetime.today() - timedelta(days=6)).strftime("%d-%m-%Y")
 
         if not start and end:
-            start = (datetime.strptime(end, "%d-%m-%Y") - timedelta(days=6)).strftime("%d-%m-%Y")
+            start = (datetime.strptime(end, "%d-%m-%Y") - timedelta(days=6)).strftime(
+                "%d-%m-%Y"
+            )
 
         if start and not end:
-            end = (datetime.strptime(start, "%d-%m-%Y") + timedelta(days=6)).strftime("%d-%m-%Y")
+            end = (datetime.strptime(start, "%d-%m-%Y") + timedelta(days=6)).strftime(
+                "%d-%m-%Y"
+            )
 
-        query = {'start': start, 'end': end}
+        query = {"start": start, "end": end}
 
         if routine:
-            assert routine in ['Run', 'Host']
-            query['routine'] = routine
+            assert routine in ["Run", "Host"]
+            query["routine"] = routine
 
         if type:
-            assert type in ['Ok', 'Error', 'Debug', 'Warning']
-            query['type'] = type
+            assert type in ["Ok", "Error", "Debug", "Warning"]
+            query["type"] = type
 
-        response = requests.get(url, params=query,
-                            headers={'Authorization': 'Bearer ' + refresh_token(*credentials, self.base_url)})
-    
-        if response.status_code == 200: 
+        response = requests.get(
+            url,
+            params=query,
+            headers={
+                "Authorization": "Bearer " + refresh_token(*credentials, self.base_url)
+            },
+        )
+
+        if response.status_code == 200:
             return response.json()
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+        elif response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Unexpected server error:")
         else:
-            raise ServerError('Unexpected server error: ', response.text)
+            logger.error(response.text)
+            raise InputError("Bad Input. Client error")
 
 
 class BaseNeomarilClient(BaseNeomaril):
@@ -79,14 +121,14 @@ class BaseNeomarilClient(BaseNeomaril):
     Raises
     ------
     NotImplementedError
-        When the environment is production, becase itis not implemented yet    
-    
+        When the environment is production, becase itis not implemented yet
+
     Example
     -------
     In this example you can see how to create a group and after consult the list of groups that already exists.
 
     .. code-block:: python
-        
+
         from neomaril_codex.base import BaseNeomarilClient
 
         def start_group(password):
@@ -97,6 +139,7 @@ class BaseNeomarilClient(BaseNeomaril):
 
             return isCreated
     """
+
     def list_groups(self) -> list:
         """
         List all existing groups.
@@ -113,19 +156,25 @@ class BaseNeomarilClient(BaseNeomaril):
         """
 
         url = f"{self.base_url}/groups"
-        
+
         token = refresh_token(*self.credentials, self.base_url)
-        
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + token})
+
+        response = requests.get(url, headers={"Authorization": "Bearer " + token})
 
         if response.status_code == 200:
-                results = response.json()['Results']
-
-                return results
+            results = response.json()["Results"]
+            return results
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+        elif response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Server Error")
         else:
-                raise ServerError('Unexpected server error: ', response.text)
+            logger.error(response.text)
+            raise InputError("Bad Input. Client error")
 
-    def create_group(self, *, name:str, description:str) -> bool:
+    def create_group(self, *, name: str, description: str) -> bool:
         """
         Create a group for multiple models of the same final client at the end if it returns TRUE, a message with the token for that group will be returned as a INFO message.
         You should keep this token information to be able to run the model of that group afterwards.
@@ -151,20 +200,31 @@ class BaseNeomarilClient(BaseNeomaril):
 
         url = f"{self.base_url}/groups"
         token = refresh_token(*self.credentials, self.base_url)
-        
-        response = requests.post(url, data=data, headers={'Authorization': 'Bearer ' + token})
-        
+
+        response = requests.post(
+            url, data=data, headers={"Authorization": "Bearer " + token}
+        )
+
         if response.status_code == 201:
-            logger.info(f"Group '{name}' inserted. Use the token for scoring. Carefully save it as we won't show it again.")
-            return response.json()['Token']
-        elif response.status_code < 500:
+            logger.info(
+                f"Group '{name}' inserted. Use the token for scoring. Carefully save it as we won't show it again."
+            )
+            return response.json()["Token"]
+        elif response.status_code == 400:
             logger.error(response.text)
             logger.error("Group already exist, nothing was changed.")
             return False
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+        elif response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Server Error")
         else:
-            raise ServerError('Unexpected server error: ', response.text)
+            logger.error(response.text)
+            raise InputError("Bad Input. Client error")
 
-    def refresh_group_token(self, *, name:str, force:bool=False) -> bool:
+    def refresh_group_token(self, *, name: str, force: bool = False) -> bool:
         """
         Refresh the group token. If the the token its still valid it wont be changed, unless you use parameter force = True.
         At the end a message with the token for that group will be returned as a INFO message.
@@ -192,7 +252,7 @@ class BaseNeomarilClient(BaseNeomaril):
         Supose that you lost the token to access your group, you can create a new one forcing it with this method as at the example below.
 
         .. code-block:: python
-            
+
             from neomaril_codex.base import BaseNeomarilClient
 
             def update_group_token(model_client, group_name):
@@ -204,16 +264,26 @@ class BaseNeomarilClient(BaseNeomaril):
 
         url = f"{self.base_url}/groups/refresh/{name}"
         token = refresh_token(*self.credentials, self.base_url)
-        
-        response = requests.get(url, params={'force': str(force).lower()},
-                                                         headers={'Authorization': 'Bearer ' + token})
+
+        response = requests.get(
+            url,
+            params={"force": str(force).lower()},
+            headers={"Authorization": "Bearer " + token},
+        )
 
         if response.status_code == 201:
-                logger.info(f"Group '{name}' was refreshed")
-                return response.json()['Token']
+            logger.info(f"Group '{name}' was refreshed")
+            return response.json()["Token"]
+        elif response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+        elif response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Server Error")
         else:
-                raise ServerError('Unexpected server error: ', response.text)
-        
+            logger.error(response.text)
+            raise InputError("Bad Input. Client error")
+
 
 class NeomarilExecution(BaseNeomaril):
     """
@@ -242,13 +312,13 @@ class NeomarilExecution(BaseNeomaril):
         Invalid execution type
     ModelError
         If the exection id was not found or wasn't possible to retrive it
-    
+
     Example
     -------
     In this example you can see how to get the status of an existing execution and download its results
 
     .. code-block:: python
-        
+
         from neomaril_codex.base import NeomarilExecution
         from neomaril_codex.model import NeomarilModelClient
 
@@ -257,7 +327,7 @@ class NeomarilExecution(BaseNeomaril):
             model = client.create_model('Example notebook Async',
                                 'score',
                                 data_path+'app.py',
-                                data_path+'model.pkl', 
+                                data_path+'model.pkl',
                                 data_path+'requirements.txt',
                                 python_version='3.9',
                                 operation="Async",
@@ -268,51 +338,73 @@ class NeomarilExecution(BaseNeomaril):
 
             execution.get_status()
 
-            execution.download_result()    
-    """    
+            execution.download_result()
+    """
 
-    def __init__(self, *, parent_id:str, exec_type:str, group:Optional[str]=None, exec_id:Optional[str]=None, 
-                 login:Optional[str]=None, password:Optional[str]=None, url:str=None, group_token:Optional[str]=None) -> None:
+    def __init__(
+        self,
+        *,
+        parent_id: str,
+        exec_type: str,
+        group: Optional[str] = None,
+        exec_id: Optional[str] = None,
+        login: Optional[str] = None,
+        password: Optional[str] = None,
+        url: str = None,
+        group_token: Optional[str] = None,
+    ) -> None:
         super().__init__(login=login, password=password, url=url)
         load_dotenv()
-        logger.info('Loading .env')
+        logger.info("Loading .env")
 
         self.exec_type = exec_type
         self.exec_id = exec_id
-        self.status = 'Requested'
+        self.status = "Requested"
         self.group = group
-        self.__token = group_token if group_token else os.getenv('NEOMARIL_GROUP_TOKEN')
+        self.__token = group_token if group_token else os.getenv("NEOMARIL_GROUP_TOKEN")
 
-        if exec_type == 'AsyncModel':
-                self.__url_path = 'model/async'
-        elif exec_type == 'Training':
-                self.__url_path = 'training'
-        elif exec_type == 'AsyncPreprocessing':
-                self.__url_path = 'preprocessing/async'
+        if exec_type == "AsyncModel":
+            self.__url_path = "model/async"
+        elif exec_type == "Training":
+            self.__url_path = "training"
+        elif exec_type == "AsyncPreprocessing":
+            self.__url_path = "preprocessing/async"
         else:
-                raise InputError(f"Invalid execution type '{exec_type}'. Valid options are 'AsyncModel' and 'Training'")
+            raise InputError(
+                f"Invalid execution type '{exec_type}'. Valid options are 'AsyncModel' and 'Training'"
+            )
 
-        if exec_type == 'AsyncPreprocessing':
+        if exec_type == "AsyncPreprocessing":
             # CHANGEME when add describe execution for preprocessing
-        
+
             self.execution_data = {}
-            
-            self.status = 'Running'
+
+            self.status = "Running"
 
         else:
             url = f"{self.base_url}/{self.__url_path.replace('/async', '')}/describe/{group}/{parent_id}/{exec_id}"
-            response = requests.get(url, headers={'Authorization': 'Bearer ' + refresh_token(*self.credentials, self.base_url)})
+            response = requests.get(
+                url,
+                headers={
+                    "Authorization": "Bearer "
+                    + refresh_token(*self.credentials, self.base_url)
+                },
+            )
 
-            if response.status_code == 404:
-                    raise ModelError(f'Execution "{exec_id}" not found.')
-
+            if response.status_code == 401:
+                logger.error(response.text)
+                raise AuthenticationError("Login not authorized")
+            elif response.status_code == 404:
+                logger.error(f'Unable to retrive execution "{exec_id}"\n{response.text}')
+                raise ModelError(f'Execution "{exec_id}" not found.')
             elif response.status_code >= 500:
-                    raise ModelError(f'Unable to retrive execution "{exec_id}"')
+                logger.error(response.text)
+                raise ServerError("Server Error")
 
-            self.execution_data = response.json()['Description']
-            
-            self.status = self.execution_data['ExecutionState']
-        
+            self.execution_data = response.json()["Description"]
+
+            self.status = self.execution_data["ExecutionState"]
+
     def __repr__(self) -> str:
         return f"""Neomaril{self.exec_type}Execution(exec_id="{self.exec_id}", status="{self.status}")"""
 
@@ -336,33 +428,37 @@ class NeomarilExecution(BaseNeomaril):
 
         url = f"{self.base_url}/{self.__url_path}/status/{self.group}/{self.exec_id}"
 
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + self.__token})
+        response = requests.get(
+            url, headers={"Authorization": "Bearer " + self.__token}
+        )
         if response.status_code not in [200, 410]:
-                logger.error(response.text)
-                raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
+            logger.error(response.text)
+            raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
 
         result = response.json()
 
-        self.status = result['Status']
-        self.execution_data['ExecutionState'] = result['Status']
+        self.status = result["Status"]
+        self.execution_data["ExecutionState"] = result["Status"]
 
         return result
-    
-    def wait_ready(self): 
+
+    def wait_ready(self):
         """
         Waits the execution until is no longer running
-        
+
         Example
         -------
         >>> model.wait_ready()
         """
-        if self.status in ['Requested', 'Running']:
-            self.status = self.get_status()['Status']
-            while self.status == 'Running':
+        if self.status in ["Requested", "Running"]:
+            self.status = self.get_status()["Status"]
+            while self.status == "Running":
                 sleep(30)
-                self.status = self.get_status()['Status']
+                self.status = self.get_status()["Status"]
 
-    def download_result(self, *, path:Optional[str]='./', filename:Optional[str]='output.zip') -> dict:
+    def download_result(
+        self, *, path: Optional[str] = "./", filename: Optional[str] = "output.zip"
+    ) -> dict:
         """
         Gets the output of the execution.
 
@@ -383,29 +479,31 @@ class NeomarilExecution(BaseNeomaril):
         dict
             Returns the path for the result file.
         """
-        if self.status in ['Running', 'Requested']:
-            self.status = self.get_status()['Status']
-        
-        if self.exec_type in ['AsyncModel', 'AsyncPreprocessing']:
+        if self.status in ["Running", "Requested"]:
+            self.status = self.get_status()["Status"]
+
+        if self.exec_type in ["AsyncModel", "AsyncPreprocessing"]:
             token = self.__token
-        elif self.exec_type == 'Training':
+        elif self.exec_type == "Training":
             token = refresh_token(*self.credentials, self.base_url)
 
-        if self.status == 'Succeeded':
-            url = f"{self.base_url}/{self.__url_path}/result/{self.group}/{self.exec_id}"
-            response = requests.get(url, headers={'Authorization': 'Bearer ' + token})
+        if self.status == "Succeeded":
+            url = (
+                f"{self.base_url}/{self.__url_path}/result/{self.group}/{self.exec_id}"
+            )
+            response = requests.get(url, headers={"Authorization": "Bearer " + token})
             if response.status_code not in [200, 410]:
-                    logger.error(response.text)
-                    raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
+                logger.error(response.text)
+                raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
 
-            if not path.endswith('/'):
-                    filename = '/'+filename
+            if not path.endswith("/"):
+                filename = "/" + filename
 
-            with open(path+filename, 'wb') as f:
-                    f.write(response.content)
+            with open(path + filename, "wb") as f:
+                f.write(response.content)
 
-            logger.info(f'Output saved in {path+filename}')
-        elif self.status == 'Failed':
+            logger.info(f"Output saved in {path+filename}")
+        elif self.status == "Failed":
             raise ExecutionError("Execution failed")
         else:
-            logger.info(f'Execution not ready. Status is {self.status}')
+            logger.info(f"Execution not ready. Status is {self.status}")
