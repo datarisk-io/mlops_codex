@@ -64,7 +64,7 @@ class NeomarilPreprocessing(BaseNeomaril):
         self.group = group
         self.__token = group_token if group_token else os.getenv("NEOMARIL_GROUP_TOKEN")
 
-        url = f"{self.base_url}/preprocessing/list"
+        url = f"{self.base_url}/preprocessing/describe/{group}/{preprocessing_id}"
         response = requests.get(
             url,
             headers={
@@ -73,10 +73,8 @@ class NeomarilPreprocessing(BaseNeomaril):
             },
         )
 
-        results = response.json()
-        for result in results.get("Results"):
-            if result.get("Hash") == preprocessing_id:
-                self.operation = result.get("Operation").lower()
+        result = response.json()['Description']
+        self.operation = result.get("Operation").lower()
 
         response = self.__get_status()
         self.status = response.get("Status")
