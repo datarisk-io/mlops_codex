@@ -1295,7 +1295,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         env : str, optional
             Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
         python_version : str, optional
-            Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'
+            Python version for the model environment. Avaliable versions are 3.8, 3.8, 3.9, 3.10. Defaults to '3.8'
         operation : str
             Defines wich kind operation is beeing executed (Sync or Async). Default value is Sync
         input_type : str
@@ -1460,7 +1460,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         env : str, optional
             .env file to be used in your model enviroment. This will be encrypted in the server.
         python_version : str, optional
-            Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'
+            Python version for the model environment. Avaliable versions are 3.8, 3.9, 3.10. Defaults to '3.8'
         operation : str
             Defines wich kind operation is beeing executed (Sync or Async). Default value is Sync
         input_type : str
@@ -1483,9 +1483,9 @@ class NeomarilModelClient(BaseNeomarilClient):
         >>> model = client.create_model('Model Example Sync', 'score',  './samples/syncModel/app.py', './samples/syncModel/'model.pkl', './samples/syncModel/requirements.txt','./samples/syncModel/schema.json', group=group, operation="Sync")
         """
 
-        if python_version not in ["3.7", "3.8", "3.9", "3.10"]:
+        if python_version not in ["3.8", "3.9", "3.10"]:
             raise InputError(
-                "Invalid python version. Avaliable versions are 3.7, 3.8, 3.9, 3.10"
+                "Invalid python version. Avaliable versions are 3.8, 3.9, 3.10"
             )
 
         if group:

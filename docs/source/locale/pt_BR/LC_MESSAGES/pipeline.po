@@ -106,11 +106,11 @@ msgstr "python_version"
 
 #: neomaril_codex.pipeline.NeomarilPipeline:14 of
 msgid ""
-"Python version for the model environment. Avaliable versions are 3.7, "
-"3.8, 3.9, 3.10. Defaults to '3.9'"
+"Python version for the model environment. Avaliable versions are 3.8, "
+"3.9 and 3.10. Defaults to '3.9'"
 msgstr ""
-"Python version for the model environment. Avaliable versions are 3.7, "
-"3.8, 3.9, 3.10. Defaults to '3.9'"
+"Python version for the model environment. Avaliable versions are 3.8, "
+"3.9 and 3.10. Defaults to '3.9'"
 
 #: neomaril_codex.pipeline.NeomarilPipeline:17
 #: neomaril_codex.pipeline.NeomarilPipeline.from_config_file:12

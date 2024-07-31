@@ -381,7 +381,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
                             schema=PATH+'schema.json', # Path of the schema file, but it could be a dict (only required for Sync models)
                             # env=PATH+'.env'  #  File for env variables (this will be encrypted in the server)
                             # extra_files=[PATH+'utils.py'], # List with extra files paths that should be uploaded along (they will be all in the same folder)
-                            python_version='3.9', # Can be 3.7 to 3.10
+                            python_version='3.9', # Can be 3.8 to 3.10
                             operation="Sync", # Can be Sync or Async
                             group='datarisk' # Model group (create one using the client)
                             )
@@ -407,7 +407,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
                             PATH+'requirements.txt', # Path of the requirements file,
                             # env=PATH+'.env',  #  File for env variables (this will be encrypted in the server)
                             # extra_files=[PATH+'input.csv'], # List with extra files paths that should be uploaded along (they will be all in the same folder)
-                            python_version='3.9', # Can be 3.7 to 3.10
+                            python_version='3.9', # Can be 3.8 to 3.10
                             operation="Async", # Can be Sync or Async
                             group='datarisk', # Model group (create one using the client)
                             input_type='csv'
@@ -763,7 +763,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         env : str, optional
             Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
         python_version : str, optional
-            Python version for the pre processing environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'
+            Python version for the pre processing environment. Avaliable versions are 3.8, 3.9, 3.10. Defaults to '3.8'
         operation : str
             Defines wich kind operation is beeing executed (Sync or Async). Default value is Sync
         input_type : str
@@ -931,7 +931,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         env : str, optional
             Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
         python_version : str, optional
-            Python version for the pre processing environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'
+            Python version for the pre processing environment. Avaliable versions are 3.8, 3.9, 3.10. Defaults to '3.8'
         operation : str
             Defines wich kind operation is beeing executed (Sync or Async). Default value is Sync
         input_type : str
@@ -954,9 +954,9 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         >>> preprocessing = client.create('Pre processing Example Sync', 'score',  './samples/syncPreprocessing/app.py', './samples/syncPreprocessing/'preprocessing.pkl', './samples/syncPreprocessing/requirements.txt','./samples/syncPreprocessing/schema.json', group=group, operation="Sync")
         """
 
-        if python_version not in ["3.7", "3.8", "3.9", "3.10"]:
+        if python_version not in ["3.8", "3.9", "3.10"]:
             raise InputError(
-                "Invalid python version. Avaliable versions are 3.7, 3.8, 3.9, 3.10"
+                "Invalid python version. Avaliable versions are 3.8, 3.9, 3.10"
             )
 
         if group:

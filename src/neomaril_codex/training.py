@@ -869,7 +869,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         training_reference : str, optional
             The name of the training function inside the source file. Just used when training_type is Custom
         python_version : str
-            Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'. Just used when training_type is Custom
+            Python version for the model environment. Avaliable versions are 3.8, 3.9, 3.10. Defaults to '3.8'. Just used when training_type is Custom
         conf_dict : Union[str, dict], optional
             Path to a JSON file with a the AutoML configuration. A dict can be send as well. Just used when training_type is AutoML
         source_file : str, optional
@@ -1122,7 +1122,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         description : str, optional
             Description of the experiment
         python_version : str, optional
-            Python version for the model environment. Avaliable versions are 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'. Just used when training_type is Custom
+            Python version for the model environment. Avaliable versions are 3.8, 3.9, 3.10. Defaults to '3.8'. Just used when training_type is Custom
         conf_dict : Union[str, dict]
             Path to a JSON file with a the AutoML configuration. A dict can be send as well. Just used when training_type is AutoML
         source_file : str, optional
@@ -1189,9 +1189,9 @@ class NeomarilTrainingExperiment(BaseNeomaril):
                 "Invalid data input. Run training requires a train_data or dataset"
             )
 
-        if python_version not in ["3.7", "3.8", "3.9", "3.10"]:
+        if python_version not in ["3.8", "3.9", "3.10"]:
             raise InputError(
-                "Invalid python version. Avaliable versions are 3.7, 3.8, 3.9, 3.10"
+                "Invalid python version. Avaliable versions are 3.8, 3.9, 3.10"
             )
 
         if training_type not in ["Custom", "AutoML", "External"]:
