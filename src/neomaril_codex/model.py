@@ -228,8 +228,8 @@ class NeomarilModel(BaseNeomaril):
         -------
         >>> model.restart_model()
         """
-        if (self.operation == "sync") and (self.status == "Deployed"):
-            url = f"{self.base_url}/model/sync/restart/{self.group}/{self.model_id}"
+        if self.status in ["Deployed", "Disabled", "DisabledRecovery", "FailedRecovery"]:
+            url = f"{self.base_url}/model/restart/{self.group}/{self.model_id}"
             response = requests.get(
                 url,
                 headers={
@@ -328,7 +328,7 @@ class NeomarilModel(BaseNeomaril):
         -------
         >>> model.delete()
         """
-        if self.__model_ready:
+        if self.__get_status()["Status"] in ["Disabled", "DisabledFailed", "Failed"]:
             token = refresh_token(*self.credentials, self.base_url)
             req = requests.delete(
                 f"{self.base_url}/model/delete/{self.group}/{self.model_id}",
