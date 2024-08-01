@@ -519,11 +519,11 @@ msgstr ""
 
 #: neomaril_codex.model.NeomarilModelClient.create_model:21 of
 msgid ""
-"Python version for the model environment. Avaliable versions are 3.7, "
-"3.8, 3.9, 3.10. Defaults to '3.8'"
+"Python version for the model environment. Avaliable versions are 3.8, "
+"3.9, 3.10. Defaults to '3.8'"
 msgstr ""
-"Python version for the model environment. Avaliable versions are 3.7, "
-"3.8, 3.9, 3.10. Defaults to '3.8'"
+"Python version for the model environment. Avaliable versions are 3.8, "
+"3.9, 3.10. Defaults to '3.8'"
 
 #: neomaril_codex.model.NeomarilModelClient.create_model:23 of
 msgid ""

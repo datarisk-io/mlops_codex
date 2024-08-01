@@ -116,7 +116,7 @@ Then we can call the :py:meth:`neomaril_codex.training.NeomarilTrainingExperimen
         #env=PATH+'.env'  #  File for env variables (this will be encrypted in the server)
         #extra_files=[PATH+'utils.py'], # List with extra files paths that should be uploaded along (they will be all in the same folder)
         training_reference='train_model', # The name of the entrypoint function that is going to be called inside the source file 
-        python_version='3.9', # Can be 3.7 to 3.10
+        python_version='3.9', # Can be 3.8 to 3.10
         wait_complete=True
     )
 

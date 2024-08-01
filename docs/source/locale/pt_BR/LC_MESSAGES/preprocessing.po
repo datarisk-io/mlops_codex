@@ -396,10 +396,10 @@ msgstr ""
 #: neomaril_codex.preprocessing.NeomarilPreprocessingClient.create:19 of
 msgid ""
 "Python version for the pre processing environment. Avaliable versions are"
-" 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'"
+" 3.8, 3.9, 3.10. Defaults to '3.8'"
 msgstr ""
 "Python version for the pre processing environment. Avaliable versions are"
-" 3.7, 3.8, 3.9, 3.10. Defaults to '3.8'"
+" 3.8, 3.9, 3.10. Defaults to '3.8'"
 
 #: neomaril_codex.preprocessing.NeomarilPreprocessingClient.create:21 of
 msgid ""

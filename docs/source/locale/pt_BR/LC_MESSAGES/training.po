@@ -360,11 +360,11 @@ msgstr "Description of the experiment"
 
 #: neomaril_codex.training.NeomarilTrainingExperiment.run_training:13 of
 msgid ""
-"Python version for the model environment. Avaliable versions are 3.7, "
-"3.8, 3.9, 3.10. Defaults to '3.8'. Just used when training_type is Custom"
+"Python version for the model environment. Avaliable versions are 3.8, "
+"3.9, 3.10. Defaults to '3.8'. Just used when training_type is Custom"
 msgstr ""
-"Python version for the model environment. Avaliable versions are 3.7, "
-"3.8, 3.9, 3.10. Defaults to '3.8'. Just used when training_type is Custom"
+"Python version for the model environment. Avaliable versions are 3.8, "
+"3.9, 3.10. Defaults to '3.8'. Just used when training_type is Custom"
 
 #: neomaril_codex.training.NeomarilTrainingExperiment.run_training:15 of
 msgid ""
