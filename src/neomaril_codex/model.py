@@ -347,22 +347,35 @@ class NeomarilModel(BaseNeomaril):
         -------
         >>> model.delete()
         """
-        if self.__get_status() in [ModelState.Disabled, ModelState.DisabledFailed, ModelState.Failed]:
-            token = refresh_token(*self.credentials, self.base_url)
-            req = requests.delete(
-                f"{self.base_url}/model/delete/{self.group}/{self.model_id}",
-                headers={"Authorization": "Bearer " + token},
-            )
+        if self.__get_status() not in [ModelState.Disabled, ModelState.DisabledFailed, ModelState.Failed]:
+            return "Cannot delete the model! Current state is " + str(self.status)
 
-            if req.status_code == 200:
-                response = requests.get(
-                    f"{self.base_url}/model/describe/{self.group}/{self.model_id}",
-                    headers={"Authorization": "Bearer " + token},
-                )
+        token = refresh_token(*self.credentials, self.base_url)
+        req = requests.delete(
+            f"{self.base_url}/model/delete/{self.group}/{self.model_id}",
+            headers={"Authorization": "Bearer " + token},
+        )
 
-                self.model_data = response.json()["Description"]
-                self.status = ModelState[self.model_data["Status"]]
-                self.__model_ready = False
+        if req.status_code == 401:
+            logger.error(req.text)
+            raise AuthenticationError("Login not authorized")
+
+        if req.status_code >= 500:
+            logger.error(req.text)
+            raise ServerError("Server Error")
+
+        if req.status_code != 200:
+            logger.error(req.text)
+            raise ModelError("Failed to delete model.")
+
+        response = requests.get(
+            f"{self.base_url}/model/describe/{self.group}/{self.model_id}",
+            headers={"Authorization": "Bearer " + token},
+        )
+
+        self.model_data = response.json()["Description"]
+        self.status = ModelState[self.model_data["Status"]]
+        self.__model_ready = False
 
                 return req.json()
             elif req.status_code == 401:
@@ -374,6 +387,7 @@ class NeomarilModel(BaseNeomaril):
             else:
                 logger.error(req.text)
                 raise ModelError("Could not delete the model")
+        return req.json()
 
         else:
             return "Model is " + str(self.status)
