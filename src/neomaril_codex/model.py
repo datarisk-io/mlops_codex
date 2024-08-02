@@ -221,7 +221,11 @@ class NeomarilModel(BaseNeomaril):
 
     def restart_model(self, *, wait_for_ready: bool = True):
         """
-        Restart a model deployment process health state.
+        Restart a model deployment process health state. Be sure your model is one of these states:
+            - Deployed;
+            - Disabled;
+            - DisabledRecovery;
+            - FailedRecovery.
 
         Parameters
         -----------
@@ -232,33 +236,43 @@ class NeomarilModel(BaseNeomaril):
         -------
         >>> model.restart_model()
         """
-        if self.status in [ModelState.Deployed, ModelState.Disabled, ModelState.DisabledRecovery, ModelState.FailedRecovery]:
-            url = f"{self.base_url}/model/restart/{self.group}/{self.model_id}"
-            response = requests.get(
-                url,
-                headers={
-                    "Authorization": "Bearer "
-                    + refresh_token(*self.credentials, self.base_url)
-                },
-            )
-            if response.status_code == 200:
-                logger.info("Model is restarting")
+        if self.status not in [
+            ModelState.Deployed,
+            ModelState.Disabled,
+            ModelState.DisabledRecovery,
+            ModelState.FailedRecovery
+        ]:
+            raise ModelError(f"Could not restart the model. Current state is: {self.status}")
+
+        url = f"{self.base_url}/model/restart/{self.group}/{self.model_id}"
+        response = requests.get(
+            url,
+            headers={
+                "Authorization": "Bearer "
+                + refresh_token(*self.credentials, self.base_url)
+            },
+        )
+
+        if response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+
+        if response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Server Error")
+
+        if response.status_code != 200:
+            logger.error(response.text)
+            raise ModelError("Could not restart the model")
+
+        logger.info("Model is restarting")
+        self.status = self.__get_status()
+        if wait_for_ready:
+            print("Waiting for deploy to be ready.", end="")
+            while self.status == ModelState.Building:
+                sleep(30)
                 self.status = self.__get_status()
-                if wait_for_ready:
-                    print("Waiting for deploy to be ready.", end="")
-                    while self.status == ModelState.Building:
-                        sleep(30)
-                        self.status = self.__get_status()
-                        print(".", end="", flush=True)
-            elif response.status_code == 401:
-                logger.error(response.text)
-                raise AuthenticationError("Login not authorized")
-            elif response.status_code >= 500:
-                logger.error(response.text)
-                raise ServerError("Server Error")
-            else:
-                logger.error(response.text)
-                raise ModelError("Could not restart the model")
+                print(".", end="", flush=True)
 
     def get_logs(
         self,
