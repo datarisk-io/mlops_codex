@@ -377,20 +377,60 @@ class NeomarilModel(BaseNeomaril):
         self.status = ModelState[self.model_data["Status"]]
         self.__model_ready = False
 
-                return req.json()
-            elif req.status_code == 401:
-                logger.error(req.text)
-                raise AuthenticationError("Login not authorized")
-            elif req.status_code >= 500:
-                logger.error(req.text)
-                raise ServerError("Server Error")
-            else:
-                logger.error(req.text)
-                raise ModelError("Could not delete the model")
         return req.json()
 
-        else:
-            return "Model is " + str(self.status)
+    def disable(self):
+        """
+        Disable a model. It does mean if you won't be able to perform all operations in the model
+        Please, check with your team if you're allowed to perform this operation
+
+        Raises
+        ------
+        ServerError
+            Model deleting failed
+
+        Returns
+        -------
+        str
+            status=Deployed: disables the model and return a json.
+            If it isn't Deployed it returns the message that the model is under another state
+
+        Example
+        -------
+        >>> model.disable()
+
+        """
+        if self.__get_status() != ModelState.Deployed:
+            return f"Cannot disable the model! Current state is not Deployed"
+
+        token = refresh_token(*self.credentials, self.base_url)
+        req = requests.post(
+            f"{self.base_url}/model/disable/{self.group}/{self.model_id}",
+            headers={"Authorization": "Bearer " + token},
+        )
+
+        if req.status_code == 401:
+            logger.error(req.text)
+            raise AuthenticationError("Login not authorized")
+
+        if req.status_code >= 500:
+            logger.error(req.text)
+            raise ServerError("Server Error")
+
+        if req.status_code != 200:
+            logger.error(req.text)
+            raise ModelError("Failed to delete model.")
+
+        response = requests.get(
+            f"{self.base_url}/model/describe/{self.group}/{self.model_id}",
+            headers={"Authorization": "Bearer " + token},
+        )
+
+        self.model_data = response.json()["Description"]
+        self.status = ModelState[self.model_data["Status"]]
+        self.__model_ready = False
+
+        return req.json()
 
     def set_token(self, group_token: str) -> None:
         """
