@@ -24,11 +24,3 @@ class ModelState(Enum):
 
     def __str__(self):
         return self.name
-
-
-k = ModelState['Ready']
-print(f"Model is {k}")
-
-print(k in [ModelState.Ready, ModelState.Building])
-print(k == 'Ready')
-
