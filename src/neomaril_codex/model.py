@@ -15,6 +15,8 @@ from neomaril_codex.datasources import NeomarilDataset
 from neomaril_codex.exceptions import *
 from neomaril_codex.preprocessing import *
 
+from utils.model_states import ModelState
+
 
 class NeomarilModel(BaseNeomaril):
     """
@@ -105,12 +107,12 @@ class NeomarilModel(BaseNeomaril):
 
         self.model_data = response.json()["Description"]
         self.name = self.model_data["Name"]
-        self.status = self.model_data["Status"]
+        self.status = ModelState[self.model_data["Status"]]
         self.operation = self.model_data["Operation"].lower()
         self.docs = (
             f"{self.base_url}/model/{self.operation}/docs/{self.group}/{self.model_id}"
         )
-        self.__model_ready = self.status == "Deployed"
+        self.__model_ready = self.status == ModelState.Deployed
 
     def __repr__(self) -> str:
         return f"""NeomarilModel(name="{self.name}", group="{self.group}", 
@@ -148,16 +150,18 @@ class NeomarilModel(BaseNeomaril):
             },
         )
         if response.status_code == 200:
-            return response.json()
-        elif response.status_code == 401:
+            return ModelState[response.json().get("Status")]
+
+        if response.status_code == 401:
             logger.error(response.text)
             raise AuthenticationError("Login not authorized")
-        elif response.status_code >= 500:
+
+        if response.status_code >= 500:
             logger.error(response.text)
             raise ServerError("Server Error")
-        else:
-            logger.error(response.text)
-            raise ModelError("Could not get the status of the model")
+
+        logger.error(response.text)
+        raise ModelError("Could not get the status of the model")
 
     def wait_ready(self):
         """
@@ -167,11 +171,11 @@ class NeomarilModel(BaseNeomaril):
         -------
         >>> model.wait_ready()
         """
-        if self.status in ["Ready", "Building"]:
-            self.status = self.__get_status()["Status"]
-            while self.status == "Building":
+        if self.status in [ModelState.Ready, ModelState.Building]:
+            self.status = self.__get_status()
+            while self.status == ModelState.Building:
                 sleep(30)
-                self.status = self.__get_status()["Status"]
+                self.status = self.__get_status()
 
     def health(self) -> str:
         """
@@ -228,7 +232,7 @@ class NeomarilModel(BaseNeomaril):
         -------
         >>> model.restart_model()
         """
-        if self.status in ["Deployed", "Disabled", "DisabledRecovery", "FailedRecovery"]:
+        if self.status in [ModelState.Deployed, ModelState.Disabled, ModelState.DisabledRecovery, ModelState.FailedRecovery]:
             url = f"{self.base_url}/model/restart/{self.group}/{self.model_id}"
             response = requests.get(
                 url,
@@ -239,12 +243,12 @@ class NeomarilModel(BaseNeomaril):
             )
             if response.status_code == 200:
                 logger.info("Model is restarting")
-                self.status = self.__get_status()["Status"]
+                self.status = self.__get_status()
                 if wait_for_ready:
                     print("Waiting for deploy to be ready.", end="")
-                    while self.status == "Building":
+                    while self.status == ModelState.Building:
                         sleep(30)
-                        self.status = self.__get_status()["Status"]
+                        self.status = self.__get_status()
                         print(".", end="", flush=True)
             elif response.status_code == 401:
                 logger.error(response.text)
@@ -322,13 +326,14 @@ class NeomarilModel(BaseNeomaril):
         Returns
         -------
         str
-            If model is at status=Deployed deletes the model and return a json with his information. If it isn't Deployed it returns the message that the model is under another state
+            If model is at status=Deployed deletes the model and return a json with his information.
+            If it isn't Deployed it returns the message that the model is under another state
 
         Example
         -------
         >>> model.delete()
         """
-        if self.__get_status()["Status"] in ["Disabled", "DisabledFailed", "Failed"]:
+        if self.__get_status() in [ModelState.Disabled, ModelState.DisabledFailed, ModelState.Failed]:
             token = refresh_token(*self.credentials, self.base_url)
             req = requests.delete(
                 f"{self.base_url}/model/delete/{self.group}/{self.model_id}",
@@ -342,7 +347,7 @@ class NeomarilModel(BaseNeomaril):
                 )
 
                 self.model_data = response.json()["Description"]
-                self.status = self.model_data["Status"]
+                self.status = ModelState[self.model_data["Status"]]
                 self.__model_ready = False
 
                 return req.json()
@@ -357,7 +362,7 @@ class NeomarilModel(BaseNeomaril):
                 raise ModelError("Could not delete the model")
 
         else:
-            return "Model is " + self.status
+            return "Model is " + str(self.status)
 
     def set_token(self, group_token: str) -> None:
         """
@@ -521,7 +526,7 @@ class NeomarilModel(BaseNeomaril):
             ).json()["Description"]
             if response["Status"] == "Deployed":
                 self.model_data = response
-                self.status = response["Status"]
+                self.status = ModelState[response["Status"]]
                 self.__model_ready = True
                 return self.predict(
                     data=data,
