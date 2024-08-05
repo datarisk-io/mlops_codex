@@ -8,7 +8,8 @@ Package for interacting with Neomaril, a tool for deploying ML models.
 
 ## Getting started
 
-### Intalation
+### Install
+
 ```
   pip install neomaril-codex
 ```
