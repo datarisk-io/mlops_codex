@@ -267,6 +267,7 @@ class NeomarilModel(BaseNeomaril):
                 sleep(30)
                 self.status = self.__get_status()
                 print(".", end="", flush=True)
+        print("Model is deployed", flush=True)
 
     def get_logs(
         self,
@@ -419,6 +420,8 @@ class NeomarilModel(BaseNeomaril):
         self.model_data = response.json()["Description"]
         self.status = ModelState[self.model_data["Status"]]
         self.__model_ready = False
+
+        print(f"The model {self.model_id} was disabled")
 
         return req.json()
 
