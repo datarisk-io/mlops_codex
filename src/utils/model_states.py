@@ -1,4 +1,10 @@
-from enum import Enum
+"""
+This file model states from different parts of the code. In the future, I must change the file name
+to 'state.py' or something similar. The purpose will be modeling the possible states of each part of the
+application
+"""
+
+from enum import Enum, auto
 
 
 class ModelState(Enum):
@@ -6,16 +12,16 @@ class ModelState(Enum):
     Possible states of a mode
     """
 
-    Ready = 1
-    Building = 2
-    Recovering = 3
-    FailedRecovery = 4
-    Failed = 5
-    Deployed = 6
-    Disabled = 7
-    DisabledRecovery = 8
-    DisabledFailed = 9
-    Deleted = 10
+    Ready = auto()
+    Building = auto()
+    Recovering = auto()
+    FailedRecovery = auto()
+    Failed = auto()
+    Deployed = auto()
+    Disabled = auto()
+    DisabledRecovery = auto()
+    DisabledFailed = auto()
+    Deleted = auto()
 
     def __eq__(self, other):
         if isinstance(other, str):
