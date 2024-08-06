@@ -115,8 +115,9 @@ class NeomarilModel(BaseNeomaril):
         self.__model_ready = self.status == ModelState.Deployed
 
     def __repr__(self) -> str:
+        status = self.__get_status()
         return f"""NeomarilModel(name="{self.name}", group="{self.group}", 
-                                status="{self.status}",
+                                status="{status}",
                                 model_id="{self.model_id}",
                                 operation="{self.operation.title()}",
                                 )"""
