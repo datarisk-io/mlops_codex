@@ -374,7 +374,7 @@ class NeomarilModel(BaseNeomaril):
 
     def disable(self):
         """
-        Disable a model. It does mean if you won't be able to perform all operations in the model
+        Disables a model. It means that you won't be able to perform some operations in the model
         Please, check with your team if you're allowed to perform this operation
 
         Raises
