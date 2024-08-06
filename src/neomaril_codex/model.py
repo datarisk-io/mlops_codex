@@ -237,13 +237,6 @@ class NeomarilModel(BaseNeomaril):
         -------
         >>> model.restart_model()
         """
-        if self.status not in [
-            ModelState.Deployed,
-            ModelState.Disabled,
-            ModelState.DisabledRecovery,
-            ModelState.FailedRecovery
-        ]:
-            raise ModelError(f"Could not restart the model. Current state is: {self.status}")
 
         url = f"{self.base_url}/model/restart/{self.group}/{self.model_id}"
         response = requests.get(
@@ -348,8 +341,6 @@ class NeomarilModel(BaseNeomaril):
         -------
         >>> model.delete()
         """
-        if self.__get_status() not in [ModelState.Disabled, ModelState.DisabledFailed, ModelState.Failed]:
-            return "Cannot delete the model! Current state is " + str(self.status)
 
         token = refresh_token(*self.credentials, self.base_url)
         req = requests.delete(
@@ -401,8 +392,6 @@ class NeomarilModel(BaseNeomaril):
         >>> model.disable()
 
         """
-        if self.__get_status() != ModelState.Deployed:
-            return f"Cannot disable the model! Current state is not Deployed"
 
         token = refresh_token(*self.credentials, self.base_url)
         req = requests.post(
