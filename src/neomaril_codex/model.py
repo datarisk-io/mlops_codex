@@ -1254,7 +1254,13 @@ class NeomarilModelClient(BaseNeomarilClient):
                     r["Schema"] = json.loads(schema)
                 parsed_results.append(r)
 
-            return parsed_results
+            return [NeomarilModel(
+                        model_id=m['ModelHash'],
+                        login=self.credentials[0],
+                        password=self.credentials[1],
+                        group=m['Group'],
+                        url=self.base_url) for m in parsed_results]
+        
         elif response.status_code == 401:
             logger.error(response.text)
             raise AuthenticationError("Login not authorized")
