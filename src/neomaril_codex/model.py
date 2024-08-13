@@ -15,7 +15,7 @@ from neomaril_codex.datasources import NeomarilDataset
 from neomaril_codex.exceptions import *
 from neomaril_codex.preprocessing import *
 
-from utils.model_states import ModelState
+from neomaril_codex.__model_states import ModelState
 
 
 class NeomarilModel(BaseNeomaril):
