@@ -1440,7 +1440,7 @@ class NeomarilTrainingClient(BaseNeomarilClient):
         """Look for a previous train experiment.
 
         Args:
-            experiment_name (str): name given to the training, should be not null, case sensitive, have between 3 and 32 characters, 
+            experiment_name (str): name given to the training, should be not null, case-sensitive, have between 3 and 32 characters,
                                    that could be alphanumeric including accentuation (for example: 'é', à', 'ç','ñ') and space, 
                                    without blank spaces and special characters
 
@@ -1452,10 +1452,10 @@ class NeomarilTrainingClient(BaseNeomarilClient):
             group (str): name of the group, previous created, where the training will be inserted
 
         Raises:
-            InputError: some part of the data is incorret
+            InputError: some part of the data is incorrect
             AuthenticationError: user has insufficient permissions
-            ServerError: server is not availabe
-            Exception: generated excepetion in case of the response to the request is different than 201
+            ServerError: server is not available
+            Exception: generated exception in case of the response to the request is different than 201
 
         Returns:
             str | None: THash if it is found, otherwise, None is returned
@@ -1498,10 +1498,10 @@ class NeomarilTrainingClient(BaseNeomarilClient):
 
     def __create(self, experiment_name: str, model_type: str, group: str) -> str:
         """Creates a train experiment. A train experiment can aggregate multiple training runs (also called executions). 
-        Each execution can eventually became a deployed model or not.
+        Each execution can eventually become a deployed model or not.
 
         Args:
-            experiment_name (str): name given to the training, should be not null, case sensitive, have between 3 and 32 characters, 
+            experiment_name (str): name given to the training, should be not null, case-sensitive, have between 3 and 32 characters,
                                    that could be alphanumeric including accentuation (for example: 'é', à', 'ç','ñ') and space, 
                                    without blank spaces and special characters
 
@@ -1513,10 +1513,10 @@ class NeomarilTrainingClient(BaseNeomarilClient):
             group (str): name of the group, previous created, where the training will be inserted
 
         Raises:
-            InputError: some part of the data is incorret
+            InputError: some part of the data is incorrect
             AuthenticationError: user has insufficient permissions
-            ServerError: server is not availabe
-            Exception: generated excepetion in case of the response to the request is different than 201
+            ServerError: server is not available
+            Exception: generated exception in case of the response to the request is different than 201
 
         Returns:
             str: training hash of the experiment
