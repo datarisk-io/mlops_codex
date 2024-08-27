@@ -1436,6 +1436,125 @@ class NeomarilTrainingClient(BaseNeomarilClient):
             url=self.base_url,
         )
 
+    def __get_repeated_thash(self, model_type: str, experiment_name: str, group: str) -> str | None:
+        """Look for a previous train experiment.
+
+        Args:
+            experiment_name (str): name given to the training, should be not null, case sensitive, have between 3 and 32 characters, 
+                                   that could be alphanumeric including accentuation (for example: 'é', à', 'ç','ñ') and space, 
+                                   without blank spaces and special characters
+
+            model_type (str): type of the model being trained. It can be
+                                Classification: for ML algorithms related to classification (predicts discrete class labels) problems;
+                                Regression: the ones that will use regression (predict a continuous quantity) algorithms;
+                                Unsupervised: for training that will use ML algorithms without supervision.
+
+            group (str): name of the group, previous created, where the training will be inserted
+
+        Raises:
+            InputError: some part of the data is incorret
+            AuthenticationError: user has insufficient permissions
+            ServerError: server is not availabe
+            Exception: generated excepetion in case of the response to the request is different than 201
+
+        Returns:
+            str | None: THash if it is found, otherwise, None is returned
+        """
+        url = f"{self.base_url}/training/search"
+        response = requests.get(
+            url,
+            headers={
+                "Authorization": "Bearer "
+                + refresh_token(*self.credentials, self.base_url)
+            },
+        )
+
+        if response.status_code == 400:
+            logger.error(response.text)
+            raise InputError("Bad Input")
+
+        if response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+
+        if response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Server Error")
+
+        if response.status_code != 200:
+            logger.error(response.text)
+            raise Exception("Unexpected error!")
+
+        results = response.json().get("Results")
+        for result in results:
+            condition = (
+                    result["ExperimentName"] == experiment_name
+                    and result["GroupName"] == group
+                    and result["ModelType"] == model_type
+            )
+            if condition:
+                logger.info("Found experiment with same attributes...")
+                return result["TrainingHash"]
+
+    def __create(self, experiment_name: str, model_type: str, group: str) -> str:
+        """Creates a train experiment. A train experiment can aggregate multiple training runs (also called executions). 
+        Each execution can eventually became a deployed model or not.
+
+        Args:
+            experiment_name (str): name given to the training, should be not null, case sensitive, have between 3 and 32 characters, 
+                                   that could be alphanumeric including accentuation (for example: 'é', à', 'ç','ñ') and space, 
+                                   without blank spaces and special characters
+
+            model_type (str): type of the model being trained. It can be
+                                Classification: for ML algorithms related to classification (predicts discrete class labels) problems;
+                                Regression: the ones that will use regression (predict a continuous quantity) algorithms;
+                                Unsupervised: for training that will use ML algorithms without supervision.
+
+            group (str): name of the group, previous created, where the training will be inserted
+
+        Raises:
+            InputError: some part of the data is incorret
+            AuthenticationError: user has insufficient permissions
+            ServerError: server is not availabe
+            Exception: generated excepetion in case of the response to the request is different than 201
+
+        Returns:
+            str: training hash of the experiment
+        """
+        url = f"{self.base_url}/training/register/{group}"
+
+        data = {"experiment_name": experiment_name, "model_type": model_type}
+
+        response = requests.post(
+            url,
+            data=data,
+            headers={
+                "Authorization": "Bearer "
+                                 + refresh_token(*self.credentials, self.base_url)
+            },
+        )
+
+        if response.status_code == 400:
+            logger.error(response.text)
+            raise InputError("Bad Input")
+
+        if response.status_code == 401:
+            logger.error(response.text)
+            raise AuthenticationError("Login not authorized")
+
+        if response.status_code >= 500:
+            logger.error(response.text)
+            raise ServerError("Server Error")
+
+        if response.status_code != 201:
+            logger.error(response.text)
+            raise Exception("Unexpected error!")
+
+        response_data = response.json()
+        logger.info(response_data["Message"])
+        training_id = response_data["TrainingHash"]
+        return training_id
+
     def create_training_experiment(
         self, *, experiment_name: str, model_type: str, group: str = "datarisk"
     ) -> NeomarilTrainingExperiment:
