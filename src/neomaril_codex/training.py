@@ -1598,7 +1598,7 @@ class NeomarilTrainingClient(BaseNeomarilClient):
                 .replace("-", "_")
             )
 
-            groups = groups = [g.get("Name") for g in self.list_groups()]
+            groups = [g.get("Name") for g in self.list_groups()]
 
             if group not in groups:
                 raise GroupError("Group dont exist. Create a group first.")
