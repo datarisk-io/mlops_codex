@@ -1613,32 +1613,15 @@ class NeomarilTrainingClient(BaseNeomarilClient):
                 f"Unsupervised"
             )
 
-        url = f"{self.base_url}/training/register/{group}"
+        logger.info("Trying to load experiment...")
+        training_id = self.__get_repeated_thash(model_type=model_type, experiment_name=experiment_name, group=group)
 
-        data = {"experiment_name": experiment_name, "model_type": model_type}
-
-        response = requests.post(
-            url,
-            data=data,
-            headers={
-                "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url)
-            },
-        )
-
-        if response.status_code == 201:
-            response_data = response.json()
-            logger.info(response_data["Message"])
-            training_id = response_data["TrainingHash"]
-        elif response.status_code == 400:
-            logger.error(response.text)
-            raise InputError("Bad Input")
-        elif response.status_code == 401:
-            logger.error(response.text)
-            raise AuthenticationError("Login not authorized")
-        else:
-            logger.error(response.text)
-            raise ServerError("Server Error")
+        if force or training_id is None:
+            msg = ("The experiment you're creating has identical name, group, and model type attributes to an existing one. "
+                   + "Since forced creation is active, we will continue with the process as specified"
+                   if force else "Could not find experiment. Creating a new one...")
+            logger.info(msg)
+            training_id = self.__create(experiment_name=experiment_name, model_type=model_type, group=group) 
 
         return NeomarilTrainingExperiment(
             training_id=training_id,
