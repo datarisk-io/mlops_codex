@@ -1569,6 +1569,8 @@ class NeomarilTrainingClient(BaseNeomarilClient):
             The name of the scoring function inside the source file.
         group : str
             Group the model is inserted. Default to 'datarisk' (public group)
+        force: bool
+            Forces to create a new training with the same model_type, experiment_name, group
 
         Raises
         ------
