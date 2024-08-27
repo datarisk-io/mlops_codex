@@ -1556,7 +1556,7 @@ class NeomarilTrainingClient(BaseNeomarilClient):
         return training_id
 
     def create_training_experiment(
-        self, *, experiment_name: str, model_type: str, group: str = "datarisk"
+        self, *, experiment_name: str, model_type: str, group: str = "datarisk", force: bool = False
     ) -> NeomarilTrainingExperiment:
         """
         Create a new training experiment on Neomaril.
