@@ -32,7 +32,7 @@ class BaseNeomaril:
             login if login else os.getenv("NEOMARIL_USER"),
             password if password else os.getenv("NEOMARIL_PASSWORD"),
         )
-        self.base_url = os.getenv("NEOMARIL_URL") if os.getenv("NEOMARIL_URL") else url
+        self.base_url = url if url else os.getenv("NEOMARIL_URL")
         self.base_url = parse_url(self.base_url)
 
         if self.base_url == "https://neomaril.staging.datarisk.net/":
@@ -40,7 +40,7 @@ class BaseNeomaril:
                 "You are using the test enviroment that will have the data cleaned from time to time. If your model is ready to use change the enviroment to Production"
             )
 
-        self.client_version = try_login(
+        self.user_token = try_login(
             self.credentials[0],
             self.credentials[1],
             self.base_url,
