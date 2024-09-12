@@ -46,14 +46,17 @@ def try_login(login: str, password: str, base_url: str) -> str | Exception:
 
     server_status = response.status_code
 
-    if server_status == 200:
-        token = refresh_token(login, password, base_url)
-        return token
-    elif server_status == 401:
-        raise AuthenticationError('Invalid credentials.')
+    if server_status == 401:
+        raise AuthenticationError('Email or password invalid.')
 
-    elif server_status >= 500:
+    if server_status >= 500:
         raise ServerError("Neomaril server unavailable at the moment.")
+
+    if server_status != 200:
+        raise Exception(f"Unexpected error! {response.text}")
+
+    token = refresh_token(login, password, base_url)
+    return token
 
 
 @ttl_cache
