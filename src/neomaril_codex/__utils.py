@@ -26,7 +26,22 @@ def parse_url(url):
     return url
 
 
-def try_login(login: str, password: str, base_url: str) -> bool:
+def try_login(login: str, password: str, base_url: str) -> str | Exception:
+    """Try to sign in Neomaril
+
+    Args:
+        login: User email
+        password: User password
+        base_url: URL that will handle the requests
+
+    Returns:
+        User login token
+
+    Raises:
+        AuthenticationError: Raises if the `login` or `password` are wrong
+        ServerError: Raises if the server is not running correctly
+        BaseException: Raises if the server status is something different from 200
+    """
     response = requests.get(f"{base_url}/health")
 
     server_status = response.status_code
