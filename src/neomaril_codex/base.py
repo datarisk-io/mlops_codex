@@ -40,7 +40,7 @@ class BaseNeomaril:
                 "You are using the test enviroment that will have the data cleaned from time to time. If your model is ready to use change the enviroment to Production"
             )
 
-        self.user_token = try_login(
+        self.user_token, self.version = try_login(
             self.credentials[0],
             self.credentials[1],
             self.base_url,

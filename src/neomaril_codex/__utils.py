@@ -26,7 +26,7 @@ def parse_url(url):
     return url
 
 
-def try_login(login: str, password: str, base_url: str) -> str | Exception:
+def try_login(login: str, password: str, base_url: str) -> tuple[str, str] | Exception:
     """Try to sign in Neomaril
 
     Args:
@@ -56,7 +56,8 @@ def try_login(login: str, password: str, base_url: str) -> str | Exception:
         raise Exception(f"Unexpected error! {response.text}")
 
     token = refresh_token(login, password, base_url)
-    return token
+    version = response.json().get("Version")
+    return token, version
 
 
 @ttl_cache
