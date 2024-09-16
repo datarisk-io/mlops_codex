@@ -26,19 +26,38 @@ def parse_url(url):
     return url
 
 
-def try_login(login: str, password: str, base_url: str) -> bool:
+def try_login(login: str, password: str, base_url: str) -> tuple[str, str] | Exception:
+    """Try to sign in Neomaril
+
+    Args:
+        login: User email
+        password: User password
+        base_url: URL that will handle the requests
+
+    Returns:
+        User login token
+
+    Raises:
+        AuthenticationError: Raises if the `login` or `password` are wrong
+        ServerError: Raises if the server is not running correctly
+        BaseException: Raises if the server status is something different from 200
+    """
     response = requests.get(f"{base_url}/health")
 
     server_status = response.status_code
 
-    if server_status == 200:
-        token = refresh_token(login, password, base_url)
-        return token
-    elif server_status == 401:
-        raise AuthenticationError('Invalid credentials.')
+    if server_status == 401:
+        raise AuthenticationError('Email or password invalid.')
 
-    elif server_status >= 500:
+    if server_status >= 500:
         raise ServerError("Neomaril server unavailable at the moment.")
+
+    if server_status != 200:
+        raise Exception(f"Unexpected error! {response.text}")
+
+    token = refresh_token(login, password, base_url)
+    version = response.json().get("Version")
+    return token, version
 
 
 @ttl_cache

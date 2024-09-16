@@ -1393,10 +1393,10 @@ class NeomarilTrainingClient(BaseNeomarilClient):
     """
 
     def __repr__(self) -> str:
-        return f'NeomarilTrainingClient(url="{self.base_url}", version="{self.client_version}")'
+        return f'API version {self.version} - NeomarilTrainingClient(url="{self.base_url}", Token="{self.user_token}")'
 
     def __str__(self):
-        return f"NEOMARIL {self.base_url} Training client:{self.client_version}"
+        return f"NEOMARIL {self.base_url} Training client:{self.user_token}"
 
     def get_training(
         self, *, training_id: str, group: str = "datarisk"

@@ -1060,10 +1060,10 @@ class NeomarilModelClient(BaseNeomarilClient):
     """
 
     def __repr__(self) -> str:
-        return f'NeomarilModelClient(url="{self.base_url}", version="{self.client_version}")'
+        return f'API version {self.version} - NeomarilModelClient(url="{self.base_url}", Token="{self.user_token}")'
 
     def __str__(self):
-        return f"NEOMARIL {self.base_url} Model client:{self.client_version}"
+        return f"NEOMARIL {self.base_url} Model client:{self.user_token}"
 
     def __get_model_status(self, model_id: str, group: str) -> dict:
         """
