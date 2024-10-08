@@ -21,18 +21,24 @@ class BaseNeomaril:
         *,
         login: Optional[str] = None,
         password: Optional[str] = None,
-        url: str = "https://neomaril.staging.datarisk.net/",
+        url: Optional[str] = None,
     ) -> None:
-        self.base_url = url
 
         load_dotenv()
         logger.info("Loading .env")
+
+        if url is None:
+            url = os.getenv("NEOMARIL_URL")
+        if url is None:
+            url = "https://neomaril.staging.datarisk.net/"
+
+        logger.info(f"Used url {url}")
 
         self.credentials = (
             login if login else os.getenv("NEOMARIL_USER"),
             password if password else os.getenv("NEOMARIL_PASSWORD"),
         )
-        self.base_url = url if url else os.getenv("NEOMARIL_URL")
+        self.base_url = url
         self.base_url = parse_url(self.base_url)
 
         if self.base_url == "https://neomaril.staging.datarisk.net/":
