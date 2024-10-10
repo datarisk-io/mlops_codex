@@ -608,8 +608,6 @@ class NeomarilTrainingExecution(NeomarilExecution):
         """
 
         url = f"{self.base_url}/model/{operation}/host/{self.group}/{model_id}"
-        if operation == "sync":
-            url = url.replace("7070", "7071")
         response = requests.get(
             url,
             headers={
