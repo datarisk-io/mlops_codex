@@ -459,15 +459,6 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         execution.download_result()
     """
 
-    def __init__(
-        self,
-        *,
-        login: Optional[str] = None,
-        password: Optional[str] = None,
-        url: str = "https://neomaril.staging.datarisk.net/",
-    ) -> None:
-        super().__init__(login=login, password=password, url=url)
-
     def __get_preprocessing_status(self, *, preprocessing_id: str, group: str) -> dict:
         """
         Gets the status of the pre processing with the hash equal to `preprocessing_id`
