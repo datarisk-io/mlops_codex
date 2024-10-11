@@ -2,7 +2,7 @@ Pipeline module
 ===============================
 
 
-This module alows you to configure your model pipeline.
+This module allows you to configure your model pipeline.
 
 
 neomaril\_codex.pipeline.NeomarilPipeline

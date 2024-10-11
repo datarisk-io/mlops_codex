@@ -48,7 +48,7 @@ The return of the function should be a dictionary that can be parsed to a JSON, 
 
 Keep in mind that some data types (like numpy `int64` and `float64` values) cannot normally be parsed to JSON, so your code should handle that before returning the response to Neomaril. 
 
-**Async model:** This is for batch scoring. We send files with usually a lot of records at once. Since this might take a while depeding on the file size, we run this asynchronously.
+**Async model:** This is for batch scoring. We send files with usually a lot of records at once. Since this might take a while depending on the file size, we run this asynchronously.
 The entrypoint function should look like this:
 
 .. code:: python
@@ -148,7 +148,7 @@ With all files ready we can deploy the model in two ways.
 As you can see deploying a model already trained in Neomaril requires less information (the AutoML models require only 2 parameters).
 
 Those methods return a :py:class:`neomaril_codex.model.NeomarilModel`. You can use the *wait_for_ready* parameter on the deployment method or call the :py:meth:`neomaril_codex.model.NeomarilModel.wait_ready` to make sure the :py:class:`neomaril_codex.model.NeomarilModel` instance is ready to use.
-We will install the model depedencies (if you are promoting a training we will use the same as the training execution), and run some tests. For the sync models we require a sample JSON of the expected schema for the API.
+We will install the model dependencies (if you are promoting a training we will use the same as the training execution), and run some tests. For the sync models we require a sample JSON of the expected schema for the API.
 
 If the deployment succeeds you can start using your model.
 
@@ -166,7 +166,7 @@ We can use the same :py:class:`neomaril_codex.model.NeomarilModel` instance to c
     # >>> 2023-05-26 12:04:14.714 | INFO     | neomaril_codex.model:predict:344 - Execution 5 started. Use the id to check its status.
 
 
-Sync models return a dictionary and async models return a :py:class:`neomaril_codex.base.NeomarilExecution` that you can use to check the status and download the result similiar to the training execution.
+Sync models return a dictionary and async models return a :py:class:`neomaril_codex.base.NeomarilExecution` that you can use to check the status and download the result similar to the training execution.
 
 To use the models you need a `group token`, that is generated when creating the group (check :ref:`connecting_to_neomaril:creating a group`). You can add this token in the NEOMARIL_GROUP_TOKEN env variable, use the :py:meth:`neomaril_codex.model.NeomarilModel.set_token` method or add in each :py:meth:`neomaril_codex.model.NeomarilModel.predict` call.
 

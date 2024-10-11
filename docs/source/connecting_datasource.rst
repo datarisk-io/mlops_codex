@@ -63,7 +63,7 @@ You can import a data set via url:
         dataset_name='meudatasetcorreto'
     )
 
-    # >>> 2024-03-20 19:19:58.408 | INFO     | neomaril_codex.datasources:import_dataset:279 - Datasource testeDataSouce import process started! Use the D66c8bc440dc4882bfeff40c0dac11641c3583f3aa274293b15ed5db21000b49 on the `/api/datasets/status` endpoint to check it's status.
+    # >>> 2024-03-20 19:19:58.408 | INFO     | neomaril_codex.datasources:import_dataset:279 - Datasource testeDataSource import process started! Use the D66c8bc440dc4882bfeff40c0dac11641c3583f3aa274293b15ed5db21000b49 on the `/api/datasets/status` endpoint to check it's status.
     # >>> 2024-03-20 19:19:58.410 | INFO     | neomaril_codex.base:__init__:20 - Loading .env
     # >>> 2024-03-20 19:19:58.415 | INFO     | neomaril_codex.base:__init__:30 - Successfully connected to Neomaril
 
