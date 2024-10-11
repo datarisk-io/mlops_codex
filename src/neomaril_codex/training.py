@@ -457,15 +457,15 @@ class NeomarilTrainingExecution(NeomarilExecution):
         source_file : str, optional
             Path of the source file. The file must have a scoring function that accepts two parameters: data (data for the request body of the model) and model_path (absolute path of where the file is located)
         schema : Union[str, dict], optional
-            Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be send as well
+            Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be sending as well
         extra_files list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
         requirements_file : str, optional
-            Path of the requirements file. This will override the requirements used in trainning. The packages versions must be fixed eg: pandas==1.0
+            Path of the requirements file. This will override the requirements used in training. The packages versions must be fixed eg: pandas==1.0
         env : str, optional
             Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is None
         operation : str
-            Defines wich kind operation is beeing executed (Sync or Async). Default value is Sync
+            Defines which kind operation is being executed (Sync or Async). Default value is Sync
         input_type : str
             The type of the input file that should be 'json', 'csv' or 'parquet'
 
@@ -652,7 +652,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
         source_file : str, optional
             Path of the source file. The file must have a scoring function that accepts two parameters: data (data for the request body of the model) and model_path (absolute path of where the file is located)
         schema : Union[str, dict], optional
-            Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be send as well
+            Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be sending as well
         extra_files: list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
         requirements_file : str, optional
@@ -660,7 +660,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
         env : str, optional
             Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
         operation : str
-            Defines wich kind operation is beeing executed (Sync or Async). Default value is Sync
+            Defines which kind operation is being executed (Sync or Async). Default value is Sync
         input_type : str
             The type of the input file that should be 'json', 'csv' or 'parquet'
 
@@ -756,9 +756,9 @@ class NeomarilTrainingExperiment(BaseNeomaril):
     Raises
     ------
     TrainingError
-        When the training can't be acessed in the server
+        When the training can't be accessed in the server
     AuthenticationError
-        Unvalid credentials
+        Invalid credentials
 
     Example
     -------
@@ -867,15 +867,15 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         training_reference : str, optional
             The name of the training function inside the source file. Just used when training_type is Custom
         python_version : str
-            Python version for the model environment. Avaliable versions are 3.8, 3.9, 3.10. Defaults to '3.8'. Just used when training_type is Custom
+            Python version for the model environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.8'. Just used when training_type is Custom
         conf_dict : Union[str, dict], optional
-            Path to a JSON file with a the AutoML configuration. A dict can be send as well. Just used when training_type is AutoML
+            Path to a JSON file with the AutoML configuration. A dict can be sending as well. Just used when training_type is AutoML
         source_file : str, optional
             Path of the source file. The file must have a training function that accepts one parameter: model_path (absolute path of where the file is located). Just used when training_type is Custom
         requirements_file : str, optional
             Path of the requirements file. The packages versions must be fixed eg: pandas==1.0. Just used when training_type is Custom
         env : str, optional
-            .env file to be used in your training enviroment. This will be encrypted in the server.
+            .env file to be used in your training environment. This will be encrypted in the server.
         extra_files : list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file. Just used when training_type is Custom
         X_train: pd.DataFrame, optional
@@ -1122,7 +1122,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         python_version : str, optional
             Python version for the model environment. Avaliable versions are 3.8, 3.9, 3.10. Defaults to '3.8'. Just used when training_type is Custom
         conf_dict : Union[str, dict]
-            Path to a JSON file with a the AutoML configuration. A dict can be send as well. Just used when training_type is AutoML
+            Path to a JSON file with the AutoML configuration. A dict can be sending as well. Just used when training_type is AutoML
         source_file : str, optional
             Path of the source file. The file must have a training function that accepts one parameter: model_path (absolute path of where the file is located). Just used when training_type is Custom
         requirements_file : str
@@ -1272,7 +1272,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         self, exec_id: Optional[str] = None
     ) -> NeomarilTrainingExecution:
         """
-        Get a execution instace.
+        Get the execution instance.
 
         Arguments
         ---------
@@ -1282,7 +1282,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         Returns
         -------
         NeomarilExecution
-            The choosen execution
+            The chosen execution
         """
         if not exec_id:
             self.__refresh_execution_list()
@@ -1313,7 +1313,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
         Returns
         -------
-        List[NeomarilExecution]
+        List[NeomarilTrainingExecution]
             All executions from that training
         """
         self.__refresh_execution_list()
@@ -1359,7 +1359,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
 class NeomarilTrainingClient(BaseNeomarilClient):
     """
-    Class for client for acessing Neomaril and manage models
+    Class for client for accessing Neomaril and manage models
 
     Attributes
     ----------
@@ -1373,7 +1373,7 @@ class NeomarilTrainingClient(BaseNeomarilClient):
     Raises
     ------
     AuthenticationError
-        Unvalid credentials
+        Invalid credentials
     ServerError
         Server unavailable
 
@@ -1453,7 +1453,7 @@ class NeomarilTrainingClient(BaseNeomarilClient):
             InputError: some part of the data is incorrect
             AuthenticationError: user has insufficient permissions
             ServerError: server is not available
-            Exception: generated exception in case of the response to the request is different than 201
+            Exception: generated exception in case of the response to the request is different from 201
 
         Returns:
             str | None: THash if it is found, otherwise, None is returned
@@ -1514,7 +1514,7 @@ class NeomarilTrainingClient(BaseNeomarilClient):
             InputError: some part of the data is incorrect
             AuthenticationError: user has insufficient permissions
             ServerError: server is not available
-            Exception: generated exception in case of the response to the request is different than 201
+            Exception: generated exception in case of the response to the request is different from 201
 
         Returns:
             str: training hash of the experiment

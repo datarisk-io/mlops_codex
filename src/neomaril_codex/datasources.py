@@ -117,8 +117,7 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
         Transform dict to json.
 
         Args:
-            output_filename: The name of output filename to save.
-            input_data: A dictionary to save.
+            input_data (dict): A dictionary to save.
         """
         path = './credentials.json'
         with open(path, "w", encoding='utf-8') as f:
@@ -425,7 +424,7 @@ class NeomarilDataset(BaseNeomaril):
     datasource_name : str
         Name given previously to the datasource.
     group : str
-        Name of the group where we will search the datasources
+        Name of the group where we will search the datasource
     """
     def __init__(self, *, dataset_hash : str, dataset_name : str, datasource_name : str, group : str, login : str, password : str, url : str) -> None:
         super().__init__(login, password, url)

@@ -13,7 +13,7 @@ class NeomarilPipeline(BaseNeomaril):
     """
     Class to construct and orchestrates the flow data of the models inside Neomaril.
 
-    Atributtes
+    Attributes
     ----------
     login : str
         Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
@@ -24,7 +24,7 @@ class NeomarilPipeline(BaseNeomaril):
     url : str
         URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
     python_version : str
-        Python version for the model environment. Avaliable versions are 3.8, 3.9, 3.10. Defaults to '3.9'
+        Python version for the model environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.9'
         
     Example
     --------     
@@ -60,7 +60,7 @@ class NeomarilPipeline(BaseNeomaril):
 
     def register_deploy_config(self, **kwargs) -> dict:
         """
-        Set the files for configure the deploy
+        Set the files for configure the deployment
 
         Parameters
         ----------
@@ -212,7 +212,7 @@ class NeomarilPipeline(BaseNeomaril):
 
     def run_deploy(self, training_id:Optional[str]=None) -> str:
         """
-        Run the deploy process
+        Run the deployment process
 
         Arguments
         ----------

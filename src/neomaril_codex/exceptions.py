@@ -9,27 +9,27 @@ class ServerError(Exception):
 
 
 class ModelError(Exception):
-    """Raised when a model is not avaliable"""
+    """Raised when a model is not available"""
     pass
 
 
 class PreprocessingError(Exception):
-    """Raised when a pre processing is not avaliable"""
+    """Raised when a preprocessing is not available"""
     pass
 
 
 class GroupError(Exception):
-    """Raised when a group is not avaliable"""
+    """Raised when a group is not available"""
     pass
 
 
 class ExecutionError(Exception):
-    """Raised when a execution is not avaliable"""
+    """Raised when a execution is not available"""
     pass
 
 
 class TrainingError(Exception):
-    """Raised when a training is not avaliable"""
+    """Raised when a training is not available"""
     pass
 
 

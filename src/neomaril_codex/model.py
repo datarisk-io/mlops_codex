@@ -35,14 +35,14 @@ class NeomarilModel(BaseNeomaril):
     group_token : str
         Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable NEOMARIL_GROUP_TOKEN
     url : str
-        URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
+        URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set these
     docs : str
         URL for the model Swagger page
 
     Raises
     ------
     ModelError
-        When the model can't be acessed in the server
+        When the model can't be accessed in the server
     AuthenticationError
         Unvalid credentials
 
@@ -185,7 +185,7 @@ class NeomarilModel(BaseNeomaril):
         Returns
         -------
         str
-            OK - if the it is possible to get the health state
+            OK - if it is possible to get the health state
             NOK - if an exception occurs
 
         Example
@@ -458,7 +458,7 @@ class NeomarilModel(BaseNeomaril):
         ---------
         data : Union[dict, str]
             The same data that is used in the source file.
-            If Sync is a dict, the keys that are needed inside this dict are the ones in the `schema` atribute.
+            If Sync is a dict, the keys that are needed inside this dict are the ones in the `schema` attribute.
             If Async is a string with the file path with the same filename used in the source file.
         group_token : str, optional
             Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable NEOMARIL_GROUP_TOKEN
@@ -714,7 +714,7 @@ class NeomarilModel(BaseNeomaril):
     def __call__(self, data: dict) -> dict:
         return self.predict(data=data)
 
-    def get_model_execution(self, exec_id: str) -> None:
+    def get_model_execution(self, exec_id: str) -> NeomarilExecution:
         """
         Get a execution instace for that model.
 
@@ -726,7 +726,7 @@ class NeomarilModel(BaseNeomaril):
         Raises
         ------
         ModelError
-            If the user tries to get a execution from a Sync model
+            If the user tries to get an execution from a Sync model
 
         Example
         -------
@@ -965,7 +965,7 @@ class NeomarilModelClient(BaseNeomarilClient):
     Raises
     ------
     AuthenticationError
-        Unvalid credentials
+        Invalid credentials
     ServerError
         Server unavailable
 
@@ -1200,13 +1200,13 @@ class NeomarilModelClient(BaseNeomarilClient):
         Arguments
         ---------
         name : str, optional
-            Text that its expected to be on the model name. It runs similar to a LIKE query on SQL
+            Text that it's expected to be on the model name. It runs similar to a LIKE query on SQL
         state : str, optional
-            Text that its expected to be on the state. It runs similar to a LIKE query on SQL
+            Text that it's expected to be on the state. It runs similar to a LIKE query on SQL
         group : str, optional
-            Text that its expected to be on the group name. It runs similar to a LIKE query on SQL
+            Text that it's expected to be on the group name. It runs similar to a LIKE query on SQL
         only_deployed : bool, optional
-            If its True, filter only models ready to be used (status == "Deployed"). Defaults to False
+            If it's True, filter only models ready to be used (status == "Deployed"). Defaults to False
 
         Raises
         ------
@@ -1359,7 +1359,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         requirements_file : str
             Path of the requirements file. The packages versions must be fixed eg: pandas==1.0
         schema : Union[str, dict], optional
-            Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be send as well
+            Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be sending as well
         group : str, optional
             Group the model is inserted. If None the server uses 'datarisk' (public group)
         extra_files : list, optional
@@ -1367,9 +1367,9 @@ class NeomarilModelClient(BaseNeomarilClient):
         env : str, optional
             Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
         python_version : str, optional
-            Python version for the model environment. Avaliable versions are 3.8, 3.8, 3.9, 3.10. Defaults to '3.8'
+            Python version for the model environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.8'
         operation : str
-            Defines wich kind operation is beeing executed (Sync or Async). Default value is Sync
+            Defines which kind operation is being executed (Sync or Async). Default value is Sync
         input_type : str
             The type of the input file that should be 'json', 'csv', 'parquet', 'txt', 'xls', 'xlsx'
 
@@ -1524,7 +1524,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         requirements_file : str
             Path of the requirements file. The packages versions must be fixed eg: pandas==1.0
         schema : Union[str, dict]
-            Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be send as well. Mandatory for Sync models
+            Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be sending as well. Mandatory for Sync models
         group : str
             Group the model is inserted. Default to 'datarisk' (public group)
         extra_files : list, optional
@@ -1548,7 +1548,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         Returns
         -------
         Union[NeomarilModel, str]
-            Returns the new model, if wait_for_ready=True runs the deploy process synchronously. If its False, returns nothing after sending all the data to server and runs the deploy asynchronously
+            Returns the new model, if wait_for_ready=True runs the deployment process synchronously. If it's False, returns nothing after sending all the data to server and runs the deployment asynchronously
 
         Example
         -------
@@ -1557,7 +1557,7 @@ class NeomarilModelClient(BaseNeomarilClient):
 
         if python_version not in ["3.8", "3.9", "3.10"]:
             raise InputError(
-                "Invalid python version. Avaliable versions are 3.8, 3.9, 3.10"
+                "Invalid python version. Available versions are 3.8, 3.9, 3.10"
             )
 
         if group:
