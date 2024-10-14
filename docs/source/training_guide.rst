@@ -197,7 +197,7 @@ See the example below, using a python script to perform and save an External tra
 Checking the execution results
 ------------------------------
 
-The return of the :py:meth:`neomaril_codex.training.NeomarilTrainingExperiment.run_training` is a :py:class:`neomaril_codex.training.NeomarilTrainingExecution` instace
+The return of the :py:meth:`neomaril_codex.training.NeomarilTrainingExperiment.run_training` is a :py:class:`neomaril_codex.training.NeomarilTrainingExecution` instance
 With this class we can follow the asynchronous execution of that experiment version and check information on it. 
 
 .. code:: python

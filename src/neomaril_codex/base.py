@@ -127,7 +127,7 @@ class BaseNeomarilClient(BaseNeomaril):
     Raises
     ------
     NotImplementedError
-        When the environment is production, becase itis not implemented yet
+        When the environment is production, because it is not implemented yet
 
     Example
     -------
@@ -183,7 +183,7 @@ class BaseNeomarilClient(BaseNeomaril):
     def create_group(self, *, name: str, description: str) -> bool:
         """
         Create a group for multiple models of the same final client at the end if it returns TRUE, a message with the token for that group will be returned as a INFO message.
-        You should keep this token information to be able to run the model of that group afterwards.
+        You should keep this token information to be able to run the model of that group afterward.
 
         Arguments
         ---------
@@ -232,9 +232,9 @@ class BaseNeomarilClient(BaseNeomaril):
 
     def refresh_group_token(self, *, name: str, force: bool = False) -> bool:
         """
-        Refresh the group token. If the the token its still valid it wont be changed, unless you use parameter force = True.
+        Refresh the group token. If the token it's still valid it won't be changed, unless you use parameter force = True.
         At the end a message with the token for that group will be returned as a INFO message.
-        You should keep this new token information to be able to run the model of that group afterwards.
+        You should keep this new token information to be able to run the model of that group afterward.
 
         Arguments
         ---------
@@ -255,7 +255,7 @@ class BaseNeomarilClient(BaseNeomaril):
 
         Example
         --------
-        Supose that you lost the token to access your group, you can create a new one forcing it with this method as at the example below.
+        Suppose that you lost the token to access your group, you can create a new one forcing it with this method as at the example below.
 
         .. code-block:: python
 
@@ -317,7 +317,7 @@ class NeomarilExecution(BaseNeomaril):
     InputError
         Invalid execution type
     ModelError
-        If the exection id was not found or wasn't possible to retrive it
+        If the execution id was not found or wasn't possible to retrieve it
 
     Example
     -------
@@ -401,7 +401,7 @@ class NeomarilExecution(BaseNeomaril):
                 logger.error(response.text)
                 raise AuthenticationError("Login not authorized")
             elif response.status_code == 404:
-                logger.error(f'Unable to retrive execution "{exec_id}"\n{response.text}')
+                logger.error(f'Unable to retrieve execution "{exec_id}"\n{response.text}')
                 raise ModelError(f'Execution "{exec_id}" not found.')
             elif response.status_code >= 500:
                 logger.error(response.text)

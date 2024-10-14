@@ -34,7 +34,7 @@ class NeomarilPreprocessing(BaseNeomaril):
 
     Example
     --------
-    Getting a model, testint its healthy and putting it to run the prediction
+    Getting a model, testing its healthy and putting it to run the prediction
 
     .. code-block:: python
 
@@ -160,12 +160,12 @@ class NeomarilPreprocessing(BaseNeomaril):
 
     def set_token(self, group_token: str) -> None:
         """
-        Saves the group token for this pre processing instance.
+        Saves the group token for this preprocessing instance.
 
         Arguments
         ---------
         group_token : str
-            Token for executing the pre processing (show when creating a group). You can set this using the NEOMARIL_GROUP_TOKEN env variable
+            Token for executing the preprocessing (show when creating a group). You can set this using the NEOMARIL_GROUP_TOKEN env variable
 
         Example
         -------
@@ -183,18 +183,18 @@ class NeomarilPreprocessing(BaseNeomaril):
         wait_complete: Optional[bool] = False,
     ) -> Union[dict, NeomarilExecution]:
         """
-        Runs a prediction from the current pre processing.
+        Runs a prediction from the current preprocessing.
 
         Arguments
         ---------
         data : Union[dict, str]
             The same data that is used in the source file.
-            If Sync is a dict, the keys that are needed inside this dict are the ones in the `schema` atribute.
+            If Sync is a dict, the keys that are needed inside this dict are the ones in the `schema` attribute.
             If Async is a string with the file path with the same filename used in the source file.
         group_token : str, optional
-            Token for executing the pre processing (show when creating a group). It can be informed when getting the preprocessing or when running predictions, or using the env variable NEOMARIL_GROUP_TOKEN
+            Token for executing the preprocessing (show when creating a group). It can be informed when getting the preprocessing or when running predictions, or using the env variable NEOMARIL_GROUP_TOKEN
         wait_complete: bool, optional
-            Boolean that informs if a pre processing training is completed (True) or not (False). Default value is False
+            Boolean that informs if a preprocessing training is completed (True) or not (False). Default value is False
 
         Raises
         ------
@@ -204,7 +204,7 @@ class NeomarilPreprocessing(BaseNeomaril):
         Returns
         -------
         Union[dict, NeomarilExecution]
-            The return of the scoring function in the source file for Sync pre processing or the execution class for Async pre processing.
+            The return of the scoring function in the source file for Sync preprocessing or the execution class for Async preprocessing.
         """
         if self.__preprocessing_ready:
             if (group_token is not None) | (self.__token is not None):
@@ -268,21 +268,11 @@ class NeomarilPreprocessing(BaseNeomaril):
             else:
                 raise AuthenticationError("Group token not informed")
         return run
-        # else:
-        #     url = f"{self.base_url}/preprocessing/describe/{self.group}/{self.preprocessing_id}"
-        #     response = requests.get(url, headers={'Authorization': 'Bearer ' + self.credentials}).json()['Description']
-        #     if response['Status'] == "Deployed":
-        #         self.preprocessing_data = response
-        #         self.status = response['Status']
-        #         self.__preprocessing_ready = True
-        #         return self.predict(data)
 
-        #     else:
-        #         raise PreprocessingError('Pre processing is not available to predictions')
 
     def get_preprocessing_execution(self, exec_id: str) -> NeomarilExecution:
         """
-        Get a execution instance for that preprocessing.
+        Get an execution instance for that preprocessing.
 
         Arguments
         ---------
@@ -292,7 +282,7 @@ class NeomarilPreprocessing(BaseNeomaril):
         Raises
         ------
         PreprocessingError
-            If the user tries to get a execution from a Sync preprocessing
+            If the user tries to get an execution from a Sync preprocessing
 
         Example
         -------
@@ -358,7 +348,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
     Raises
     ------
     AuthenticationError
-        Unvalid credentials
+        Invalid credentials
     ServerError
         Server unavailable
 
@@ -461,14 +451,14 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
 
     def __get_preprocessing_status(self, *, preprocessing_id: str, group: str) -> dict:
         """
-        Gets the status of the pre processing with the hash equal to `preprocessing_id`
+        Gets the status of the preprocessing with the hash equal to `preprocessing_id`
 
         Parameters
         ----------
         group : str
-            Group the pre processing is inserted
+            Group the preprocessing is inserted
         preprocessing_id : str
-            Pre processing id (hash) from the pre processing being searched
+            Pre processing id (hash) from the preprocessing being searched
 
         Raises
         ------
@@ -478,7 +468,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         Returns
         -------
         dict
-            The pre processing status and a message if the status is 'Failed'
+            The preprocessing status and a message if the status is 'Failed'
         """
 
         url = f"{self.base_url}/preprocessing/status/{group}/{preprocessing_id}"
@@ -505,18 +495,18 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         wait_for_ready: bool = True,
     ) -> NeomarilPreprocessing:
         """
-        Access a pre processing using its id
+        Access a preprocessing using its id
 
         Arguments
         ---------
         preprocessing_id : str
             Pre processing id (hash) that needs to be accessed
         group : str
-            Group the pre processing is inserted. Default is 'datarisk' (public group)
+            Group the preprocessing is inserted. Default is 'datarisk' (public group)
         group_token : str, optional
-            Token for executing the pre processing (show when creating a group). It can be informed when getting the preprocessing or when running predictions, or using the env variable NEOMARIL_GROUP_TOKEN
+            Token for executing the preprocessing (show when creating a group). It can be informed when getting the preprocessing or when running predictions, or using the env variable NEOMARIL_GROUP_TOKEN
         wait_for_ready : bool
-            If the pre processing is being deployed, wait for it to be ready instead of failing the request. Defaults to True
+            If the preprocessing is being deployed, wait for it to be ready instead of failing the request. Defaults to True
 
         Raises
         ------
@@ -528,7 +518,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         Returns
         -------
         NeomarilPreprocessing
-            A NeomarilPreprocessing instance with the pre processing hash from `preprocessing_id`
+            A NeomarilPreprocessing instance with the preprocessing hash from `preprocessing_id`
 
         Example
         -------
@@ -597,18 +587,18 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         only_deployed: bool = False,
     ) -> list:
         """
-        Search for pre processing using the name of the pre processing
+        Search for preprocessing using the name of the preprocessing
 
         Arguments
         ---------
         name : str, optional
-            Text that its expected to be on the pre processing name. It runs similar to a LIKE query on SQL
+            Text that it's expected to be on the preprocessing name. It runs similar to a LIKE query on SQL
         state : str, optional
-            Text that its expected to be on the state. It runs similar to a LIKE query on SQL
+            Text that it's expected to be on the state. It runs similar to a LIKE query on SQL
         group : str, optional
-            Text that its expected to be on the group name. It runs similar to a LIKE query on SQL
+            Text that it's expected to be on the group name. It runs similar to a LIKE query on SQL
         only_deployed : bool, optional
-            If its True, filter only pre processing ready to be used (status == "Deployed"). Defaults to False
+            If it's True, filter only preprocessing ready to be used (status == "Deployed"). Defaults to False
 
         Raises
         ------
@@ -618,7 +608,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         Returns
         -------
         list
-            List with the pre processing data, it can works like a filter depending on the arguments values
+            List with the preprocessing data, it can works like a filter depending on the arguments values
         Example
         -------
         >>> client.search_preprocessing(group='ex_group', only_deployed=True)
@@ -738,7 +728,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         Arguments
         ---------
         preprocessing_name : str
-            The name of the pre processing, in less than 32 characters
+            The name of the preprocessing, in less than 32 characters
         preprocessing_reference : str
             The name of the scoring function inside the source file
         source_file : str
@@ -746,17 +736,17 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         requirements_file : str
             Path of the requirements file. The packages versions must be fixed eg: pandas==1.0
         schema : Union[str, dict], optional
-            Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be send as well
+            Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be sending as well
         group : str, optional
-            Group the pre processing is inserted. If None the server uses 'datarisk' (public group)
+            Group the preprocessing is inserted. If None the server uses 'datarisk' (public group)
         extra_files : list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
         env : str, optional
             Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
         python_version : str, optional
-            Python version for the pre processing environment. Avaliable versions are 3.8, 3.9, 3.10. Defaults to '3.8'
+            Python version for the preprocessing environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.8'
         operation : str
-            Defines wich kind operation is beeing executed (Sync or Async). Default value is Sync
+            Defines which kind operation is being executed (Sync or Async). Default value is Sync
         input_type : str
             The type of the input file that should be 'json', 'csv' or 'parquet'
 
@@ -768,7 +758,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         Returns
         -------
         str
-            The new pre processing id (hash)
+            The new preprocessing id (hash)
         """
         url = f"{self.base_url}/preprocessing/register/{group}"
 
@@ -848,11 +838,11 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         Arguments
         ---------
         operation : str
-            The pre processing operation type (Sync or Async)
+            The preprocessing operation type (Sync or Async)
         preprocessing_id : str
-            The uploaded pre processing id (hash)
+            The uploaded preprocessing id (hash)
         group : str
-            Group the pre processing is inserted. Default is 'datarisk' (public group)
+            Group the preprocessing is inserted. Default is 'datarisk' (public group)
 
         Raises
         ------
@@ -906,7 +896,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         Arguments
         ---------
         preprocessing_name : str
-            The name of the pre processing, in less than 32 characters
+            The name of the preprocessing, in less than 32 characters
         preprocessing_reference : str
             The name of the scoring function inside the source file
         source_file : str
@@ -914,15 +904,15 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         requirements_file : str
             Path of the requirements file. The packages versions must be fixed eg: pandas==1.0
         schema : Union[str, dict]
-            Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be send as well. Mandatory for Sync preprocessing
+            Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be sending as well. Mandatory for Sync preprocessing
         group : str
-            Group the pre processing is inserted. Default to 'datarisk' (public group)
+            Group the preprocessing is inserted. Default to 'datarisk' (public group)
         extra_files : list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
         env : str, optional
             Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
         python_version : str, optional
-            Python version for the pre processing environment. Avaliable versions are 3.8, 3.9, 3.10. Defaults to '3.8'
+            Python version for the preprocessing environment. Avaliable versions are 3.8, 3.9, 3.10. Defaults to '3.8'
         operation : str
             Defines wich kind operation is beeing executed (Sync or Async). Default value is Sync
         input_type : str
@@ -938,7 +928,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         Returns
         -------
         Union[NeomarilPreprocessing, str]
-            Returns the new preprocessing, if wait_for_ready=True runs the deploy process synchronously. If its False, returns nothing after sending all the data to server and runs the deploy asynchronously
+            Returns the new preprocessing, if wait_for_ready=True runs the deployment process synchronously. If it's False, returns nothing after sending all the data to server and runs the deployment asynchronously
 
         Example
         -------
@@ -996,7 +986,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         self, preprocessing_id: str, exec_id: str, group: Optional[str] = None
     ) -> NeomarilExecution:
         """
-        Get a execution instace (Async pre processing only).
+        Get a execution instace (Async preprocessing only).
 
         Arguments
         ---------
