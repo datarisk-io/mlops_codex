@@ -30,7 +30,6 @@ class BaseNeomaril:
         password: Optional[str] = None,
         url: Optional[str] = None,
     ) -> None:
-
         load_dotenv()
         logger.info("Loading .env")
 
@@ -58,7 +57,7 @@ class BaseNeomaril:
             self.credentials[1],
             self.base_url,
         )
-        logger.info(f"Successfully connected to Neomaril")
+        logger.info("Successfully connected to Neomaril")
 
     def _logs(
         self,
@@ -408,7 +407,9 @@ class NeomarilExecution(BaseNeomaril):
                 logger.error(response.text)
                 raise AuthenticationError("Login not authorized")
             elif response.status_code == 404:
-                logger.error(f'Unable to retrieve execution "{exec_id}"\n{response.text}')
+                logger.error(
+                    f'Unable to retrieve execution "{exec_id}"\n{response.text}'
+                )
                 raise ModelError(f'Execution "{exec_id}" not found.')
             elif response.status_code >= 500:
                 logger.error(response.text)
