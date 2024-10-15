@@ -448,7 +448,7 @@ class NeomarilExecution(BaseNeomaril):
 
         return result
 
-    def wait_ready(self):
+    def wait_ready(self) -> None:
         """
         Waits the execution until is no longer running
 
@@ -456,11 +456,15 @@ class NeomarilExecution(BaseNeomaril):
         -------
         >>> model.wait_ready()
         """
-        if self.status in ["Requested", "Running"]:
+
+        self.status = self.get_status()["Status"]
+        while self.status in ["Requested", "Running"]:
+            sleep(30)
             self.status = self.get_status()["Status"]
-            while self.status == "Running":
-                sleep(30)
-                self.status = self.get_status()["Status"]
+        if self.status == "Failed":
+            logger.error("Execution failed! Please check the logs")
+            raise ExecutionError("Execution failed") # TODO: how to improve this message?
+        logger.info("Execution completed successfully")
 
     def download_result(
         self, *, path: Optional[str] = "./", filename: Optional[str] = "output.zip"
