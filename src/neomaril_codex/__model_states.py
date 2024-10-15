@@ -4,29 +4,38 @@ to 'state.py' or something similar. The purpose will be modeling the possible st
 application
 """
 
-from enum import Enum, auto
+from enum import Enum
 
 
-class ModelState(Enum):
+class ModelState(str, Enum):
     """
-    Possible states of a mode
+    States of a model
     """
 
-    Ready = auto()
-    Building = auto()
-    Recovering = auto()
-    FailedRecovery = auto()
-    Failed = auto()
-    Deployed = auto()
-    Disabled = auto()
-    DisabledRecovery = auto()
-    DisabledFailed = auto()
-    Deleted = auto()
+    Ready = "Ready"
+    Building = "Building"
+    Recovering = "Recovering"
+    FailedRecovery = "FailedRecovery"
+    Failed = "Failed"
+    Deployed = "Deployed"
+    Disabled = "Disabled"
+    DisabledRecovery = "DisabledRecovery"
+    DisabledFailed = "DisabledFailed"
+    Deleted = "Deleted"
 
-    def __eq__(self, other):
-        if isinstance(other, str):
-            return str(self.name) == other
-        return super().__eq__(other)
+    def __str__(self):
+        return self.name
+
+
+class ModelExecutionState(str, Enum):
+    """
+    State of a model execution
+    """
+
+    Requested = "Requested"
+    Running = "Running"
+    Succeeded = "Succeeded"
+    Failed = "Failed"
 
     def __str__(self):
         return self.name
