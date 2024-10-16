@@ -2,6 +2,7 @@ import io
 import json
 
 import requests
+import yaml
 from cachetools.func import ttl_cache
 
 from neomaril_codex.exceptions import AuthenticationError, ServerError
@@ -70,3 +71,7 @@ def refresh_token(login: str, password: str, base_url: str):
         return respose.json()["Token"]
     else:
         raise AuthenticationError(respose.text)
+
+
+def parse_json_to_yaml(json_dict) -> str:
+    return yaml.dump(json_dict)
