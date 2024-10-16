@@ -3,6 +3,7 @@ import sys
 from datetime import datetime, timedelta
 from time import sleep
 from typing import Optional
+from http import HTTPStatus
 
 import requests
 from dotenv import load_dotenv
@@ -233,18 +234,24 @@ class BaseNeomarilClient(BaseNeomaril):
             logger.info(
                 f"Group '{name}' inserted. Use the token for scoring. Carefully save it as we won't show it again. Token: {t}"
             )
-        elif response.status_code == 409:
-            logger.info(f"Something went wrong:\n {parse_json_to_yaml(response.json())}")
+            return HTTPStatus.OK
+        
+        formatted_msg = parse_json_to_yaml(response.json())
+
+        if response.status_code == 409:
+            logger.info(f"Something went wrong:\n {formatted_msg}")
             raise GroupError("Group already exist, nothing was changed.")
-        elif response.status_code == 401:
-            logger.error(f"Something went wrong:\n {parse_json_to_yaml(response.json())}")
+
+        if response.status_code == 401:
+            logger.error(f"Something went wrong:\n {formatted_msg}")
             raise AuthenticationError("Login not authorized")
-        elif response.status_code >= 500:
-            logger.error(f"Something went wrong:\n {parse_json_to_yaml(response.json())}")
+
+        if response.status_code >= 500:
+            logger.error(f"Something went wrong:\n {formatted_msg}")
             raise ServerError("Server Error")
-        else:
-            logger.error(f"Something went wrong:\n {parse_json_to_yaml(response.json())}")
-            raise InputError("Bad Input. Client error")
+    
+        logger.error(f"Something went wrong:\n {formatted_msg}")
+        raise InputError("Bad Input. Client error")
 
     def refresh_group_token(self, *, name: str, force: bool = False) -> bool:
         """
@@ -294,17 +301,20 @@ class BaseNeomarilClient(BaseNeomaril):
         )
 
         if response.status_code == 201:
-            logger.info(f"Group '{name}' was refreshed")
-            return response.json()["Token"]
-        elif response.status_code == 401:
+            t = response.json()["Token"]
+            logger.info(f"Group '{name}' was refreshed. New token: {t}")
+            return HTTPStatus.OK
+
+        if response.status_code == 401:
             logger.error(response.text)
             raise AuthenticationError("Login not authorized")
-        elif response.status_code >= 500:
+
+        if response.status_code >= 500:
             logger.error(response.text)
             raise ServerError("Server Error")
-        else:
-            logger.error(response.text)
-            raise InputError("Bad Input. Client error")
+
+        logger.error(response.text)
+        raise InputError("Bad Input. Client error")
 
 
 class NeomarilExecution(BaseNeomaril):
