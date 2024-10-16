@@ -4,7 +4,7 @@ import json
 import requests
 from cachetools.func import ttl_cache
 
-from neomaril_codex.exceptions import *
+from neomaril_codex.exceptions import AuthenticationError, ServerError
 
 
 def parse_dict_or_file(obj):
