@@ -7,8 +7,15 @@ import requests
 from dotenv import load_dotenv
 from loguru import logger
 
-from neomaril_codex.__utils import *
-from neomaril_codex.exceptions import *
+from neomaril_codex.__model_states import ModelExecutionState
+from neomaril_codex.__utils import parse_url, refresh_token, try_login
+from neomaril_codex.exceptions import (
+    AuthenticationError,
+    ExecutionError,
+    InputError,
+    ModelError,
+    ServerError,
+)
 
 
 class BaseNeomaril:
@@ -23,7 +30,6 @@ class BaseNeomaril:
         password: Optional[str] = None,
         url: Optional[str] = None,
     ) -> None:
-
         load_dotenv()
         logger.info("Loading .env")
 
@@ -51,7 +57,7 @@ class BaseNeomaril:
             self.credentials[1],
             self.base_url,
         )
-        logger.info(f"Successfully connected to Neomaril")
+        logger.info("Successfully connected to Neomaril")
 
     def _logs(
         self,
@@ -365,7 +371,7 @@ class NeomarilExecution(BaseNeomaril):
 
         self.exec_type = exec_type
         self.exec_id = exec_id
-        self.status = "Requested"
+        self.status = ModelExecutionState.Requested
         self.group = group
         self.__token = group_token if group_token else os.getenv("NEOMARIL_GROUP_TOKEN")
 
@@ -381,11 +387,11 @@ class NeomarilExecution(BaseNeomaril):
             )
 
         if exec_type == "AsyncPreprocessing":
-            # CHANGEME when add describe execution for preprocessing
+            # TODO: CHANGEME when add describe execution for preprocessing
 
             self.execution_data = {}
 
-            self.status = "Running"
+            self.status = ModelExecutionState.Running
 
         else:
             url = f"{self.base_url}/{self.__url_path.replace('/async', '')}/describe/{group}/{parent_id}/{exec_id}"
@@ -401,7 +407,9 @@ class NeomarilExecution(BaseNeomaril):
                 logger.error(response.text)
                 raise AuthenticationError("Login not authorized")
             elif response.status_code == 404:
-                logger.error(f'Unable to retrieve execution "{exec_id}"\n{response.text}')
+                logger.error(
+                    f'Unable to retrieve execution "{exec_id}"\n{response.text}'
+                )
                 raise ModelError(f'Execution "{exec_id}" not found.')
             elif response.status_code >= 500:
                 logger.error(response.text)
@@ -409,7 +417,7 @@ class NeomarilExecution(BaseNeomaril):
 
             self.execution_data = response.json()["Description"]
 
-            self.status = self.execution_data["ExecutionState"]
+            self.status = ModelExecutionState[self.execution_data["ExecutionState"]]
 
     def __repr__(self) -> str:
         return f"""Neomaril{self.exec_type}Execution(exec_id="{self.exec_id}", status="{self.status}")"""
@@ -443,12 +451,12 @@ class NeomarilExecution(BaseNeomaril):
 
         result = response.json()
 
-        self.status = result["Status"]
+        self.status = ModelExecutionState[result["Status"]]
         self.execution_data["ExecutionState"] = result["Status"]
 
         return result
 
-    def wait_ready(self):
+    def wait_ready(self) -> None:
         """
         Waits the execution until is no longer running
 
@@ -456,11 +464,20 @@ class NeomarilExecution(BaseNeomaril):
         -------
         >>> model.wait_ready()
         """
-        if self.status in ["Requested", "Running"]:
-            self.status = self.get_status()["Status"]
-            while self.status == "Running":
-                sleep(30)
-                self.status = self.get_status()["Status"]
+
+        self.status = ModelExecutionState[self.get_status()["Status"]]
+        while self.status in [
+            ModelExecutionState.Requested,
+            ModelExecutionState.Running,
+        ]:
+            sleep(30)
+            self.status = ModelExecutionState[self.get_status()["Status"]]
+        if self.status == ModelExecutionState.Failed:
+            logger.error("Execution failed! Please check the logs")
+            raise ExecutionError(
+                "Execution failed"
+            )  # TODO: how to improve this message?
+        logger.info("Execution completed successfully")
 
     def download_result(
         self, *, path: Optional[str] = "./", filename: Optional[str] = "output.zip"
@@ -485,15 +502,15 @@ class NeomarilExecution(BaseNeomaril):
         dict
             Returns the path for the result file.
         """
-        if self.status in ["Running", "Requested"]:
-            self.status = self.get_status()["Status"]
+        if self.status in [ModelExecutionState.Running, ModelExecutionState.Requested]:
+            self.status = ModelExecutionState[self.get_status()["Status"]]
 
         if self.exec_type in ["AsyncModel", "AsyncPreprocessing"]:
             token = self.__token
         elif self.exec_type == "Training":
             token = refresh_token(*self.credentials, self.base_url)
 
-        if self.status == "Succeeded":
+        if self.status == ModelExecutionState.Succeeded:
             url = (
                 f"{self.base_url}/{self.__url_path}/result/{self.group}/{self.exec_id}"
             )
@@ -509,7 +526,7 @@ class NeomarilExecution(BaseNeomaril):
                 f.write(response.content)
 
             logger.info(f"Output saved in {path+filename}")
-        elif self.status == "Failed":
+        elif self.status == ModelExecutionState.Failed:
             raise ExecutionError("Execution failed")
         else:
             logger.info(f"Execution not ready. Status is {self.status}")
