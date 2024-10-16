@@ -10,6 +10,9 @@ from loguru import logger
 from neomaril_codex.__utils import *
 from neomaril_codex.exceptions import *
 
+logger.remove(0)
+logger.add(sys.stdout, format="{level} - {message}", filter=filter_log(["INFO", "ERROR"]))
+
 
 class BaseNeomaril:
     """
@@ -51,7 +54,7 @@ class BaseNeomaril:
             self.credentials[1],
             self.base_url,
         )
-        logger.info(f"Successfully connected to Neomaril")
+        logger.info("Successfully connected to Neomaril")
 
     def _logs(
         self,
@@ -212,22 +215,21 @@ class BaseNeomarilClient(BaseNeomaril):
         )
 
         if response.status_code == 201:
+            t = response.json().get("Token")
             logger.info(
-                f"Group '{name}' inserted. Use the token for scoring. Carefully save it as we won't show it again."
+                f"Group '{name}' inserted. Use the token for scoring. Carefully save it as we won't show it again. Token: {t}"
             )
-            return response.json()["Token"]
-        elif response.status_code == 400:
-            logger.error(response.text)
-            logger.error("Group already exist, nothing was changed.")
-            return False
+        elif response.status_code == 409:
+            logger.info(f"Something went wrong:\n {parse_json_to_yaml(response.json())}")
+            raise GroupError("Group already exist, nothing was changed.")
         elif response.status_code == 401:
-            logger.error(response.text)
+            logger.error(f"Something went wrong:\n {parse_json_to_yaml(response.json())}")
             raise AuthenticationError("Login not authorized")
         elif response.status_code >= 500:
-            logger.error(response.text)
+            logger.error(f"Something went wrong:\n {parse_json_to_yaml(response.json())}")
             raise ServerError("Server Error")
         else:
-            logger.error(response.text)
+            logger.error(f"Something went wrong:\n {parse_json_to_yaml(response.json())}")
             raise InputError("Bad Input. Client error")
 
     def refresh_group_token(self, *, name: str, force: bool = False) -> bool:
