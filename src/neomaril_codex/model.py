@@ -589,12 +589,7 @@ class NeomarilModel(BaseNeomaril):
                         response = run.get_status()
                         status = response["Status"]
                         if wait_complete:
-                            print("Waiting the training run.", end="")
-                            while status in ["Running", "Requested"]:
-                                sleep(30)
-                                print(".", end="", flush=True)
-                                response = run.get_status()
-                                status = response["Status"]
+                            run.wait_ready()
                         if status == "Failed":
                             logger.error(response["Message"])
                             raise ExecutionError("Training execution failed")
