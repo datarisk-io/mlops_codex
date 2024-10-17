@@ -74,4 +74,12 @@ def refresh_token(login: str, password: str, base_url: str):
 
 
 def parse_json_to_yaml(json_dict) -> str:
+    """Parse a json file to yaml format
+
+    Args:
+        json_dict (dict): data in a json format
+
+    Returns:
+        str: data in the yaml format
+    """
     return yaml.dump(json_dict, allow_unicode=True, default_flow_style=False)
