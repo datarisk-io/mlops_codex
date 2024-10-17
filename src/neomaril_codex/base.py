@@ -535,3 +535,7 @@ class NeomarilExecution(BaseNeomaril):
             raise ExecutionError("Execution failed")
         else:
             logger.info(f"Execution not ready. Status is {self.status}")
+
+    def execution_info(self) -> None:
+        """Show the execution data in a better format"""
+        print(parse_json_to_yaml(self.execution_data))
