@@ -74,13 +74,4 @@ def refresh_token(login: str, password: str, base_url: str):
 
 
 def parse_json_to_yaml(json_dict) -> str:
-    return yaml.dump(json_dict)
-
-
-def filter_log(levels):
-    def is_level(record) -> bool:
-        for level in levels:
-            if record["level"].name == level:
-                return True
-        return False
-    return is_level
+    return yaml.dump(json_dict, allow_unicode=True, default_flow_style=False)

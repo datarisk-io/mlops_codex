@@ -18,9 +18,11 @@ from neomaril_codex.__utils import *
 from neomaril_codex.base import *
 from neomaril_codex.datasources import NeomarilDataset
 from neomaril_codex.exceptions import *
+from neomaril_codex.logger_config import get_logger
 from neomaril_codex.model import NeomarilModel
 
 patt = re.compile(r"(\d+)")
+logger = get_logger()
 
 
 class NeomarilTrainingLogger:

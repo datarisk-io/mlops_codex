@@ -24,9 +24,9 @@ from neomaril_codex.exceptions import (
     ModelError,
     ServerError,
 )
+from neomaril_codex.logger_config import get_logger
 
-logger.remove(0)
-logger.add(sys.stdout, format="{level} - {message}", filter=filter_log(["INFO", "ERROR"]))
+logger = get_logger()
 
 
 class BaseNeomaril:
