@@ -2,7 +2,6 @@ import json
 import os
 from datetime import datetime
 from typing import Optional
-from datetime import datetime
 
 import yaml
 from dotenv import load_dotenv

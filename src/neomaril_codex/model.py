@@ -30,7 +30,7 @@ from neomaril_codex.exceptions import (
 from neomaril_codex.logger_config import get_logger
 from neomaril_codex.preprocessing import NeomarilPreprocessing
 
-from neomaril_codex.__model_states import ModelState
+logger = get_logger()
 
 
 class NeomarilModel(BaseNeomaril):
@@ -110,14 +110,18 @@ class NeomarilModel(BaseNeomaril):
             },
         )
 
+        formatted_msg = parse_json_to_yaml(response.json())
+
         if response.status_code == 401:
-            logger.error(response.text)
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise AuthenticationError("Login not authorized")
-        elif response.status_code == 404:
-            logger.error(response.text)
+
+        if response.status_code == 404:
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ModelError(f'Model "{model_id}" not found.')
-        elif response.status_code >= 500:
-            logger.error(response.text)
+
+        if response.status_code >= 500:
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ServerError("Server Error")
 
         self.model_data = response.json()["Description"]
@@ -168,15 +172,17 @@ class NeomarilModel(BaseNeomaril):
         if response.status_code == 200:
             return ModelState[response.json().get("Status")]
 
+        formatted_msg = parse_json_to_yaml(response.json())
+
         if response.status_code == 401:
-            logger.error(response.text)
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise AuthenticationError("Login not authorized")
 
         if response.status_code >= 500:
-            logger.error(response.text)
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ServerError("Server Error")
 
-        logger.error(response.text)
+        logger.error(f"Something went wrong...\n{formatted_msg}")
         raise ModelError("Could not get the status of the model")
 
     def wait_ready(self):
@@ -225,15 +231,19 @@ class NeomarilModel(BaseNeomaril):
             )
             if response.status_code == 200:
                 return response.json()["Message"]
-            elif response.status_code == 401:
-                logger.error(response.text)
+
+            formatted_msg = parse_json_to_yaml(response.json())
+
+            if response.status_code == 401:
+                logger.error(f"Something went wrong...\n{formatted_msg}")
                 raise AuthenticationError("Login not authorized")
-            elif response.status_code >= 500:
-                logger.error(response.text)
+
+            if response.status_code >= 500:
+                logger.error(f"Something went wrong...\n{formatted_msg}")
                 raise ServerError("Server Error")
-            else:
-                logger.error(response.text)
-                raise ModelError("Could not get the health of the model")
+
+            logger.error(f"Something went wrong...\n{formatted_msg}")
+            raise ModelError("Could not get the health of the model")
 
     def restart_model(self, *, wait_for_ready: bool = True):
         """
@@ -262,16 +272,18 @@ class NeomarilModel(BaseNeomaril):
             },
         )
 
+        formatted_msg = parse_json_to_yaml(response.json())
+
         if response.status_code == 401:
-            logger.error(response.text)
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise AuthenticationError("Login not authorized")
 
         if response.status_code >= 500:
-            logger.error(response.text)
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ServerError("Server Error")
 
         if response.status_code != 200:
-            logger.error(response.text)
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ModelError("Could not restart the model")
 
         logger.info("Model is restarting")
@@ -364,16 +376,18 @@ class NeomarilModel(BaseNeomaril):
             headers={"Authorization": "Bearer " + token},
         )
 
+        formatted_msg = parse_json_to_yaml(req.json())
+
         if req.status_code == 401:
-            logger.error(req.text)
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise AuthenticationError("Login not authorized")
 
         if req.status_code >= 500:
-            logger.error(req.text)
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ServerError("Server Error")
 
         if req.status_code != 200:
-            logger.error(req.text)
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ModelError("Failed to delete model.")
 
         response = requests.get(
@@ -415,16 +429,18 @@ class NeomarilModel(BaseNeomaril):
             headers={"Authorization": "Bearer " + token},
         )
 
+        formatted_msg = parse_json_to_yaml(req.json())
+
         if req.status_code == 401:
-            logger.error(req.text)
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise AuthenticationError("Login not authorized")
 
         if req.status_code >= 500:
-            logger.error(req.text)
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ServerError("Server Error")
 
         if req.status_code != 200:
-            logger.error(req.text)
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ModelError("Failed to delete model.")
 
         response = requests.get(
@@ -845,15 +861,20 @@ class NeomarilModel(BaseNeomaril):
 
         if response.status_code == 200:
             logger.info(f'Model monitoring host started - Hash: "{model_id}"')
-        elif response.status_code == 401:
-            logger.error(response.text)
+            return HTTPStatus.OK
+
+        formatted_msg = parse_json_to_yaml(response.json())
+
+        if response.status_code == 401:
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise AuthenticationError("Login not authorized")
-        elif response.status_code >= 500:
-            logger.error(response.text)
+
+        if response.status_code >= 500:
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ServerError("Server Error")
-        else:
-            logger.error("Model monitoring host error: " + response.text)
-            raise InputError("Monitoring host error")
+
+        logger.error("Model monitoring host error: " + response.text)
+        raise InputError("Monitoring host error")
 
     def register_monitoring(
         self,
@@ -953,15 +974,23 @@ class NeomarilModel(BaseNeomaril):
             self.__host_monitoring_status(group=self.group, model_id=model_id)
 
             return model_id
-        elif response.status_code == 401:
-            logger.error(response.text)
+
+        formatted_msg = parse_json_to_yaml(response.json())
+
+        if response.status_code == 401:
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise AuthenticationError("Login not authorized")
-        elif response.status_code >= 500:
-            logger.error(response.text)
+
+        if response.status_code >= 500:
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ServerError("Server Error")
-        else:
-            logger.error("Upload error: " + response.text)
-            raise InputError("Invalid parameters for model creation")
+
+        logger.error("Upload error: " + response.text)
+        raise InputError("Invalid parameters for model creation")
+
+    def model_info(self) -> None:
+        """Show the model data in a better format"""
+        print(parse_json_to_yaml(self.model_data))
 
 
 class NeomarilModelClient(BaseNeomarilClient):
@@ -1269,15 +1298,6 @@ class NeomarilModelClient(BaseNeomarilClient):
                     r["Schema"] = json.loads(schema)
                 parsed_results.append(r)
 
-            return [NeomarilModel(
-                        model_id=m['ModelHash'],
-                        login=self.credentials[0],
-                        password=self.credentials[1],
-                        group=m['Group'],
-                        url=self.base_url) for m in parsed_results]
-        
-        elif response.status_code == 401:
-            logger.error(response.text)
             return [
                 NeomarilModel(
                     model_id=m["ModelHash"],
@@ -1288,13 +1308,19 @@ class NeomarilModelClient(BaseNeomarilClient):
                 )
                 for m in parsed_results
             ]
+
+        formatted_msg = parse_json_to_yaml(response.json())
+
+        if response.status_code == 401:
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise AuthenticationError("Login not authorized")
-        elif response.status_code >= 500:
-            logger.error(response.text)
+
+        if response.status_code >= 500:
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ServerError("Server Error")
-        else:
-            logger.error(response.text)
-            raise ModelError("Could not search the model")
+
+        logger.error(f"Something went wrong...\n{formatted_msg}")
+        raise ModelError("Could not search the model")
 
     def get_logs(
         self,
@@ -1466,15 +1492,19 @@ class NeomarilModelClient(BaseNeomarilClient):
             model_id = data["ModelHash"]
             logger.info(f'{data["Message"]} - Hash: "{model_id}"')
             return model_id
-        elif response.status_code == 401:
-            logger.error(response.text)
+
+        formatted_msg = parse_json_to_yaml(response.json())
+
+        if response.status_code == 401:
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise AuthenticationError("Login not authorized")
-        elif response.status_code >= 500:
-            logger.error(response.text)
+
+        if response.status_code >= 500:
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ServerError("Server Error")
-        else:
-            logger.error("Upload error: " + response.text)
-            raise InputError("Invalid parameters for model creation")
+
+        logger.error("Upload error: " + response.text)
+        raise InputError("Invalid parameters for model creation")
 
     def __host_model(self, *, operation: str, model_id: str, group: str) -> None:
         """
@@ -1506,15 +1536,19 @@ class NeomarilModelClient(BaseNeomarilClient):
         )
         if response.status_code == 202:
             logger.info(f"Model host in process - Hash: {model_id}")
-        elif response.status_code == 401:
-            logger.error(response.text)
+
+        formatted_msg = parse_dict_or_file(response.json())
+
+        if response.status_code == 401:
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise AuthenticationError("Login not authorized")
-        elif response.status_code >= 500:
-            logger.error(response.text)
+
+        if response.status_code >= 500:
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ServerError("Server Error")
-        else:
-            logger.error(response.text)
-            raise InputError("Invalid parameters for model creation")
+
+        logger.error(f"Something went wrong...\n{formatted_msg}")
+        raise InputError("Invalid parameters for model creation")
 
     def create_model(
         self,

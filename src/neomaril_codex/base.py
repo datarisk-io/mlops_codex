@@ -182,14 +182,17 @@ class BaseNeomarilClient(BaseNeomaril):
         if response.status_code == 200:
             results = response.json()["Results"]
             return results
-        elif response.status_code == 401:
-            logger.error(response.text)
+
+        formatted_msg = parse_json_to_yaml(response.json())
+
+        if response.status_code == 401:
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise AuthenticationError("Login not authorized")
         elif response.status_code >= 500:
-            logger.error(response.text)
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ServerError("Server Error")
         else:
-            logger.error(response.text)
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise InputError("Bad Input. Client error")
 
     def create_group(self, *, name: str, description: str) -> bool:
@@ -299,15 +302,17 @@ class BaseNeomarilClient(BaseNeomaril):
             logger.info(f"Group '{name}' was refreshed. New token: {t}")
             return HTTPStatus.OK
 
+        formatted_msg = parse_json_to_yaml(response.json())
+
         if response.status_code == 401:
-            logger.error(response.text)
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise AuthenticationError("Login not authorized")
 
         if response.status_code >= 500:
-            logger.error(response.text)
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ServerError("Server Error")
 
-        logger.error(response.text)
+        logger.error(f"Something went wrong...\n{formatted_msg}")
         raise InputError("Bad Input. Client error")
 
 
@@ -460,7 +465,8 @@ class NeomarilExecution(BaseNeomaril):
             url, headers={"Authorization": "Bearer " + self.__token}
         )
         if response.status_code not in [200, 410]:
-            logger.error(response.text)
+            formatted_msg = parse_json_to_yaml(response.json())
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
 
         result = response.json()
@@ -521,7 +527,8 @@ class NeomarilExecution(BaseNeomaril):
             )
             response = requests.get(url, headers={"Authorization": "Bearer " + token})
             if response.status_code not in [200, 410]:
-                logger.error(response.text)
+                formatted_msg = parse_json_to_yaml(response.json())
+                logger.error(f"Something went wrong...\n{formatted_msg}")
                 raise ExecutionError(f'Execution "{self.exec_id}" unavailable')
 
             if not path.endswith("/"):

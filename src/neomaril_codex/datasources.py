@@ -171,15 +171,19 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
         if response.status_code == 200:
             results = response.json().get("Results")
             return results
-        elif response.status_code == 401:
-            logger.error(response.text)
+
+        formatted_msg = parse_json_to_yaml(response.json())
+
+        if response.status_code == 401:
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise AuthenticationError("Login not authorized")
-        elif response.status_code >= 500:
-            logger.error(response.text)
+
+        if response.status_code >= 500:
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ServerError("Unexpected server error:")
-        else:
-            logger.error(response.text)
-            raise InputError("Bad Input. Client error")
+
+        logger.error(f"Something went wrong...\n{formatted_msg}")
+        raise InputError("Bad Input. Client error")
 
     def get_datasource(self, *, datasource_name: str, provider: str, group: str):
         """
@@ -506,16 +510,18 @@ class NeomarilDataset(BaseNeomaril):
 
             return {"status": status, "log": log}
 
-            return {'status': status, 'log': log }
-        elif response.status_code == 401:
-            logger.error(response.text)
+        formatted_msg = parse_json_to_yaml(response.json())
+
+        if response.status_code == 401:
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise AuthenticationError("Login not authorized")
-        elif response.status_code >= 500:
-            logger.error(response.text)
+
+        if response.status_code >= 500:
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ServerError("Unexpected server error:")
-        else:
-            logger.error(response.text)
-            raise DatasetNotFoundError('Dataset not found')
+
+        logger.error(f"Something went wrong...\n{formatted_msg}")
+        raise DatasetNotFoundError("Dataset not found")
 
     def delete(self):
         """
@@ -533,13 +539,18 @@ class NeomarilDataset(BaseNeomaril):
             url=url, headers={"Authorization": "Bearer " + token}, timeout=60
         )
         if response.status_code == 200:
-            logger.info(response.json().get('Message'))
-        elif response.status_code == 401:
-            logger.error(response.text)
+            logger.info(response.json().get("Message"))
+            return HTTPStatus.OK
+
+        formatted_msg = parse_json_to_yaml(response.json())
+
+        if response.status_code == 401:
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise AuthenticationError("Login not authorized")
-        elif response.status_code >= 500:
-            logger.error(response.text)
+
+        if response.status_code >= 500:
+            logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ServerError("Unexpected server error:")
-        else:
-            logger.error(response.text)
-            raise DatasetNotFoundError('Dataset not found')
+
+        logger.error(f"Something went wrong...\n{formatted_msg}")
+        raise DatasetNotFoundError("Dataset not found")
