@@ -7,6 +7,7 @@ from typing import Optional
 import requests
 from dotenv import load_dotenv
 
+from neomaril_codex.__model_states import ModelExecutionState
 from neomaril_codex.__utils import (
     parse_json_to_yaml,
     parse_url,
@@ -24,15 +25,6 @@ from neomaril_codex.exceptions import (
 from neomaril_codex.logger_config import get_logger
 
 logger = get_logger()
-from neomaril_codex.__model_states import ModelExecutionState
-from neomaril_codex.__utils import parse_url, refresh_token, try_login
-from neomaril_codex.exceptions import (
-    AuthenticationError,
-    ExecutionError,
-    InputError,
-    ModelError,
-    ServerError,
-)
 
 
 class BaseNeomaril:
@@ -120,7 +112,9 @@ class BaseNeomaril:
             return response.json()
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
@@ -197,7 +191,9 @@ class BaseNeomarilClient(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
@@ -252,7 +248,9 @@ class BaseNeomarilClient(BaseNeomaril):
             raise GroupError("Group already exist, nothing was changed.")
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
@@ -317,7 +315,9 @@ class BaseNeomarilClient(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
@@ -435,7 +435,9 @@ class NeomarilExecution(BaseNeomaril):
             )
 
             if response.status_code == 401:
-                logger.error("Login or password are invalid, please check your credentials.")
+                logger.error(
+                    "Login or password are invalid, please check your credentials."
+                )
                 raise AuthenticationError("Login not authorized.")
 
             if response.status_code == 404:
