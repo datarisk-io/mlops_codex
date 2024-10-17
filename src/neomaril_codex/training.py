@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import json
 import os
 import re
 import sys
@@ -14,10 +15,18 @@ import pandas as pd
 import requests
 from lazy_imports import try_import
 
-from neomaril_codex.__utils import *
-from neomaril_codex.base import *
+from neomaril_codex.__utils import parse_dict_or_file, parse_json_to_yaml, refresh_token
+from neomaril_codex.base import BaseNeomaril, BaseNeomarilClient, NeomarilExecution
 from neomaril_codex.datasources import NeomarilDataset
-from neomaril_codex.exceptions import *
+from neomaril_codex.exceptions import (
+    AuthenticationError,
+    ExecutionError,
+    GroupError,
+    InputError,
+    ModelError,
+    ServerError,
+    TrainingError,
+)
 from neomaril_codex.logger_config import get_logger
 from neomaril_codex.model import NeomarilModel
 
@@ -270,7 +279,7 @@ class NeomarilTrainingLogger:
 
         try:
             params["pipeline_steps"] = list(self.model.named_steps.keys())
-        except:
+        except Exception:
             params["pipeline_steps"] = [
                 str(self.model.__class__).replace("<class '", "").replace("'>", "")
             ]
@@ -588,7 +597,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
             self.run_data = self.execution_data["RunData"]
             try:
                 del self.run_data["tags"]
-            except:
+            except Exception:
                 pass
         return result
 
@@ -1292,7 +1301,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             exec_id = max(self.executions)
         try:
             int(exec_id)
-        except:
+        except Exception:
             InputError(
                 "Unvalid execution Id informed or this training dont have a successful execution yet."
             )
@@ -1436,12 +1445,14 @@ class NeomarilTrainingClient(BaseNeomarilClient):
             url=self.base_url,
         )
 
-    def __get_repeated_thash(self, model_type: str, experiment_name: str, group: str) -> str | None:
+    def __get_repeated_thash(
+        self, model_type: str, experiment_name: str, group: str
+    ) -> str | None:
         """Look for a previous train experiment.
 
         Args:
             experiment_name (str): name given to the training, should be not null, case-sensitive, have between 3 and 32 characters,
-                                   that could be alphanumeric including accentuation (for example: 'é', à', 'ç','ñ') and space, 
+                                   that could be alphanumeric including accentuation (for example: 'é', à', 'ç','ñ') and space,
                                    without blank spaces and special characters
 
             model_type (str): type of the model being trained. It can be
@@ -1488,21 +1499,21 @@ class NeomarilTrainingClient(BaseNeomarilClient):
         results = response.json().get("Results")
         for result in results:
             condition = (
-                    result["ExperimentName"] == experiment_name
-                    and result["GroupName"] == group
-                    and result["ModelType"] == model_type
+                result["ExperimentName"] == experiment_name
+                and result["GroupName"] == group
+                and result["ModelType"] == model_type
             )
             if condition:
                 logger.info("Found experiment with same attributes...")
                 return result["TrainingHash"]
 
     def __create(self, experiment_name: str, model_type: str, group: str) -> str:
-        """Creates a train experiment. A train experiment can aggregate multiple training runs (also called executions). 
+        """Creates a train experiment. A train experiment can aggregate multiple training runs (also called executions).
         Each execution can eventually become a deployed model or not.
 
         Args:
             experiment_name (str): name given to the training, should be not null, case-sensitive, have between 3 and 32 characters,
-                                   that could be alphanumeric including accentuation (for example: 'é', à', 'ç','ñ') and space, 
+                                   that could be alphanumeric including accentuation (for example: 'é', à', 'ç','ñ') and space,
                                    without blank spaces and special characters
 
             model_type (str): type of the model being trained. It can be
@@ -1530,7 +1541,7 @@ class NeomarilTrainingClient(BaseNeomarilClient):
             data=data,
             headers={
                 "Authorization": "Bearer "
-                                 + refresh_token(*self.credentials, self.base_url)
+                + refresh_token(*self.credentials, self.base_url)
             },
         )
 
@@ -1556,7 +1567,12 @@ class NeomarilTrainingClient(BaseNeomarilClient):
         return training_id
 
     def create_training_experiment(
-        self, *, experiment_name: str, model_type: str, group: str = "datarisk", force: bool = False
+        self,
+        *,
+        experiment_name: str,
+        model_type: str,
+        group: str = "datarisk",
+        force: bool = False,
     ) -> NeomarilTrainingExperiment:
         """
         Create a new training experiment on Neomaril.
@@ -1614,14 +1630,21 @@ class NeomarilTrainingClient(BaseNeomarilClient):
             )
 
         logger.info("Trying to load experiment...")
-        training_id = self.__get_repeated_thash(model_type=model_type, experiment_name=experiment_name, group=group)
+        training_id = self.__get_repeated_thash(
+            model_type=model_type, experiment_name=experiment_name, group=group
+        )
 
         if force or training_id is None:
-            msg = ("The experiment you're creating has identical name, group, and model type attributes to an existing one. "
-                   + "Since forced creation is active, we will continue with the process as specified"
-                   if force else "Could not find experiment. Creating a new one...")
+            msg = (
+                "The experiment you're creating has identical name, group, and model type attributes to an existing one. "
+                + "Since forced creation is active, we will continue with the process as specified"
+                if force
+                else "Could not find experiment. Creating a new one..."
+            )
             logger.info(msg)
-            training_id = self.__create(experiment_name=experiment_name, model_type=model_type, group=group) 
+            training_id = self.__create(
+                experiment_name=experiment_name, model_type=model_type, group=group
+            )
 
         return NeomarilTrainingExperiment(
             training_id=training_id,

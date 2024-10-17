@@ -1,16 +1,12 @@
 import os
-import sys
 from datetime import datetime, timedelta
 from time import sleep
 from typing import Optional
-from http import HTTPStatus
 
 import requests
 from dotenv import load_dotenv
-from loguru import logger
 
 from neomaril_codex.__utils import (
-    filter_log,
     parse_json_to_yaml,
     parse_url,
     refresh_token,
@@ -41,7 +37,6 @@ class BaseNeomaril:
         password: Optional[str] = None,
         url: Optional[str] = None,
     ) -> None:
-
         load_dotenv()
         logger.info("Loading .env")
 
@@ -49,8 +44,6 @@ class BaseNeomaril:
             url = os.getenv("NEOMARIL_URL")
         if url is None:
             url = "https://neomaril.staging.datarisk.net/"
-
-        logger.info(f"Used url {url}")
 
         self.credentials = (
             login if login else os.getenv("NEOMARIL_USER"),
@@ -235,7 +228,7 @@ class BaseNeomarilClient(BaseNeomaril):
                 f"Group '{name}' inserted. Use the token for scoring. Carefully save it as we won't show it again. Token: {t}"
             )
             return HTTPStatus.OK
-        
+
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 409:
@@ -249,7 +242,7 @@ class BaseNeomarilClient(BaseNeomaril):
         if response.status_code >= 500:
             logger.error(f"Something went wrong:\n {formatted_msg}")
             raise ServerError("Server Error")
-    
+
         logger.error(f"Something went wrong:\n {formatted_msg}")
         raise InputError("Bad Input. Client error")
 
@@ -427,7 +420,9 @@ class NeomarilExecution(BaseNeomaril):
                 logger.error(response.text)
                 raise AuthenticationError("Login not authorized")
             elif response.status_code == 404:
-                logger.error(f'Unable to retrieve execution "{exec_id}"\n{response.text}')
+                logger.error(
+                    f'Unable to retrieve execution "{exec_id}"\n{response.text}'
+                )
                 raise ModelError(f'Execution "{exec_id}" not found.')
             elif response.status_code >= 500:
                 logger.error(response.text)
@@ -490,7 +485,7 @@ class NeomarilExecution(BaseNeomaril):
 
     def download_result(
         self, *, path: Optional[str] = "./", filename: Optional[str] = "output.zip"
-    ) -> dict:
+    ) -> None:
         """
         Gets the output of the execution.
 
