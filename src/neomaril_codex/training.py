@@ -6,6 +6,7 @@ import os
 import re
 import sys
 from contextlib import contextmanager
+from http import HTTPStatus
 from time import sleep
 from typing import Any, List, Optional, Union
 

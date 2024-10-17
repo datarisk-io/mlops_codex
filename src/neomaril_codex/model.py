@@ -1,19 +1,34 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import io
 import json
 import os
+from http import HTTPStatus
 from time import sleep
 from typing import Optional, Union
 
 import requests
 
-from neomaril_codex.__utils import *
-from neomaril_codex.base import *
+from neomaril_codex.__model_states import ModelState
+from neomaril_codex.__utils import (
+    parse_dict_or_file,
+    parse_json_to_yaml,
+    refresh_token,
+    try_login,
+)
+from neomaril_codex.base import BaseNeomaril, BaseNeomarilClient, NeomarilExecution
 from neomaril_codex.datasources import NeomarilDataset
-from neomaril_codex.exceptions import *
-from neomaril_codex.preprocessing import *
+from neomaril_codex.exceptions import (
+    AuthenticationError,
+    ExecutionError,
+    GroupError,
+    InputError,
+    ModelError,
+    PreprocessingError,
+    ServerError,
+)
+from neomaril_codex.logger_config import get_logger
+from neomaril_codex.preprocessing import NeomarilPreprocessing
 
 from neomaril_codex.__model_states import ModelState
 
@@ -888,7 +903,7 @@ class NeomarilModel(BaseNeomaril):
             conf = json.dumps(configuration_file)
 
         upload_data = [
-            ("configuration", ('configuration.json', conf)),
+            ("configuration", ("configuration.json", conf)),
         ]
 
         form_data = {
@@ -1263,6 +1278,16 @@ class NeomarilModelClient(BaseNeomarilClient):
         
         elif response.status_code == 401:
             logger.error(response.text)
+            return [
+                NeomarilModel(
+                    model_id=m["ModelHash"],
+                    login=self.credentials[0],
+                    password=self.credentials[1],
+                    group=m["Group"],
+                    url=self.base_url,
+                )
+                for m in parsed_results
+            ]
             raise AuthenticationError("Login not authorized")
         elif response.status_code >= 500:
             logger.error(response.text)

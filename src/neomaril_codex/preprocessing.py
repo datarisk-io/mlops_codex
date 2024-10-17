@@ -1,18 +1,28 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import io
 import json
 import os
 import time
+from http import HTTPStatus
 from time import sleep
 from typing import Optional, Union
 
 import requests
 
-from neomaril_codex.__utils import *
-from neomaril_codex.base import *
-from neomaril_codex.exceptions import *
+from neomaril_codex.__utils import parse_json_to_yaml, refresh_token
+from neomaril_codex.base import BaseNeomaril, BaseNeomarilClient, NeomarilExecution
+from neomaril_codex.exceptions import (
+    AuthenticationError,
+    ExecutionError,
+    GroupError,
+    InputError,
+    PreprocessingError,
+    ServerError,
+)
+from neomaril_codex.logger_config import get_logger
+
+logger = get_logger()
 
 
 class NeomarilPreprocessing(BaseNeomaril):
@@ -73,7 +83,7 @@ class NeomarilPreprocessing(BaseNeomaril):
             },
         )
 
-        result = response.json()['Description']
+        result = response.json()["Description"]
         self.operation = result.get("Operation").lower()
 
         response = self.__get_status()
@@ -268,7 +278,6 @@ class NeomarilPreprocessing(BaseNeomaril):
             else:
                 raise AuthenticationError("Group token not informed")
         return run
-
 
     def get_preprocessing_execution(self, exec_id: str) -> NeomarilExecution:
         """
