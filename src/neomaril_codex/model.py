@@ -1539,8 +1539,9 @@ class NeomarilModelClient(BaseNeomarilClient):
         )
         if response.status_code == 202:
             logger.info(f"Model host in process - Hash: {model_id}")
+            return HTTPStatus.OK
 
-        formatted_msg = parse_dict_or_file(response.json())
+        formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
             logger.error("Login or password are invalid, please check your credentials.")
