@@ -834,6 +834,10 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         if response.status_code >= 500:
             logger.error("Server is not available. Please, try it later.")
             raise ServerError(f'Unable to retrive experiment "{training_id}"')
+        
+        if response.status_code != 200:
+            logger.error(f"Something went wrong...\n{formatted_msg}")
+            raise Exception("Unexpected error.")
 
         self.training_data = response.json()["Description"]
         self.model_type = self.training_data["ModelType"]
@@ -1110,6 +1114,11 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         if response.status_code >= 500:
             logger.error("Server is not available. Please, try it later.")
             raise ServerError(f'Unable to retrive experiment "{self.training_id}"')
+        
+        if response.status_code != 200:
+            logger.error(f"Something went wrong...\n{formatted_msg}")
+            raise Exception("Unexpected error.")
+
 
         self.training_data = response.json()["Description"]
         self.executions = [c["Id"] for c in self.training_data["Executions"]]

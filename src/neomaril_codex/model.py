@@ -876,7 +876,7 @@ class NeomarilModel(BaseNeomaril):
             logger.error("Server is not available. Please, try it later.")
             raise ServerError("Server is not available!")
 
-        logger.error("Model monitoring host error: " + response.text)
+        logger.error(f"Model monitoring host error:\n{formatted_msg}")
         raise InputError("Monitoring host error")
 
     def register_monitoring(
@@ -988,7 +988,7 @@ class NeomarilModel(BaseNeomaril):
             logger.error("Server is not available. Please, try it later.")
             raise ServerError("Server is not available!")
 
-        logger.error("Upload error: " + response.text)
+        logger.error(f"Upload error:\n{formatted_msg}")
         raise InputError("Invalid parameters for model creation")
 
     def model_info(self) -> None:
@@ -1506,7 +1506,7 @@ class NeomarilModelClient(BaseNeomarilClient):
             logger.error("Server is not available. Please, try it later.")
             raise ServerError("Server is not available!")
 
-        logger.error("Upload error: " + response.text)
+        logger.error(f"Upload error:\n{formatted_msg}")
         raise InputError("Invalid parameters for model creation")
 
     def __host_model(self, *, operation: str, model_id: str, group: str) -> None:
