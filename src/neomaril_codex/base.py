@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timedelta
+from http import HTTPStatus
 from time import sleep
 from typing import Optional
 
