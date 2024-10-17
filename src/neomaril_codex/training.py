@@ -1019,20 +1019,23 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             headers={"Authorization": "Bearer " + token},
         )
 
-        message = response.text
+        message = parse_json_to_yaml(response.json())
+        raw_response = response.text
 
         if response.status_code == 201:
-            logger.info(message)
-            return re.search(patt, message).group(1)
-        elif response.status_code == 401:
-            logger.error(response.text)
+            logger.info(f"Result\n{message}")
+            return re.search(patt, raw_response).group(1)
+
+        if response.status_code == 401:
+            logger.error(f"Something went wrong\n{message}")
             raise AuthenticationError("Login not authorized")
-        elif response.status_code >= 500:
-            logger.error(response.text)
+
+        if response.status_code >= 500:
+            logger.error(f"Something went wrong\n{message}")
             raise ServerError("Server Error")
-        else:
-            logger.error(message)
-            raise InputError("Bad input for training upload")
+
+        logger.error(f"Something went wrong\n{message}")
+        raise InputError("Bad input for training upload")
 
     def __execute_training(self, exec_id: str) -> None:
         """
