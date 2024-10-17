@@ -109,15 +109,17 @@ class BaseNeomaril:
 
         if response.status_code == 200:
             return response.json()
-        elif response.status_code == 401:
-            logger.error(response.text)
-            raise AuthenticationError("Login not authorized")
-        elif response.status_code >= 500:
-            logger.error(response.text)
-            raise ServerError("Unexpected server error:")
-        else:
-            logger.error(response.text)
-            raise InputError("Bad Input. Client error")
+        
+        if response.status_code == 401:
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
+        
+        if response.status_code >= 500:
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
+
+        logger.error(response.text)
+        raise InputError("Bad Input. Client error")
 
 
 class BaseNeomarilClient(BaseNeomaril):
@@ -186,14 +188,15 @@ class BaseNeomarilClient(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError("Login not authorized")
-        elif response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Server Error")
-        else:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise InputError("Bad Input. Client error")
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
+        
+        if response.status_code >= 500:
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
+
+        logger.error(f"Something went wrong...\n{formatted_msg}")
+        raise InputError("Bad Input. Client error")
 
     def create_group(self, *, name: str, description: str) -> bool:
         """
@@ -240,12 +243,12 @@ class BaseNeomarilClient(BaseNeomaril):
             raise GroupError("Group already exist, nothing was changed.")
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong:\n {formatted_msg}")
-            raise AuthenticationError("Login not authorized")
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong:\n {formatted_msg}")
-            raise ServerError("Server Error")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         logger.error(f"Something went wrong:\n {formatted_msg}")
         raise InputError("Bad Input. Client error")
@@ -305,12 +308,12 @@ class BaseNeomarilClient(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError("Login not authorized")
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Server Error")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         logger.error(f"Something went wrong...\n{formatted_msg}")
         raise InputError("Bad Input. Client error")
@@ -423,16 +426,18 @@ class NeomarilExecution(BaseNeomaril):
             )
 
             if response.status_code == 401:
-                logger.error(response.text)
-                raise AuthenticationError("Login not authorized")
-            elif response.status_code == 404:
+                logger.error("Login or password are invalid, please check your credentials.")
+                raise AuthenticationError("Login not authorized.")
+            
+            if response.status_code == 404:
                 logger.error(
                     f'Unable to retrieve execution "{exec_id}"\n{response.text}'
                 )
                 raise ModelError(f'Execution "{exec_id}" not found.')
-            elif response.status_code >= 500:
-                logger.error(response.text)
-                raise ServerError("Server Error")
+            
+            if response.status_code >= 500:
+                logger.error("Server is not available. Please, try it later.")
+                raise ServerError("Server is not available!")
 
             self.execution_data = response.json()["Description"]
 

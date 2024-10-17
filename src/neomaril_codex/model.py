@@ -113,16 +113,16 @@ class NeomarilModel(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError("Login not authorized")
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code == 404:
             logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ModelError(f'Model "{model_id}" not found.')
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Server Error")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         self.model_data = response.json()["Description"]
         self.name = self.model_data["Name"]
@@ -175,12 +175,12 @@ class NeomarilModel(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError("Login not authorized")
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Server Error")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         logger.error(f"Something went wrong...\n{formatted_msg}")
         raise ModelError("Could not get the status of the model")
@@ -235,12 +235,12 @@ class NeomarilModel(BaseNeomaril):
             formatted_msg = parse_json_to_yaml(response.json())
 
             if response.status_code == 401:
-                logger.error(f"Something went wrong...\n{formatted_msg}")
-                raise AuthenticationError("Login not authorized")
+                logger.error("Login or password are invalid, please check your credentials.")
+                raise AuthenticationError("Login not authorized.")
 
             if response.status_code >= 500:
-                logger.error(f"Something went wrong...\n{formatted_msg}")
-                raise ServerError("Server Error")
+                logger.error("Server is not available. Please, try it later.")
+                raise ServerError("Server is not available!")
 
             logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ModelError("Could not get the health of the model")
@@ -275,12 +275,12 @@ class NeomarilModel(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError("Login not authorized")
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Server Error")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         if response.status_code != 200:
             logger.error(f"Something went wrong...\n{formatted_msg}")
@@ -379,12 +379,12 @@ class NeomarilModel(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(req.json())
 
         if req.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError("Login not authorized")
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if req.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Server Error")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         if req.status_code != 200:
             logger.error(f"Something went wrong...\n{formatted_msg}")
@@ -432,12 +432,12 @@ class NeomarilModel(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(req.json())
 
         if req.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError("Login not authorized")
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if req.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Server Error")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         if req.status_code != 200:
             logger.error(f"Something went wrong...\n{formatted_msg}")
@@ -600,10 +600,11 @@ class NeomarilModel(BaseNeomaril):
                             raise ExecutionError("Training execution failed")
                         return run
                     elif req.status_code >= 500:
-                        raise ServerError("Unexpected server error: ", req.text)
+                        logger.error("Server is not available. Please, try it later.")
+                        raise ServerError("Server is not available!")
                     else:
                         logger.error(req.text)
-                        raise ServerError("Server Error")
+                        raise Exception("Unexpected error")
 
             else:
                 raise InputError("Group token not informed")
@@ -823,15 +824,17 @@ class NeomarilModel(BaseNeomaril):
                 res_message = message["Message"]
                 logger.error(f"Model monitoring host message: {res_message}")
                 raise ExecutionError("Monitoring host failed")
-        elif response.status_code == 401:
-            logger.error(response.text)
-            raise AuthenticationError("Login not authorized")
-        elif response.status_code >= 500:
-            logger.error(response.text)
-            raise ServerError("Server Error")
-        else:
-            logger.error(response.text)
-            raise ModelError("Could not get host monitoring status")
+        
+        if response.status_code == 401:
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
+        
+        if response.status_code >= 500:
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
+        
+        logger.error(response.text)
+        raise ModelError("Could not get host monitoring status")
 
     def __host_monitoring(self, *, group: str, model_id: str):
         """
@@ -866,12 +869,12 @@ class NeomarilModel(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError("Login not authorized")
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Server Error")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         logger.error("Model monitoring host error: " + response.text)
         raise InputError("Monitoring host error")
@@ -978,12 +981,12 @@ class NeomarilModel(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError("Login not authorized")
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Server Error")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         logger.error("Upload error: " + response.text)
         raise InputError("Invalid parameters for model creation")
@@ -1312,12 +1315,12 @@ class NeomarilModelClient(BaseNeomarilClient):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError("Login not authorized")
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Server Error")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         logger.error(f"Something went wrong...\n{formatted_msg}")
         raise ModelError("Could not search the model")
@@ -1496,12 +1499,12 @@ class NeomarilModelClient(BaseNeomarilClient):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError("Login not authorized")
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Server Error")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         logger.error("Upload error: " + response.text)
         raise InputError("Invalid parameters for model creation")
@@ -1540,12 +1543,12 @@ class NeomarilModelClient(BaseNeomarilClient):
         formatted_msg = parse_dict_or_file(response.json())
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError("Login not authorized")
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Server Error")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         logger.error(f"Something went wrong...\n{formatted_msg}")
         raise InputError("Invalid parameters for model creation")

@@ -277,7 +277,9 @@ class NeomarilPreprocessing(BaseNeomaril):
                         raise ServerError(req.text)
 
             else:
-                raise AuthenticationError("Group token not informed")
+                logger.error("Login or password are invalid, please check your credentials.")
+                raise GroupError("Group token not informed.")
+
         return run
 
     def get_preprocessing_execution(self, exec_id: str) -> NeomarilExecution:
@@ -659,12 +661,12 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError("Login not authorized")
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Server Error")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         logger.error(f"Something went wrong...\n{formatted_msg}")
         raise PreprocessingError("Could not search the preprocessing script")
@@ -841,14 +843,14 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError("Login not authorized")
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Server Error")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
-        logger.error("Upload error: " + response.text)
+        logger.error(f"Something went wrong...\n{formatted_msg}")
         raise InputError("Invalid parameters for preprocessing creation")
 
     def __host_preprocessing(
@@ -891,12 +893,12 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError("Login not authorized")
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Server Error")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         logger.error(f"Something went wrong...\n{formatted_msg}")
         raise InputError("Invalid parameters for preprocessing creation")

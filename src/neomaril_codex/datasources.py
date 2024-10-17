@@ -175,12 +175,12 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError("Login not authorized")
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Unexpected server error:")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         logger.error(f"Something went wrong...\n{formatted_msg}")
         raise InputError("Bad Input. Client error")
@@ -325,12 +325,12 @@ class NeomarilDataSource(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError("Login not authorized")
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Unexpected server error:")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         logger.error(f"Something went wrong...\n{formatted_msg}")
         raise InputError("Bad Input. Client error")
@@ -513,12 +513,12 @@ class NeomarilDataset(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError("Login not authorized")
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Unexpected server error:")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         logger.error(f"Something went wrong...\n{formatted_msg}")
         raise DatasetNotFoundError("Dataset not found")
@@ -545,12 +545,12 @@ class NeomarilDataset(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError("Login not authorized")
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Unexpected server error:")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         logger.error(f"Something went wrong...\n{formatted_msg}")
         raise DatasetNotFoundError("Dataset not found")

@@ -635,14 +635,12 @@ class NeomarilTrainingExecution(NeomarilExecution):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError(
-                "Login not authorized. Please check your credentials!"
-            )
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Server Error.")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         logger.error(f"Something went wrong...\n{formatted_msg}")
         raise InputError("Invalid parameters for model creation")
@@ -830,13 +828,11 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError(
-                "Login not authorized. Please check your credentials!"
-            )
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
+            logger.error("Server is not available. Please, try it later.")
             raise ServerError(f'Unable to retrive experiment "{training_id}"')
 
         self.training_data = response.json()["Description"]
@@ -1042,14 +1038,12 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             return re.search(patt, raw_response).group(1)
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{message}")
-            raise AuthenticationError(
-                "Login not authorized. Please check your credentials!"
-            )
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{message}")
-            raise ServerError("Server Error.")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         logger.error(f"Something went wrong...\n{message}")
         raise InputError("Bad input for training upload")
@@ -1084,14 +1078,12 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError(
-                "Login not authorized. Please check your credentials!"
-            )
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Server Error.")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         logger.error(f"Something went wrong...\n{formatted_msg}")
         raise InputError("Invalid parameters for training execution")
@@ -1112,13 +1104,11 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError(
-                "Login not authorized. Please check your credentials!"
-            )
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
+            logger.error("Server is not available. Please, try it later.")
             raise ServerError(f'Unable to retrive experiment "{self.training_id}"')
 
         self.training_data = response.json()["Description"]
@@ -1520,14 +1510,12 @@ class NeomarilTrainingClient(BaseNeomarilClient):
             raise InputError("Bad Input")
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError(
-                "Login not authorized. Please check your credentials!"
-            )
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Server Error.")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         if response.status_code != 200:
             logger.error(f"Something went wrong...\n{formatted_msg}")
@@ -1589,14 +1577,12 @@ class NeomarilTrainingClient(BaseNeomarilClient):
             raise InputError("Bad Input")
 
         if response.status_code == 401:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise AuthenticationError(
-                "Login not authorized. Please check your credentials!"
-            )
+            logger.error("Login or password are invalid, please check your credentials.")
+            raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ServerError("Server Error.")
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
 
         if response.status_code != 201:
             logger.error(f"Something went wrong...\n{formatted_msg}")
