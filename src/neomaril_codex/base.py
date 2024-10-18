@@ -244,7 +244,7 @@ class BaseNeomarilClient(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 409:
-            logger.info(f"Something went wrong:\n {formatted_msg}")
+            logger.error(f"Something went wrong:\n {formatted_msg}")
             raise GroupError("Group already exist, nothing was changed.")
 
         if response.status_code == 401:
