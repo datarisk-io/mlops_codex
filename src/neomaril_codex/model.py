@@ -988,7 +988,7 @@ class NeomarilModel(BaseNeomaril):
 
     def model_info(self) -> None:
         """Show the model data in a better format"""
-        print(parse_json_to_yaml(self.model_data))
+        logger.info(f"Result:\n{parse_json_to_yaml(self.model_data)}")
 
 
 class NeomarilModelClient(BaseNeomarilClient):

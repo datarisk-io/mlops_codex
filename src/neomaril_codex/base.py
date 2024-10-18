@@ -570,4 +570,4 @@ class NeomarilExecution(BaseNeomaril):
 
     def execution_info(self) -> None:
         """Show the execution data in a better format"""
-        print(parse_json_to_yaml(self.execution_data))
+        logger.info(f"Result:\n{parse_json_to_yaml(self.execution_data)}")
