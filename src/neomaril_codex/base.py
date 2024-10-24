@@ -182,7 +182,14 @@ class BaseNeomarilClient(BaseNeomaril):
 
         token = refresh_token(*self.credentials, self.base_url)
 
-        response = requests.get(url, headers={"Authorization": "Bearer " + token})
+        response = requests.get(
+            url,
+            headers={
+                "Authorization": "Bearer " + token,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.list_groups.__qualname__,
+            },
+        )
 
         if response.status_code == 200:
             results = response.json()["Results"]
@@ -231,7 +238,13 @@ class BaseNeomarilClient(BaseNeomaril):
         token = refresh_token(*self.credentials, self.base_url)
 
         response = requests.post(
-            url, data=data, headers={"Authorization": "Bearer " + token}
+            url,
+            data=data,
+            headers={
+                "Authorization": "Bearer " + token,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.create_group.__qualname__,
+            },
         )
 
         if response.status_code == 201:
@@ -304,7 +317,11 @@ class BaseNeomarilClient(BaseNeomaril):
         response = requests.get(
             url,
             params={"force": str(force).lower()},
-            headers={"Authorization": "Bearer " + token},
+            headers={
+                "Authorization": "Bearer " + token,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.refresh_group_token.__qualname__,
+            },
         )
 
         if response.status_code == 201:
@@ -550,7 +567,14 @@ class NeomarilExecution(BaseNeomaril):
             url = (
                 f"{self.base_url}/{self.__url_path}/result/{self.group}/{self.exec_id}"
             )
-            response = requests.get(url, headers={"Authorization": "Bearer " + token})
+            response = requests.get(
+                url,
+                headers={
+                    "Authorization": "Bearer " + token,
+                    "Neomaril-Origin": "Codex",
+                    "Neomaril-Method": self.download_result.__qualname__,
+                },
+            )
             if response.status_code not in [200, 410]:
                 formatted_msg = parse_json_to_yaml(response.json())
                 logger.error(f"Something went wrong...\n{formatted_msg}")

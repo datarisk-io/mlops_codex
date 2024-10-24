@@ -113,7 +113,9 @@ class NeomarilModel(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code == 404:
@@ -175,7 +177,9 @@ class NeomarilModel(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
@@ -227,7 +231,12 @@ class NeomarilModel(BaseNeomaril):
         elif self.operation == "sync":
             url = f"{self.base_url}/model/sync/health/{self.group}/{self.model_id}"
             response = requests.get(
-                url, headers={"Authorization": "Bearer " + self.__token}
+                url,
+                headers={
+                    "Authorization": "Bearer " + self.__token,
+                    "Neomaril-Origin": "Codex",
+                    "Neomaril-Method": self.health.__qualname__,
+                },
             )
             if response.status_code == 200:
                 return response.json()["Message"]
@@ -235,7 +244,9 @@ class NeomarilModel(BaseNeomaril):
             formatted_msg = parse_json_to_yaml(response.json())
 
             if response.status_code == 401:
-                logger.error("Login or password are invalid, please check your credentials.")
+                logger.error(
+                    "Login or password are invalid, please check your credentials."
+                )
                 raise AuthenticationError("Login not authorized.")
 
             if response.status_code >= 500:
@@ -268,14 +279,18 @@ class NeomarilModel(BaseNeomaril):
             url,
             headers={
                 "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url)
+                + refresh_token(*self.credentials, self.base_url),
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.restart_model.__qualname__,
             },
         )
 
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
@@ -373,13 +388,19 @@ class NeomarilModel(BaseNeomaril):
         token = refresh_token(*self.credentials, self.base_url)
         req = requests.delete(
             f"{self.base_url}/model/delete/{self.group}/{self.model_id}",
-            headers={"Authorization": "Bearer " + token},
+            headers={
+                "Authorization": "Bearer " + token,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.delete.__qualname__,
+            },
         )
 
         formatted_msg = parse_json_to_yaml(req.json())
 
         if req.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if req.status_code >= 500:
@@ -426,13 +447,19 @@ class NeomarilModel(BaseNeomaril):
         token = refresh_token(*self.credentials, self.base_url)
         req = requests.post(
             f"{self.base_url}/model/disable/{self.group}/{self.model_id}",
-            headers={"Authorization": "Bearer " + token},
+            headers={
+                "Authorization": "Bearer " + token,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.disable.__qualname__,
+            },
         )
 
         formatted_msg = parse_json_to_yaml(req.json())
 
         if req.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if req.status_code >= 500:
@@ -528,7 +555,11 @@ class NeomarilModel(BaseNeomaril):
                     req = requests.post(
                         url,
                         data=json.dumps(model_input),
-                        headers={"Authorization": "Bearer " + group_token},
+                        headers={
+                            "Authorization": "Bearer " + group_token,
+                            "Neomaril-Origin": "Codex",
+                            "Neomaril-Method": self.predict.__qualname__,
+                        },
                     )
 
                     return req.json()
@@ -569,7 +600,11 @@ class NeomarilModel(BaseNeomaril):
                         url,
                         files=files,
                         data=form_data,
-                        headers={"Authorization": "Bearer " + group_token},
+                        headers={
+                            "Authorization": "Bearer " + group_token,
+                            "Neomaril-Origin": "Codex",
+                            "Neomaril-Method": self.predict.__qualname__,
+                        },
                     )
 
                     if req.status_code == 202:
@@ -609,7 +644,9 @@ class NeomarilModel(BaseNeomaril):
                 url,
                 headers={
                     "Authorization": "Bearer "
-                    + refresh_token(*self.credentials, self.base_url)
+                    + refresh_token(*self.credentials, self.base_url),
+                    "Neomaril-Origin": "Codex",
+                    "Neomaril-Method": self.predict.__qualname__,
                 },
             ).json()["Description"]
             if response["Status"] == "Deployed":
@@ -819,15 +856,17 @@ class NeomarilModel(BaseNeomaril):
                 res_message = message["Message"]
                 logger.error(f"Model monitoring host message: {res_message}")
                 raise ExecutionError("Monitoring host failed")
-        
+
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
-        
+
         if response.status_code >= 500:
             logger.error("Server is not available. Please, try it later.")
             raise ServerError("Server is not available!")
-        
+
         logger.error(response.text)
         raise ModelError("Could not get host monitoring status")
 
@@ -864,7 +903,9 @@ class NeomarilModel(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
@@ -959,7 +1000,9 @@ class NeomarilModel(BaseNeomaril):
             files=upload_data,
             headers={
                 "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url)
+                + refresh_token(*self.credentials, self.base_url),
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.register_monitoring.__qualname__,
             },
         )
 
@@ -976,7 +1019,9 @@ class NeomarilModel(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
@@ -1284,7 +1329,9 @@ class NeomarilModelClient(BaseNeomarilClient):
             params=query,
             headers={
                 "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url)
+                + refresh_token(*self.credentials, self.base_url),
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.search_models.__qualname__,
             },
         )
 
@@ -1310,7 +1357,9 @@ class NeomarilModelClient(BaseNeomarilClient):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
@@ -1481,7 +1530,9 @@ class NeomarilModelClient(BaseNeomarilClient):
             files=upload_data,
             headers={
                 "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url)
+                + refresh_token(*self.credentials, self.base_url),
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.__upload_model.__qualname__,
             },
         )
 
@@ -1494,7 +1545,9 @@ class NeomarilModelClient(BaseNeomarilClient):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
@@ -1529,7 +1582,9 @@ class NeomarilModelClient(BaseNeomarilClient):
             url,
             headers={
                 "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url)
+                + refresh_token(*self.credentials, self.base_url),
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.create_model.__qualname__,
             },
         )
         if response.status_code == 202:
@@ -1539,7 +1594,9 @@ class NeomarilModelClient(BaseNeomarilClient):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
