@@ -115,7 +115,11 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
             url=url,
             data=form_data,
             files=files,
-            headers={"Authorization": "Bearer " + token},
+            headers={
+                "Authorization": "Bearer " + token,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.register_datasource.__qualname__,
+            },
             timeout=60,
         )
 
@@ -166,7 +170,13 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
         token = refresh_token(*self.credentials, self.base_url)
 
         response = requests.get(
-            url=url, headers={"Authorization": "Bearer " + token}, timeout=60
+            url=url,
+            headers={
+                "Authorization": "Bearer " + token,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.list_datasources.__qualname__,
+            },
+            timeout=60,
         )
         if response.status_code == 200:
             results = response.json().get("Results")
@@ -175,7 +185,9 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
@@ -304,7 +316,11 @@ class NeomarilDataSource(BaseNeomaril):
         response = requests.post(
             url=url,
             data=form_data,
-            headers={"Authorization": "Bearer " + token},
+            headers={
+                "Authorization": "Bearer " + token,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.import_dataset.__qualname__,
+            },
             timeout=60,
         )
 
@@ -325,7 +341,9 @@ class NeomarilDataSource(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
@@ -359,7 +377,13 @@ class NeomarilDataSource(BaseNeomaril):
         token = refresh_token(*self.credentials, self.base_url)
 
         response = requests.get(
-            url=url, headers={"Authorization": "Bearer " + token}, timeout=60
+            url=url,
+            headers={
+                "Authorization": "Bearer " + token,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.list_datasets.__qualname__,
+            },
+            timeout=60,
         )
 
         return response.json().get("Results")
@@ -380,7 +404,13 @@ class NeomarilDataSource(BaseNeomaril):
 
         token = refresh_token(*self.credentials, self.base_url)
         response = requests.delete(
-            url=url, headers={"Authorization": "Bearer " + token}, timeout=60
+            url=url,
+            headers={
+                "Authorization": "Bearer " + token,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.delete.__qualname__,
+            },
+            timeout=60,
         )
         logger.info(response.json().get("Message"))
 
@@ -501,7 +531,13 @@ class NeomarilDataset(BaseNeomaril):
         token = refresh_token(*self.credentials, self.base_url)
 
         response = requests.get(
-            url=url, headers={"Authorization": "Bearer " + token}, timeout=60
+            url=url,
+            headers={
+                "Authorization": "Bearer " + token,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.get_status.__qualname__,
+            },
+            timeout=60,
         )
 
         if response.status_code == 200:
@@ -513,7 +549,9 @@ class NeomarilDataset(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
@@ -536,7 +574,13 @@ class NeomarilDataset(BaseNeomaril):
 
         token = refresh_token(*self.credentials, self.base_url)
         response = requests.delete(
-            url=url, headers={"Authorization": "Bearer " + token}, timeout=60
+            url=url,
+            headers={
+                "Authorization": "Bearer " + token,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.delete.__qualname__,
+            },
+            timeout=60,
         )
         if response.status_code == 200:
             logger.info(response.json().get("Message"))
@@ -545,7 +589,9 @@ class NeomarilDataset(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:

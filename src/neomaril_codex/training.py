@@ -575,7 +575,9 @@ class NeomarilTrainingExecution(NeomarilExecution):
             url,
             headers={
                 "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url)
+                + refresh_token(*self.credentials, self.base_url),
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.get_status.__qualname__,
             },
         )
         if response.status_code not in [200, 410]:
@@ -593,7 +595,9 @@ class NeomarilTrainingExecution(NeomarilExecution):
                 url,
                 headers={
                     "Authorization": "Bearer "
-                    + refresh_token(*self.credentials, self.base_url)
+                    + refresh_token(*self.credentials, self.base_url),
+                    "Neomaril-Origin": "Codex",
+                    "Neomaril-Method": self.get_status.__qualname__,
                 },
             )
             self.execution_data = response.json()["Description"]
@@ -626,7 +630,9 @@ class NeomarilTrainingExecution(NeomarilExecution):
             url,
             headers={
                 "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url)
+                + refresh_token(*self.credentials, self.base_url),
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.promote_model.__qualname__,
             },
         )
         if response.status_code == 202:
@@ -635,7 +641,9 @@ class NeomarilTrainingExecution(NeomarilExecution):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
@@ -828,13 +836,15 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
             logger.error("Server is not available. Please, try it later.")
             raise ServerError(f'Unable to retrive experiment "{training_id}"')
-        
+
         if response.status_code != 200:
             logger.error(f"Something went wrong...\n{formatted_msg}")
             raise Exception("Unexpected error.")
@@ -1042,7 +1052,9 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             return re.search(patt, raw_response).group(1)
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
@@ -1072,7 +1084,9 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             url,
             headers={
                 "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url)
+                + refresh_token(*self.credentials, self.base_url),
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.run_training.__qualname__,
             },
         )
         if response.status_code == 200:
@@ -1082,7 +1096,9 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
@@ -1108,17 +1124,18 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
             logger.error("Server is not available. Please, try it later.")
             raise ServerError(f'Unable to retrive experiment "{self.training_id}"')
-        
+
         if response.status_code != 200:
             logger.error(f"Something went wrong...\n{formatted_msg}")
             raise Exception("Unexpected error.")
-
 
         self.training_data = response.json()["Description"]
         self.executions = [c["Id"] for c in self.training_data["Executions"]]
@@ -1519,7 +1536,9 @@ class NeomarilTrainingClient(BaseNeomarilClient):
             raise InputError("Bad Input")
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
@@ -1575,7 +1594,9 @@ class NeomarilTrainingClient(BaseNeomarilClient):
             data=data,
             headers={
                 "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url)
+                + refresh_token(*self.credentials, self.base_url),
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.__create.__qualname__,
             },
         )
 
@@ -1586,7 +1607,9 @@ class NeomarilTrainingClient(BaseNeomarilClient):
             raise InputError("Bad Input")
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:

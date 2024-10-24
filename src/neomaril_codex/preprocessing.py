@@ -229,7 +229,11 @@ class NeomarilPreprocessing(BaseNeomaril):
                     req = requests.post(
                         url,
                         data=json.dumps(preprocessing_input),
-                        headers={"Authorization": "Bearer " + group_token},
+                        headers={
+                            "Authorization": "Bearer " + group_token,
+                            "Neomaril-Origin": "Codex",
+                            "Neomaril-Method": self.run.__qualname__,
+                        },
                     )
 
                     return req.json()
@@ -242,7 +246,11 @@ class NeomarilPreprocessing(BaseNeomaril):
                     req = requests.post(
                         url,
                         files=files,
-                        headers={"Authorization": "Bearer " + group_token},
+                        headers={
+                            "Authorization": "Bearer " + group_token,
+                            "Neomaril-Origin": "Codex",
+                            "Neomaril-Method": self.run.__qualname__,
+                        },
                     )
 
                     # TODO: Shouldn't both sync and async preprocessing have the same succeeded status code?
@@ -277,7 +285,9 @@ class NeomarilPreprocessing(BaseNeomaril):
                         raise ServerError(req.text)
 
             else:
-                logger.error("Login or password are invalid, please check your credentials.")
+                logger.error(
+                    "Login or password are invalid, please check your credentials."
+                )
                 raise GroupError("Group token not informed.")
 
         return run
@@ -650,7 +660,9 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
             params=query,
             headers={
                 "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url)
+                + refresh_token(*self.credentials, self.base_url),
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.search_preprocessing.__qualname__,
             },
         )
 
@@ -661,7 +673,9 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
@@ -843,7 +857,9 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
@@ -882,7 +898,9 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
             url,
             headers={
                 "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url)
+                + refresh_token(*self.credentials, self.base_url),
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.create.__qualname__,
             },
         )
 
@@ -893,7 +911,9 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
-            logger.error("Login or password are invalid, please check your credentials.")
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
