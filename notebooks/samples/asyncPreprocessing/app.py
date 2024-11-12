@@ -33,14 +33,12 @@ def cria_variaveis_e_ajusta(df):
     df[variaveis_categoricas] = df[variaveis_categoricas].fillna('MISSING')
     return df
 
-def build_df(data_path, extra_path=None):
+def build_df(df, data_path, extra_path=None):
 
     variaveis_numericas = ['VALOR_A_PAGAR', 'TAXA', 'RENDA_MES_ANTERIOR', 'NO_FUNCIONARIOS', 'RZ_RENDA_FUNC', 'VL_TAXA']
     variaveis_categoricas = ['DDD', 'SEGMENTO_INDUSTRIAL', 'DOMINIO_EMAIL', 'PORTE', 'CEP_2_DIG']
 
     features = variaveis_numericas + variaveis_categoricas
-
-    df = pd.read_csv(data_path+'/'+os.getenv('inputFileName'))
 
     base_completa = (
         # Cruzamento das bases
@@ -61,8 +59,6 @@ def build_df(data_path, extra_path=None):
 
     features = variaveis_numericas + variaveis_categoricas
 
-    output = data_path+'/base_preprocessada.csv'
-
-    base_completa[['FLAG_MAU', 'SAFRA_REF', 'ID_CLIENTE']+features].to_csv(output, index=False)
+    output = base_completa[['FLAG_MAU', 'SAFRA_REF', 'ID_CLIENTE']+features]
     
     return output
