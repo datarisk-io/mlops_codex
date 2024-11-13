@@ -563,10 +563,14 @@ class NeomarilDataset(BaseNeomaril):
 
         Attributes
         ----------
-            origin: Optional[str] = None,
-            origin_id: Optional[str] = None,
-            datasource_name: Optional[str] = None
-            group: Optional[bool] = False
+            origin: Optional[str]
+                Origin of a dataset. It can be "Training", "Preprocessing", "Datasource" or "Model"
+            origin_id: Optional[str]
+                Integer that represents the id of a dataset, given an origin
+            datasource_name: Optional[str]
+                Name of the datasource 
+            group: Optional[str]
+                Name of the group where we will search the datasource
 
         Returns
         ----------
