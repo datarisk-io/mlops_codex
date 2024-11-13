@@ -1,6 +1,6 @@
 import json
 from http import HTTPStatus
-from typing import Union
+from typing import Optional, Union
 
 import requests
 
@@ -353,40 +353,6 @@ class NeomarilDataSource(BaseNeomaril):
         logger.error(f"Something went wrong...\n{formatted_msg}")
         raise InputError("Bad Input. Client error")
 
-    def list_datasets(self, *, origin: str = None):
-        """
-        List datasets from datasources.
-
-        Attributes
-        ----------
-        origin : Optional[str]
-            Can be an EHash or a SHash
-
-        Returns
-        ----------
-        list
-            A list of datasets information.
-
-        Example
-        -------
-        >>> dataset.list_datasets()
-        """
-        url = f"{self.base_url}/datasets/list?datasource={self.datasource_name}"
-        url += f"origin={origin}" if origin else ""
-
-        token = refresh_token(*self.credentials, self.base_url)
-
-        response = requests.get(
-            url=url,
-            headers={
-                "Authorization": "Bearer " + token,
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.list_datasets.__qualname__,
-            },
-            timeout=60,
-        )
-
-        return response.json().get("Results")
 
     def delete(self):
         """
@@ -481,23 +447,6 @@ class NeomarilDataset(BaseNeomaril):
     group : str
         Name of the group where we will search the datasource
     """
-
-    def __init__(
-        self,
-        *,
-        dataset_hash: str,
-        dataset_name: str,
-        datasource_name: str,
-        group: str,
-        login: str,
-        password: str,
-        url: str,
-    ) -> None:
-        super().__init__(login, password, url)
-        self.group = group
-        self.dataset_hash = dataset_hash
-        self.dataset_name = dataset_name
-        self.datasource_name = datasource_name
 
     def get_status(self):
         """
@@ -600,3 +549,69 @@ class NeomarilDataset(BaseNeomaril):
 
         logger.error(f"Something went wrong...\n{formatted_msg}")
         raise DatasetNotFoundError("Dataset not found")
+
+    def list_datasets(
+        self,
+        *,
+        origin: Optional[str] = None,
+        origin_id: Optional[int] = None,
+        datasource_name: Optional[str] = None,
+        group: Optional[str] = None
+    ):
+        """
+        List datasets from datasources.
+
+        Attributes
+        ----------
+            origin: Optional[str]
+                Origin of a dataset. It can be "Training", "Preprocessing", "Datasource" or "Model"
+            origin_id: Optional[str]
+                Integer that represents the id of a dataset, given an origin
+            datasource_name: Optional[str]
+                Name of the datasource 
+            group: Optional[str]
+                Name of the group where we will search the datasource
+
+        Returns
+        ----------
+        list
+            A list of datasets information.
+
+        Example
+        -------
+        >>> dataset.list_datasets()
+        """
+        url = f"{self.base_url}/datasets/list"
+        token = refresh_token(*self.credentials, self.base_url)
+
+        query = {}
+
+        if group:
+            query["group"] = group
+        
+        if origin and origin != "Datasource":
+            if "group" not in query:
+                query["group"] = group
+            query["origin"] = origin
+            if origin_id:
+                query["origin_id"] = origin_id
+
+        if origin == "Datasource":
+            query["origin"] = origin
+            if datasource_name:
+                query["datasource"] = datasource_name
+
+        response = requests.get(
+            url=url,
+            params=query,
+            headers={
+                "Authorization": "Bearer " + token,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.list_datasets.__qualname__,
+            },
+            timeout=60,
+        )
+
+        r = response.json().get("Results")
+
+        return r

@@ -5,7 +5,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import cross_val_score
 import os
 
-def train_model(base_path:str): # O nome da função (train_model) é que deve ser passado no campo 'training_reference'
+def train_model(df: pd.DataFrame, base_path:str): # O nome da função (train_model) é que deve ser passado no campo 'training_reference'
     """
     Função usada para treinar o modelo com base em um conjunto de dados fornecido.
     Essa função deve estruturar os passos que o Neomaril terá que executar para retornar o
@@ -21,6 +21,9 @@ def train_model(base_path:str): # O nome da função (train_model) é que deve s
 
     Parâmetros
     ---------
+    df: pd.Dataframe
+        Pandas dataframe que será manipulado.
+        Esse valor é obrigatório
     base_path : str
         O caminho de pastas para os arquivos que serão usados. 
         O usuário pode usar um valor default para testes locais, mas no Neomaril será usado o caminho 
@@ -60,11 +63,6 @@ def train_model(base_path:str): # O nome da função (train_model) é que deve s
     # my_var = os.getenv('MY_VAR')
     # if my_var is None:
     #    raise Exception("Could not find `env` variable")
-
-    ## Variável de ambiente carregada do Neomaril com nome da base de dados (usado em alternativa a linha 61)
-    # df = pd.read_csv(base_path+'/'+os.getenv('inputFileName'))
-    df = pd.read_csv(base_path+"/dados.csv")    # Carrega a base de dados (dados.csv) que precisa ter o mesmo nome
-                                                # arquivo enviado para o Neomaril no campo 'train_data'
     
     # Os dados enviados devem ser os dados completos para treino e validação (excluída a amostra de validação), 
     # ficando a critério do usuário como tratar os dados aqui
