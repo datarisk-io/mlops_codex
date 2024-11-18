@@ -638,7 +638,6 @@ class NeomarilTrainingExecution(NeomarilExecution):
         if response.status_code == 202:
             logger.info(f"Model host in process - Hash: {model_id}")
 
-        formatted_msg = parse_json_to_yaml(response.json())
 
         if response.status_code == 401:
             logger.error(
@@ -647,11 +646,8 @@ class NeomarilTrainingExecution(NeomarilExecution):
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error("Server is not available. Please, try it later.")
-            raise ServerError("Server is not available!")
-
-        logger.error(f"Something went wrong...\n{formatted_msg}")
-        raise InputError("Invalid parameters for model creation")
+            logger.error(f"Something went wrong...\n{parse_json_to_yaml(response.json())}")
+            raise InputError("Invalid parameters for model creation")
 
     def promote_model(
         self,

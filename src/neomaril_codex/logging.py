@@ -50,6 +50,9 @@ class Logger:
     """
     
     def __init__(self, model_type:str) -> None:
+        if model_type.lower() not in ['sync', 'async']: 
+            raise InputError(f'Invalid model_type {model_type}. Valid options are Sync or Async')
+
         self.model_type = model_type
         self.__levels=["OUTPUT", "DEBUG", "WARNING", "ERROR"]
         self.__data = ''
@@ -69,13 +72,13 @@ class Logger:
         if level in self.__levels:
             log_message = f"[{level}]{message}[{level}]"
 
-            if self.model_type.title() == 'Sync':
+            if self.model_type.lower() == 'sync':
                 self.__data += log_message
 
             else: 
                 base_path = os.getenv('BASE_PATH')
                 exec_id = os.getenv('EXECUTION_ID')
-                if base_path and exec_id:
+                if base_path and 'host' not in exec_id:
                     with open(f"{base_path}/{exec_id}/output/execution.log", "a") as file:
                         file.write(log_message+"\n")
                 print(log_message)
@@ -144,7 +147,7 @@ class Logger:
             Output of the function being executed.
         """
 
-        if self.model_type == "Sync":
+        if self.model_type.lower() == "sync":
             if isinstance(output, (dict, list)):
                 output = '[OUTPUT]'+json.dumps(output)+'[OUTPUT]'
             elif isinstance(output, (int, float)):

@@ -812,7 +812,7 @@ class NeomarilModel(BaseNeomaril):
         else:
             raise ModelError("Sync models don't have executions")
 
-    def __host_monitoring_status(self, *, group: str, model_id: str):
+    def __host_monitoring_status(self, *, group: str, model_id: str, period:str):
         """
         Get the host status for the monitoring configuration
 
@@ -822,6 +822,8 @@ class NeomarilModel(BaseNeomaril):
             Group the model is inserted. Default is 'datarisk' (public group)
         model_id : str
             The uploaded model id (hash)
+        period : str
+            The monitoring period (Day, Week, Month)
 
         Raises
         ------
@@ -830,7 +832,7 @@ class NeomarilModel(BaseNeomaril):
         ServerError
             Unexpected server error
         """
-        url = f"{self.base_url}/monitoring/status/{group}/{model_id}"
+        url = f"{self.base_url}/monitoring/status/{group}/{model_id}/{period}"
 
         response = requests.get(
             url,
@@ -848,10 +850,11 @@ class NeomarilModel(BaseNeomaril):
                 logger.info("Waiting the monitoring host.")
                 sleep(30)
                 self.__host_monitoring_status(
-                    group=group, model_id=model_id
+                    group=group, model_id=model_id,period=period
                 )  # recursive
             if status == "Validated":
                 logger.info(f'Model monitoring host validated - Hash: "{model_id}"')
+                
             if status == "Invalidated":
                 res_message = message["Message"]
                 logger.error(f"Model monitoring host message: {res_message}")
@@ -864,13 +867,10 @@ class NeomarilModel(BaseNeomaril):
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error("Server is not available. Please, try it later.")
-            raise ServerError("Server is not available!")
+            logger.error(response.text)
+            raise ModelError("Could not get host monitoring status")
 
-        logger.error(response.text)
-        raise ModelError("Could not get host monitoring status")
-
-    def __host_monitoring(self, *, group: str, model_id: str):
+    def __host_monitoring(self, *, group: str, model_id: str, period:str):
         """
         Host the monitoring configuration
 
@@ -880,13 +880,15 @@ class NeomarilModel(BaseNeomaril):
             Group the model is inserted. Default is 'datarisk' (public group)
         model_id : str
             The uploaded model id (hash)
+        period : str
+            The monitoring period (Day, Week, Month)
 
         Raises
         ------
         InputError
             Monitoring host error
         """
-        url = f"{self.base_url}/monitoring/host/{group}/{model_id}"
+        url = f"{self.base_url}/monitoring/host/{group}/{model_id}/{period}"
 
         response = requests.get(
             url,
@@ -958,9 +960,14 @@ class NeomarilModel(BaseNeomaril):
         url = f"{self.base_url}/monitoring/register/{self.group}/{self.model_id}"
 
         if isinstance(configuration_file, str):
+            with open(configuration_file, "rb") as f:
+                conf_dict = json.load(f)
+
             conf = open(configuration_file, "rb")
+            
         elif isinstance(configuration_file, dict):
             conf = json.dumps(configuration_file)
+            conf_dict = configuration_file
 
         upload_data = [
             ("configuration", ("configuration.json", conf)),
@@ -982,13 +989,6 @@ class NeomarilModel(BaseNeomaril):
                 )
             )
 
-            if preprocess_file.endswith("py"):
-                form_data["type"] = "PythonScript"
-            elif preprocess_file.endswith("ipynb"):
-                form_data["type"] = "PythonNotebook"
-        else:
-            form_data["type"] = "ModelScript"
-
         if requirements_file:
             upload_data.append(
                 ("requirements", ("requirements.txt", open(requirements_file, "rb")))
@@ -1009,10 +1009,11 @@ class NeomarilModel(BaseNeomaril):
         if response.status_code == 201:
             data = response.json()
             model_id = data["ModelHash"]
+            period = conf_dict['Period']
             logger.info(f'{data["Message"]} - Hash: "{model_id}"')
 
-            self.__host_monitoring(group=self.group, model_id=model_id)
-            self.__host_monitoring_status(group=self.group, model_id=model_id)
+            self.__host_monitoring(group=self.group, model_id=model_id, period=period)
+            self.__host_monitoring_status(group=self.group, model_id=model_id, period=period)
 
             return model_id
 

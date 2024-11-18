@@ -62,6 +62,13 @@ class NeomarilPipeline(BaseNeomaril):
         self.deploy_config = None
         self.monitoring_config = None
 
+    def __try_create_group(self, client, group:str):
+        groups = client.list_groups()
+
+        if group not in [g['Name'] for g in groups]:
+            client.create_group(name=group, description='Created with Codex Pipeline')
+
+
     def register_train_config(self, **kwargs) -> dict:
         """
         Set the files for configure the training
@@ -189,7 +196,7 @@ class NeomarilPipeline(BaseNeomaril):
         client = NeomarilTrainingClient(
             login=self.credentials[0], password=self.credentials[1], url=self.base_url
         )
-        client.create_group(name=self.group, description=self.group)
+        self.__try_create_group(client, self.group)
 
         conf = self.train_config
 
@@ -206,7 +213,8 @@ class NeomarilPipeline(BaseNeomaril):
         if conf["training_type"] == "Custom":
             run = training.run_training(
                 run_name=run_name,
-                training_type=os.path.join(PATH, conf["data"]),
+                training_type=conf["training_type"],
+                train_data=os.path.join(PATH, conf["data"]),
                 source_file=os.path.join(PATH, conf["source"]),
                 requirements_file=os.path.join(PATH, conf["packages"]),
                 training_reference=conf["train_function"],
@@ -283,9 +291,7 @@ class NeomarilPipeline(BaseNeomaril):
                     if extra_files
                     else None,
                     env=os.path.join(PATH, conf["env"]) if conf.get("env") else None,
-                    schema=os.path.join(PATH, conf["schema"])
-                    if conf.get("schema")
-                    else None,
+                    schema=os.path.join(PATH, conf["schema"]),
                     operation=conf["operation"],
                 )
 
@@ -301,7 +307,7 @@ class NeomarilPipeline(BaseNeomaril):
                 password=self.credentials[1],
                 url=self.base_url,
             )
-            client.create_group(name=self.group, description=self.group)
+            self.__try_create_group(client, self.group)
 
             model = client.create_model(
                 model_name=conf.get("name"),
