@@ -270,7 +270,7 @@ class NeomarilDataSource(BaseNeomaril):
         password: str,
         url: str,
     ) -> None:
-        super().__init__(login, password, url)
+        super().__init__(login=login, password=password, url=url)
         self.datasource_name = datasource_name
         self.provider = provider
         self.group = group
@@ -447,6 +447,23 @@ class NeomarilDataset(BaseNeomaril):
     group : str
         Name of the group where we will search the datasource
     """
+
+    def __init__(
+            self,
+            *,
+            dataset_hash: str,
+            dataset_name: str,
+            datasource_name: str,
+            group: str,
+            login: str,
+            password: str,
+            url: Optional[str] = None,
+    ) -> None:
+        super().__init__(login=login, password=password, url=url)
+        self.group = group
+        self.dataset_hash = dataset_hash
+        self.dataset_name = dataset_name
+        self.datasource_name = datasource_name
 
     def get_status(self):
         """
