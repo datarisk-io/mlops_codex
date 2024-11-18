@@ -173,7 +173,7 @@ class NeomarilExternalMonitoring(BaseNeomaril):
             if file is not None:
                 url = f"{self.external_monitoring_url}/{self.ex_monitoring_hash}/{path}"
                 self._upload_file(field, file, url, form)
-
+                logger.info(f"{file} file uploaded successfully")
 
     def host(self, wait_ready: Optional[bool] = False):
         """Host the new external monitoring
@@ -202,6 +202,8 @@ class NeomarilExternalMonitoring(BaseNeomaril):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.host.__qualname__,
             },
             timeout=60,
         )
