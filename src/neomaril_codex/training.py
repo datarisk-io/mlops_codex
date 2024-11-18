@@ -997,11 +997,11 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             if model_hash:
                 form_data["model_hash"] = model_hash
 
-            if X_train:
+            if X_train is not None:
                 print(f"X_train:{X_train}")
                 upload_data += [("features", ("features.parquet", open(X_train, "rb")))]
 
-            if y_train:
+            if y_train is not None:
                 print(f"y_train:{y_train}")
                 upload_data += [("target", ("target.parquet", open(y_train, "rb")))]
 
@@ -1231,7 +1231,12 @@ class NeomarilTrainingExperiment(BaseNeomaril):
                 "train_data, dataset or train_data, conf_dict, run_name, python_version"
             )
         elif training_type == "External":
-            input_validator = run_name and python_version and X_train and y_train
+            input_validator = (
+                    run_name is not None and
+                    python_version is not None and
+                    X_train is not None and
+                    y_train is not None
+            )
             fields_required = "run_name, python_version, X_train, y_train"
         else:
             input_validator = False
@@ -1249,7 +1254,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
         if python_version not in ["3.8", "3.9", "3.10"]:
             raise InputError(
-                "Invalid python version. Avaliable versions are 3.8, 3.9, 3.10"
+                "Invalid python version. Available versions are 3.8, 3.9, 3.10"
             )
 
         if training_type not in ["Custom", "AutoML", "External"]:
