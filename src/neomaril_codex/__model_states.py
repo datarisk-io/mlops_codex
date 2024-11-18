@@ -39,3 +39,14 @@ class ModelExecutionState(str, Enum):
 
     def __str__(self):
         return self.name
+
+
+class MonitoringStatus(str, Enum):
+    """
+    State of monitoring
+    """
+
+    Unvalidated = "Unvalidated"
+    Validating = "Validating"
+    Validated = "Validated"
+    Invalidated = "Invalidated"
