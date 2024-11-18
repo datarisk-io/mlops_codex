@@ -56,3 +56,8 @@ class DatasetNotFoundError(Exception):
 class CredentialError(Exception):
     """Raised when the datasource cloud credential it's invalid"""
     pass
+
+
+class ExternalMonitoringError(Exception):
+    """Raised when a external monitoring is not available"""
+    pass
