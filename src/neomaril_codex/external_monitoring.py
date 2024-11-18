@@ -1,17 +1,22 @@
+"""
+External Monitoring Module
+"""
+
+from time import sleep
 from typing import Optional, Union
 
 import requests
-from time import sleep
 
+from neomaril_codex.__model_states import MonitoringStatus
 from neomaril_codex.__utils import parse_json_to_yaml, refresh_token
 from neomaril_codex.base import BaseNeomaril, BaseNeomarilClient
 from neomaril_codex.exceptions import (
     AuthenticationError,
     ExecutionError,
     ExternalMonitoringError,
-    ServerError,
     GroupError,
-    InputError
+    InputError,
+    ServerError,
 )
 from neomaril_codex.logger_config import get_logger
 
@@ -19,86 +24,37 @@ logger = get_logger()
 
 
 class NeomarilExternalMonitoring(BaseNeomaril):
+    """
+    Class that handles an external monitoring object
+    """
+
     def __init__(
         self,
         group: str,
         ex_monitoring_hash: str,
+        status: MonitoringStatus,
         login: Optional[str] = None,
         password: Optional[str] = None,
         url: Optional[str] = None,
     ):
         super().__init__(login=login, password=password, url=url)
+        self.external_monitoring_url = f"{self.base_url}/external-monitoring/{group}"
         self.ex_monitoring_hash = ex_monitoring_hash
         self.group = group
+        self.status = status
 
     def __repr__(self):
-        return f"Group: {self.group}\nHash: {self.ex_monitoring_hash}"
+        return f"Group: {self.group}\nHash: {self.ex_monitoring_hash}\nStatus: {self.status}"
 
     def __str__(self):
-        return f"Group: {self.group}\nHash: {self.ex_monitoring_hash}"
+        return f"Group: {self.group}\nHash: {self.ex_monitoring_hash}\nStatus: {self.status}"
 
-
-class NeomarilExternalMonitoringClient(BaseNeomarilClient):
-    def __repr__(self) -> str:
-        return f'API version {self.version} - NeomarilExternalMonitoringClient(url="{self.base_url}", Token="{self.user_token}")'
-
-    def __str__(self):
-        return f"NEOMARIL {self.base_url} External Monitoring client:{self.user_token}"
-
-    def __register(self, configuration_file: Union[str, dict], url: str) -> str:
-        """Register a new external monitoring
-
-        Attributes:
-        -----------
-        configuration_file (Union[str, dict]): Dict with configuration
-        url (str): Url to register the external monitoring
-
-        Raises:
-        -------
-        AuthenticationError
-        GroupError
-        ServerError
-        ExternalMonitoringError
-
-        Returns:
-        --------
-        str: External monitoring Hash
-        """
-        response = requests.post(
-            url,
-            json=configuration_file,
-            headers={
-                "Authorization": "Bearer " + refresh_token(*self.credentials, self.base_url),
-            },
-        )
-        formatted_msg = parse_json_to_yaml(response.json())
-
-        if response.status_code == 201:
-            logger.debug(
-                f"External monitoring was successfully registered:\n{formatted_msg}"
-            )
-            external_monitoring_hash = response.json()["ExternalMonitoringHash"]
-            return external_monitoring_hash
-
-        if response.status_code == 401:
-            logger.debug(
-                "Login or password are invalid, please check your credentials."
-            )
-            raise AuthenticationError("Login not authorized.")
-
-        if response.status_code == 404:
-            logger.debug("Group not found in the database")
-            raise GroupError("Group not found in the database")
-
-        if response.status_code >= 500:
-            logger.debug("Server is not available. Please, try it later.")
-            raise ServerError("Server is not available!")
-
-        logger.debug(f"Something went wrong...\n{formatted_msg}")
-        raise ExternalMonitoringError("Could not register the monitoring.")
-
-    def __upload_file(
-        self, field: str, file: str, url: str, form: Optional[dict] = None
+    def _upload_file(
+        self,
+        field: str,
+        file: str,
+        url: str,
+        form: Optional[dict] = None,
     ) -> bool:
         """Upload a file
 
@@ -132,7 +88,10 @@ class NeomarilExternalMonitoringClient(BaseNeomarilClient):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.upload_file.__qualname__,
             },
+            timeout=60,
         )
 
         formatted_msg = parse_json_to_yaml(response.json())
@@ -158,7 +117,65 @@ class NeomarilExternalMonitoringClient(BaseNeomarilClient):
         logger.debug(f"Something went wrong...\n{formatted_msg}")
         raise ExternalMonitoringError("Could not register the monitoring.")
 
-    def __host(self, url: str) -> bool:
+    def upload_file(
+        self,
+        model_file: Optional[str] = None,
+        requirements_file: Optional[str] = None,
+        preprocess_file: Optional[str] = None,
+        preprocess_reference: Optional[str] = None,
+        shap_reference: Optional[str] = None,
+        python_version: Optional[str] = "3.10",
+    ):
+        """Validate inputs before send files
+
+        Args:
+            model_file (Optional[str], optional): Path to your model.pkl file. Defaults to None.
+            requirements_file (Optional[str]): Path to your requirements.txt file. Defaults to None.
+            preprocess_file (Optional[str]): Path to your preprocessing file. Defaults to None.
+            preprocess_reference (Optional[str]): Preprocessing function entrypoint. Defaults to None.
+            shap_reference (Optional[str]): Shap function entrypoint. Defaults to None.
+            python_version (Optional[str], optional): Python version. Can be "3.8", "3.9" or "3.10". Defaults to "3.10".
+
+        Raises:
+            InputError
+            InputError
+        """
+        if preprocess_file is not None and (
+            preprocess_reference is None or shap_reference is None
+        ):
+            raise InputError(
+                "You must pass the preprocess entrypoint and shap reference!"
+            )
+
+        if (
+            preprocess_reference is not None or shap_reference is not None
+        ) and preprocess_file is None:
+            raise InputError("You must pass the preprocess file!")
+
+        python_version = "Python" + python_version.replace(".", "")
+
+        uploads = [
+            ("model", model_file, "model-file", None),
+            ("requirements", requirements_file, "requirements-file", None),
+            (
+                "script",
+                preprocess_file,
+                "script-file",
+                {
+                    "preprocess_reference": preprocess_reference,
+                    "shap_reference": shap_reference,
+                    "python_version": python_version,
+                },
+            ),
+        ]
+
+        for field, file, path, form in uploads:
+            if file is not None:
+                url = f"{self.external_monitoring_url}/{self.ex_monitoring_hash}/{path}"
+                self._upload_file(field, file, url, form)
+
+
+    def host(self, wait_ready: Optional[bool] = False):
         """Host the new external monitoring
 
         Attributes:
@@ -176,16 +193,24 @@ class NeomarilExternalMonitoringClient(BaseNeomarilClient):
         -------
         bool: True if host the new external monitoring
         """
+
+        if self.status == MonitoringStatus.Validated:
+            return f"You can't host a model that is already hosted. Status is {self.status}"
+
         response = requests.patch(
-            url,
+            url=f"{self.external_monitoring_url}/{self.ex_monitoring_hash}/status",
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
             },
+            timeout=60,
         )
 
         formatted_msg = parse_json_to_yaml(response.json())
         if response.status_code == 200:
+            self.status = MonitoringStatus.Validating
+            if wait_ready:
+                self._wait_ready()
             logger.debug("Hosted external monitoring successfully")
             return True
 
@@ -206,7 +231,7 @@ class NeomarilExternalMonitoringClient(BaseNeomarilClient):
         logger.debug(f"Something went wrong...\n{formatted_msg}")
         raise ExternalMonitoringError("Could not register the monitoring.")
 
-    def __status(self, url: str, external_monitoring_hash: str):
+    def _wait_ready(self):
         """Check the status of the external monitoring
 
         Args:
@@ -217,24 +242,26 @@ class NeomarilExternalMonitoringClient(BaseNeomarilClient):
             str: external monitoring
         """
         response = requests.get(
-            url,
+            url=f"{self.external_monitoring_url}/{self.ex_monitoring_hash}/status",
             headers={
                 "Authorization": "Bearer "
-                 + refresh_token(*self.credentials, self.base_url),
+                + refresh_token(*self.credentials, self.base_url),
             },
+            timeout=60,
         )
         message = response.json()
         status = message["Status"]
 
         print("Waiting the monitoring host...", end="")
 
-        while status not in ["Validated", "Invalidated"]:
+        while status not in [MonitoringStatus.Validated, MonitoringStatus.Invalidated]:
             response = requests.get(
-                url,
+                url=f"{self.external_monitoring_url}/{self.ex_monitoring_hash}/status",
                 headers={
                     "Authorization": "Bearer "
                     + refresh_token(*self.credentials, self.base_url),
                 },
+                timeout=60,
             )
             message = response.json()
             status = message["Status"]
@@ -263,110 +290,145 @@ class NeomarilExternalMonitoringClient(BaseNeomarilClient):
             print(".", end="", flush=True)
             sleep(30)
 
-        if status == "Invalidated":
+        if status == MonitoringStatus.Invalidated:
             res_message = message["Message"]
+            self.status = MonitoringStatus.Invalidated
             logger.debug(f"Model monitoring host message: {res_message}")
             raise ExecutionError("Monitoring host failed")
 
+        self.status = MonitoringStatus.Validated
         logger.debug(
-            f'External monitoring host validated - Hash: "{external_monitoring_hash}"'
+            f'External monitoring host validated - Hash: "{self.ex_monitoring_hash}"'
         )
-        return external_monitoring_hash
+
+
+class NeomarilExternalMonitoringClient(BaseNeomarilClient):
+    """
+    Class that handles Neomaril External Monitoring Client
+    """
+
+    def __repr__(self) -> str:
+        return f"API version {self.version} - NeomarilExternalMonitoringClient"
+
+    def __str__(self):
+        return f"NEOMARIL {self.base_url} External Monitoring client:{self.user_token}"
+
+    def __register(self, configuration_file: Union[str, dict], url: str) -> str:
+        """Register a new external monitoring
+
+        Attributes:
+        -----------
+        configuration_file (Union[str, dict]): Dict with configuration
+        url (str): Url to register the external monitoring
+
+        Raises:
+        -------
+        AuthenticationError
+        GroupError
+        ServerError
+        ExternalMonitoringError
+
+        Returns:
+        --------
+        str: External monitoring Hash
+        """
+        response = requests.post(
+            url,
+            json=configuration_file,
+            headers={
+                "Authorization": "Bearer "
+                + refresh_token(*self.credentials, self.base_url),
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.register_monitoring.__qualname__,
+            },
+            timeout=60,
+        )
+        formatted_msg = parse_json_to_yaml(response.json())
+
+        if response.status_code == 201:
+            logger.debug(
+                f"External monitoring was successfully registered:\n{formatted_msg}"
+            )
+            external_monitoring_hash = response.json()["ExternalMonitoringHash"]
+            return external_monitoring_hash
+
+        if response.status_code == 401:
+            logger.debug(
+                "Login or password are invalid, please check your credentials."
+            )
+            raise AuthenticationError("Login not authorized.")
+
+        if response.status_code == 404:
+            logger.debug("Group not found in the database")
+            raise GroupError("Group not found in the database")
+
+        if response.status_code >= 500:
+            logger.debug("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
+
+        logger.debug(f"Something went wrong...\n{formatted_msg}")
+        raise ExternalMonitoringError("Could not register the monitoring.")
 
     def register_monitoring(
         self,
         *,
         configuration_file: Union[str, dict],
-        model_file: str,
         group: Optional[str] = "datarisk",
+        model_file: Optional[str] = None,
         requirements_file: Optional[str] = None,
         preprocess_file: Optional[str] = None,
         preprocess_reference: Optional[str] = None,
         shap_reference: Optional[str] = None,
         python_version: Optional[str] = "3.10",
+        wait_ready: Optional[bool] = True,
     ) -> NeomarilExternalMonitoring:
-        """
-        Register and host a Neomaril External Monitoring
+        """Register and host a Neomaril External Monitoring
 
-        Attributes
-        ----------
-        configuration_file : str or dict
-            Path or dict that represents the configuration file
-        model_file: str
-            Path to your locally trained model
-        group: str
-            Group the model is inserted. Default is 'datarisk' (public group)
-        requirements_file : str
-            Path of the requirements file
-        preprocess_file : str, optional
-            Path of the preprocess script.
-        preprocess_reference : str
-            Name of the preprocess reference
-        shap_reference : str
-            Name of the preprocess function
-        python_version : str, optional
-            The version of the python environment. Can be 3.8, 3.9 or 3.10. Default is 3.10
+        Args:
+            configuration_file (Union[str, dict]): Path or dict that represents the configuration file
+            group (Optional[str]): Group the model is inserted. Default is 'datarisk' (public group). Defaults to "datarisk".
+            model_file (Optional[str]): Path to your locally trained model. Defaults to None.
+            requirements_file (Optional[str]): Path of the requirements file. Defaults to None.
+            preprocess_file (Optional[str]): Path of the preprocess script. Defaults to None.
+            preprocess_reference (Optional[str]): Preprocessing function entrypoint. Defaults to None.
+            shap_reference (Optional[str]): Shap function entrypoint. Defaults to None.
+            python_version (Optional[str]): Python version. Can be "3.8", "3.9" or "3.10". Defaults to "3.10".
+            wait_ready (Optional[bool]): Wait external monitoring be ready. Defaults to True.
 
-        Returns
-        -------
-        NeomarilExternalMonitoring
-            A Neomaril External Monitoring
+        Returns:
+            NeomarilExternalMonitoring
         """
 
         base_external_url = f"{self.base_url}/external-monitoring/{group}"
 
-        if python_version not in ["3.8", "3.9", "3.10"]:
-            raise InputError(
-                "Invalid python version. Available versions are 3.8, 3.9, 3.10"
-            )
-
-        if preprocess_file is not None and (preprocess_reference is None or shap_reference is None):
-            raise InputError(
-                "You must pass the preprocess entrypoint and shap reference!"
-            )
-
-        python_version = "Python" + python_version.replace(".", "")
-
-        uploads = [
-            ("model", model_file, "model-file", None),
-            ("requirements", requirements_file, "requirements-file", None),
-            (
-                "script",
-                preprocess_file,
-                "script-file",
-                {
-                    "preprocess_reference": preprocess_reference,
-                    "shap_reference": shap_reference,
-                    "python_version": python_version,
-                },
-            ),
-        ]
-
         external_monitoring_hash = self.__register(
             configuration_file=configuration_file, url=base_external_url
         )
-        logger.info(f"External Monitoring registered successfully. Hash - {external_monitoring_hash}")
-
-        for field, file, path, form in uploads:
-            if file is not None:
-                url = f"{base_external_url}/{external_monitoring_hash}/{path}"
-                self.__upload_file(field, file, url, form)
-        logger.info(f"Files uploaded successfully")
-
-        self.__host(url=f"{base_external_url}/{external_monitoring_hash}/status")
-        self.__status(
-            url=f"{base_external_url}/{external_monitoring_hash}/status",
-            external_monitoring_hash=external_monitoring_hash,
-        )
-
-        logger.info(f'External monitoring host validated')
-        return NeomarilExternalMonitoring(
+        external_monitoring = NeomarilExternalMonitoring(
             login=self.credentials[0],
             password=self.credentials[1],
             url=self.base_url,
             group=group,
             ex_monitoring_hash=external_monitoring_hash,
+            status=MonitoringStatus.Unvalidated,
         )
+
+        logger.info(
+            f"External Monitoring registered successfully. Hash - {external_monitoring_hash}"
+        )
+
+        external_monitoring.upload_file(
+            model_file=model_file,
+            requirements_file=requirements_file,
+            preprocess_file=preprocess_file,
+            preprocess_reference=preprocess_reference,
+            shap_reference=shap_reference,
+            python_version=python_version,
+        )
+
+        external_monitoring.host(wait_ready=wait_ready)
+
+        return external_monitoring
 
     def list_hosted_external_monitorings(self) -> None:
         """List all hosted external monitoring"""
@@ -375,8 +437,10 @@ class NeomarilExternalMonitoringClient(BaseNeomarilClient):
         response = requests.get(
             url=url,
             headers={
-                "Authorization": "Bearer " + refresh_token(*self.credentials, self.base_url),
+                "Authorization": "Bearer "
+                + refresh_token(*self.credentials, self.base_url),
             },
+            timeout=60,
         )
 
         if response.status_code == 401:
@@ -404,13 +468,32 @@ class NeomarilExternalMonitoringClient(BaseNeomarilClient):
         for result in results:
             print(parse_json_to_yaml(result))
 
-    def get_external_monitoring(self, group: str, external_monitoring_hash: str) -> NeomarilExternalMonitoring:
+    def get_external_monitoring(
+        self, group: str, external_monitoring_hash: str
+    ) -> NeomarilExternalMonitoring:
+        """Return a external monitoring
+
+        Args:
+            group (str): Group where external monitoring was inserted
+            external_monitoring_hash (str): External Monitoring Hash
+
+        Raises:
+            AuthenticationError
+            GroupError
+            ServerError
+            ExternalMonitoringError
+
+        Returns:
+            NeomarilExternalMonitoring
+        """
         url = f"{self.base_url}/external-monitoring/{group}/{external_monitoring_hash}"
         response = requests.get(
             url=url,
             headers={
-                "Authorization": "Bearer " + refresh_token(*self.credentials, self.base_url),
+                "Authorization": "Bearer "
+                + refresh_token(*self.credentials, self.base_url),
             },
+            timeout=60,
         )
 
         if response.status_code == 401:
@@ -432,11 +515,12 @@ class NeomarilExternalMonitoringClient(BaseNeomarilClient):
             logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ExternalMonitoringError("Could not register the monitoring.")
 
-        logger.info(f'External monitoring found')
+        logger.info("External monitoring found")
         return NeomarilExternalMonitoring(
             login=self.credentials[0],
             password=self.credentials[1],
             url=self.base_url,
             group=group,
             ex_monitoring_hash=external_monitoring_hash,
+            status=MonitoringStatus[response.json()["Status"]],
         )
