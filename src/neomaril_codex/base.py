@@ -5,7 +5,7 @@ from time import sleep
 from typing import Optional
 
 import requests
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
 from neomaril_codex.__model_states import ModelExecutionState
 from neomaril_codex.__utils import (
@@ -39,7 +39,10 @@ class BaseNeomaril:
         password: Optional[str] = None,
         url: Optional[str] = None,
     ) -> None:
-        load_dotenv()
+        loaded = load_dotenv()
+        # Somethings when running as a script the default version might not work
+        if not loaded:
+            load_dotenv(find_dotenv(usecwd=True))
         logger.info("Loading .env")
 
         if url is None:
@@ -414,7 +417,10 @@ class NeomarilExecution(BaseNeomaril):
         group_token: Optional[str] = None,
     ) -> None:
         super().__init__(login=login, password=password, url=url)
-        load_dotenv()
+        loaded = load_dotenv()
+        # Somethings when running as a script the default version might not work
+        if not loaded:
+            load_dotenv(find_dotenv(usecwd=True))
         logger.info("Loading .env")
 
         self.exec_type = exec_type
