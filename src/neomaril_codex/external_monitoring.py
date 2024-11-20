@@ -2,6 +2,7 @@
 External Monitoring Module
 """
 
+from datetime import datetime
 from time import sleep
 from typing import Optional, Union
 
@@ -140,17 +141,45 @@ class NeomarilExternalMonitoring(BaseNeomaril):
             InputError
             InputError
         """
-        if preprocess_file is not None and (
-            preprocess_reference is None or shap_reference is None
-        ):
-            raise InputError(
-                "You must pass the preprocess entrypoint and shap reference!"
-            )
 
-        if (
-            preprocess_reference is not None or shap_reference is not None
-        ) and preprocess_file is None:
-            raise InputError("You must pass the preprocess file!")
+        if model_file is not None:
+            missing_args = [
+                f
+                for f in [
+                    model_file,
+                    requirements_file,
+                    preprocess_file,
+                    preprocess_reference,
+                    shap_reference,
+                    python_version,
+                ]
+                if f is None
+            ]
+            if missing_args:
+                logger.error(f"You must pass the following arguments: {missing_args}")
+                raise InputError("Missing files, function entrypoint or python version")
+
+        if preprocess_file is not None:
+            missing_args = [
+                f
+                for f in [
+                    requirements_file,
+                    preprocess_file,
+                    preprocess_reference,
+                    shap_reference,
+                    python_version,
+                ]
+                if f is None
+            ]
+            if missing_args:
+                logger.error(f"You must pass the following arguments: {missing_args}")
+                raise InputError("Missing files, function entrypoint or python version")
+
+        if python_version not in ["3.8", "3.9", "3.10"]:
+            logger.error(f"{python_version} is not available")
+            raise InputError(
+                "Invalid python version. Available versions are 3.8, 3.9, 3.10"
+            )
 
         python_version = "Python" + python_version.replace(".", "")
 
