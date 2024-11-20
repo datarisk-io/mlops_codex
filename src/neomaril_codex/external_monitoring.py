@@ -336,6 +336,18 @@ class NeomarilExternalMonitoring(BaseNeomaril):
             f'External monitoring host validated - Hash: "{self.ex_monitoring_hash}"'
         )
 
+    def logs(self, start: str, end: str):
+        """Get the logs of an external monitoring
+
+        Args:
+            start (str): start date to look for the records. The format must be dd-MM-yyyy
+            end (str): end date to look for the records. The format must be dd-MM-yyyy
+        """
+        url = f"{self.base_url}/monitoring/search/records/{self.group}/{self.ex_monitoring_hash}"
+        return parse_json_to_yaml(
+            self._logs(url=url, credentials=self.credentials, start=start, end=end)
+        )
+
 
 class NeomarilExternalMonitoringClient(BaseNeomarilClient):
     """
