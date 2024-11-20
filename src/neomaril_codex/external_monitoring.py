@@ -205,7 +205,7 @@ class NeomarilExternalMonitoring(BaseNeomaril):
                 self._upload_file(field, file, url, form)
                 logger.info(f"{file} file uploaded successfully")
 
-    def host(self, wait_ready: Optional[bool] = False):
+    def host(self, wait: Optional[bool] = False):
         """Host the new external monitoring
 
         Attributes:
@@ -225,7 +225,10 @@ class NeomarilExternalMonitoring(BaseNeomaril):
         """
 
         if self.status == MonitoringStatus.Validated:
-            return f"You can't host a model that is already hosted. Status is {self.status}"
+            logger.info(
+                f"You can't host a model that is already hosted. Status is {self.status}"
+            )
+            return
 
         response = requests.patch(
             url=f"{self.external_monitoring_url}/{self.ex_monitoring_hash}/status",
@@ -241,29 +244,29 @@ class NeomarilExternalMonitoring(BaseNeomaril):
         formatted_msg = parse_json_to_yaml(response.json())
         if response.status_code == 200:
             self.status = MonitoringStatus.Validating
-            if wait_ready:
-                self._wait_ready()
-            logger.debug("Hosted external monitoring successfully")
-            return True
+            if wait:
+                self.wait_ready()
+            logger.info("Hosted external monitoring successfully")
+            return self.ex_monitoring_hash
 
         if response.status_code == 401:
-            logger.debug(
+            logger.error(
                 "Login or password are invalid, please check your credentials."
             )
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code == 404:
-            logger.debug("Group not found in the database")
+            logger.error("Group not found in the database")
             raise GroupError("Group not found in the database")
 
         if response.status_code >= 500:
-            logger.debug("Server is not available. Please, try it later.")
+            logger.error("Server is not available. Please, try it later.")
             raise ServerError("Server is not available!")
 
-        logger.debug(f"Something went wrong...\n{formatted_msg}")
+        logger.error(f"Something went wrong...\n{formatted_msg}")
         raise ExternalMonitoringError("Could not register the monitoring.")
 
-    def _wait_ready(self):
+    def wait_ready(self):
         """Check the status of the external monitoring
 
         Args:
@@ -587,11 +590,12 @@ class NeomarilExternalMonitoringClient(BaseNeomarilClient):
             raise ExternalMonitoringError("Could not register the monitoring.")
 
         logger.info("External monitoring found")
-        return NeomarilExternalMonitoring(
+        external_monitoring = NeomarilExternalMonitoring(
             login=self.credentials[0],
             password=self.credentials[1],
             url=self.base_url,
             group=group,
             ex_monitoring_hash=external_monitoring_hash,
-            status=MonitoringStatus[response.json()["Status"]],
         )
+        external_monitoring.wait_ready()
+        return external_monitoring
