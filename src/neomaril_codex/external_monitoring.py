@@ -33,7 +33,7 @@ class NeomarilExternalMonitoring(BaseNeomaril):
         self,
         group: str,
         ex_monitoring_hash: str,
-        status: MonitoringStatus,
+        status: Optional[MonitoringStatus] = MonitoringStatus.Unvalidated,
         login: Optional[str] = None,
         password: Optional[str] = None,
         url: Optional[str] = None,
@@ -403,34 +403,84 @@ class NeomarilExternalMonitoringClient(BaseNeomarilClient):
     def register_monitoring(
         self,
         *,
-        configuration_file: Union[str, dict],
+        name: str,
+        training_execution_id: int,
+        period: str,
+        input_cols: list,
+        output_cols: list,
+        datasource_name: str,
+        extraction_type: str,
+        datasource_uri: str,
+        column_name: Optional[str] = None,
+        reference_date: Optional[str] = None,
+        python_version: Optional[str] = None,
         group: Optional[str] = "datarisk",
-        model_file: Optional[str] = None,
-        requirements_file: Optional[str] = None,
-        preprocess_file: Optional[str] = None,
-        preprocess_reference: Optional[str] = None,
-        shap_reference: Optional[str] = None,
-        python_version: Optional[str] = "3.10",
-        wait_ready: Optional[bool] = True,
     ) -> NeomarilExternalMonitoring:
-        """Register and host a Neomaril External Monitoring
+        """Register a Neomaril External Monitoring
 
         Args:
-            configuration_file (Union[str, dict]): Path or dict that represents the configuration file
-            group (Optional[str]): Group the model is inserted. Default is 'datarisk' (public group). Defaults to "datarisk".
-            model_file (Optional[str]): Path to your locally trained model. Defaults to None.
-            requirements_file (Optional[str]): Path of the requirements file. Defaults to None.
-            preprocess_file (Optional[str]): Path of the preprocess script. Defaults to None.
-            preprocess_reference (Optional[str]): Preprocessing function entrypoint. Defaults to None.
-            shap_reference (Optional[str]): Shap function entrypoint. Defaults to None.
-            python_version (Optional[str]): Python version. Can be "3.8", "3.9" or "3.10". Defaults to "3.10".
-            wait_ready (Optional[bool]): Wait external monitoring be ready. Defaults to True.
+            name: External Monitoring name
+            training_execution_id: Valid Mlops training execution id
+            period: The frequency the monitoring will run. It can be: "Day" | "Week" | "Quarter" | "Month" | "Year"
+            input_cols: Array with input columns name
+            output_cols: Array with output columns name
+            datasource_name: Valid Mlops datasource name
+            extraction_type: Type of extraction. It can be "Incremental" | "Full"
+            datasource_uri: Valid datasource Uri
+            column_name: Column name of the data column
+            reference_date: Reference extraction date
+            python_version: Python version used to run preprocessing scripts. It can be "3.8" | "3.9" | "3.10"
+            group: Name of the group where the monitoring model will be inserted
 
         Returns:
             NeomarilExternalMonitoring
         """
 
         base_external_url = f"{self.base_url}/external-monitoring/{group}"
+
+        if period not in ["Day", "Week", "Quarter", "Month", "Year"]:
+            logger.error(
+                f"{period} is not available. Must be Day | Week | Quarter | Month | Year"
+            )
+            raise InputError("Period is not valid")
+
+        if extraction_type not in ["Full", "Incremental"]:
+            logger.error(
+                f"{extraction_type} is not available. Must be 'Full' or 'Incremental'"
+            )
+            raise InputError("Extraction Type is not valid")
+
+        configuration_file = {
+            "Name": name,
+            "TrainingExecutionId": training_execution_id,
+            "Period": period,
+            "InputCols": input_cols,
+            "OutputCols": output_cols,
+            "DataSourceName": datasource_name,
+            "ExtractionType": extraction_type,
+            "DataSourceUri": datasource_uri,
+        }
+
+        if column_name:
+            configuration_file["ColumnName"] = column_name
+
+        if reference_date:
+            try:
+                datetime.strptime(reference_date, format="%d-%m-%Y")
+            except ValueError as exc:
+                logger.error("Reference date is in incorrect format. Use 'DD-MM-YYYY'")
+                raise InputError("Date is not in the correct format") from exc
+            configuration_file["ReferenceDate"] = reference_date
+
+        if python_version:
+            if python_version not in ["3.8", "3.9", "3.10"]:
+                raise InputError(
+                    "Invalid python version. Available versions are 3.8, 3.9, 3.10"
+                )
+
+            python_version = "Python" + python_version.replace(".", "")
+
+            configuration_file["PythonVersion"] = python_version
 
         external_monitoring_hash = self.__register(
             configuration_file=configuration_file, url=base_external_url
@@ -447,17 +497,6 @@ class NeomarilExternalMonitoringClient(BaseNeomarilClient):
         logger.info(
             f"External Monitoring registered successfully. Hash - {external_monitoring_hash}"
         )
-
-        external_monitoring.upload_file(
-            model_file=model_file,
-            requirements_file=requirements_file,
-            preprocess_file=preprocess_file,
-            preprocess_reference=preprocess_reference,
-            shap_reference=shap_reference,
-            python_version=python_version,
-        )
-
-        external_monitoring.host(wait_ready=wait_ready)
 
         return external_monitoring
 
