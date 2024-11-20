@@ -120,6 +120,7 @@ class NeomarilExternalMonitoring(BaseNeomaril):
 
     def upload_file(
         self,
+        *,
         model_file: Optional[str] = None,
         requirements_file: Optional[str] = None,
         preprocess_file: Optional[str] = None,
