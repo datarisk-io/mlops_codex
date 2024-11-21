@@ -812,7 +812,7 @@ class NeomarilModel(BaseNeomaril):
         else:
             raise ModelError("Sync models don't have executions")
 
-    def __host_monitoring_status(self, *, group: str, model_id: str, period:str):
+    def __host_monitoring_status(self, *, group: str, model_id: str, period: str):
         """
         Get the host status for the monitoring configuration
 
@@ -850,11 +850,11 @@ class NeomarilModel(BaseNeomaril):
                 logger.info("Waiting the monitoring host.")
                 sleep(30)
                 self.__host_monitoring_status(
-                    group=group, model_id=model_id,period=period
+                    group=group, model_id=model_id, period=period
                 )  # recursive
             if status == "Validated":
                 logger.info(f'Model monitoring host validated - Hash: "{model_id}"')
-                
+
             if status == "Invalidated":
                 res_message = message["Message"]
                 logger.error(f"Model monitoring host message: {res_message}")
@@ -870,7 +870,7 @@ class NeomarilModel(BaseNeomaril):
             logger.error(response.text)
             raise ModelError("Could not get host monitoring status")
 
-    def __host_monitoring(self, *, group: str, model_id: str, period:str):
+    def __host_monitoring(self, *, group: str, model_id: str, period: str):
         """
         Host the monitoring configuration
 
@@ -964,7 +964,7 @@ class NeomarilModel(BaseNeomaril):
                 conf_dict = json.load(f)
 
             conf = open(configuration_file, "rb")
-            
+
         elif isinstance(configuration_file, dict):
             conf = json.dumps(configuration_file)
             conf_dict = configuration_file
@@ -1009,11 +1009,13 @@ class NeomarilModel(BaseNeomaril):
         if response.status_code == 201:
             data = response.json()
             model_id = data["ModelHash"]
-            period = conf_dict['Period']
+            period = conf_dict["Period"]
             logger.info(f'{data["Message"]} - Hash: "{model_id}"')
 
             self.__host_monitoring(group=self.group, model_id=model_id, period=period)
-            self.__host_monitoring_status(group=self.group, model_id=model_id, period=period)
+            self.__host_monitoring_status(
+                group=self.group, model_id=model_id, period=period
+            )
 
             return model_id
 

@@ -48,7 +48,7 @@ def try_login(login: str, password: str, base_url: str) -> tuple[str, str] | Exc
     server_status = response.status_code
 
     if server_status == 401:
-        raise AuthenticationError('Email or password invalid.')
+        raise AuthenticationError("Email or password invalid.")
 
     if server_status >= 500:
         raise ServerError("Neomaril server unavailable at the moment.")

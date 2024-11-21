@@ -353,7 +353,6 @@ class NeomarilDataSource(BaseNeomaril):
         logger.error(f"Something went wrong...\n{formatted_msg}")
         raise InputError("Bad Input. Client error")
 
-
     def delete(self):
         """
         Delete the datasource on neomaril.
@@ -556,7 +555,7 @@ class NeomarilDataset(BaseNeomaril):
         origin: Optional[str] = None,
         origin_id: Optional[int] = None,
         datasource_name: Optional[str] = None,
-        group: Optional[str] = None
+        group: Optional[str] = None,
     ):
         """
         List datasets from datasources.
@@ -568,7 +567,7 @@ class NeomarilDataset(BaseNeomaril):
             origin_id: Optional[str]
                 Integer that represents the id of a dataset, given an origin
             datasource_name: Optional[str]
-                Name of the datasource 
+                Name of the datasource
             group: Optional[str]
                 Name of the group where we will search the datasource
 
@@ -588,7 +587,7 @@ class NeomarilDataset(BaseNeomaril):
 
         if group:
             query["group"] = group
-        
+
         if origin and origin != "Datasource":
             if "group" not in query:
                 query["group"] = group

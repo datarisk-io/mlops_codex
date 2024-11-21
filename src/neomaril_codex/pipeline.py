@@ -68,12 +68,11 @@ class NeomarilPipeline(BaseNeomaril):
         self.__model = None
         self.__model_id = None
 
-    def __try_create_group(self, client, group:str):
+    def __try_create_group(self, client, group: str):
         groups = client.list_groups()
 
-        if group not in [g['Name'] for g in groups]:
-            client.create_group(name=group, description='Created with Codex Pipeline')
-
+        if group not in [g["Name"] for g in groups]:
+            client.create_group(name=group, description="Created with Codex Pipeline")
 
     def register_train_config(self, **kwargs) -> dict:
         """
@@ -227,9 +226,11 @@ class NeomarilPipeline(BaseNeomaril):
                 source_file=os.path.join(PATH, conf["source"]),
                 requirements_file=os.path.join(PATH, conf["packages"]),
                 training_reference=conf["train_function"],
-                extra_files=[os.path.join(PATH, e) for e in extra_files]
-                if extra_files
-                else None,
+                extra_files=(
+                    [os.path.join(PATH, e) for e in extra_files]
+                    if extra_files
+                    else None
+                ),
                 python_version=str(self.python_version),
                 wait_complete=True,
             )
@@ -253,13 +254,17 @@ class NeomarilPipeline(BaseNeomaril):
                 model_metrics=conf["model_metrics"],
                 model_params=conf["model_params"],
                 python_version=conf["python_version"],
-                extra_files=[os.path.join(PATH, e) for e in extra_files]
-                if extra_files
-                else None,
+                extra_files=(
+                    [os.path.join(PATH, e) for e in extra_files]
+                    if extra_files
+                    else None
+                ),
                 wait_complete=True,
             )
         else:
-            raise TrainingError(f"Invalid training_type {conf['training_type']}. Valid options are Custom, AutoML and External")
+            raise TrainingError(
+                f"Invalid training_type {conf['training_type']}. Valid options are Custom, AutoML and External"
+            )
 
         status = self.__training_run.get_status()
         if status["Status"] == "Succeeded":
@@ -307,9 +312,11 @@ class NeomarilPipeline(BaseNeomaril):
                     model_name=model_name,
                     model_reference=conf["score_function"],
                     source_file=os.path.join(PATH, conf["source"]),
-                    extra_files=[os.path.join(PATH, e) for e in extra_files]
-                    if extra_files
-                    else None,
+                    extra_files=(
+                        [os.path.join(PATH, e) for e in extra_files]
+                        if extra_files
+                        else None
+                    ),
                     env=os.path.join(PATH, conf["env"]) if conf.get("env") else None,
                     schema=os.path.join(PATH, conf["schema"]),
                     operation=conf["operation"],
@@ -335,13 +342,15 @@ class NeomarilPipeline(BaseNeomaril):
                 source_file=os.path.join(PATH, conf["source"]),
                 model_file=os.path.join(PATH, conf["model"]),
                 requirements_file=os.path.join(PATH, conf["packages"]),
-                extra_files=[os.path.join(PATH, e) for e in extra_files]
-                if extra_files
-                else None,
+                extra_files=(
+                    [os.path.join(PATH, e) for e in extra_files]
+                    if extra_files
+                    else None
+                ),
                 env=os.path.join(PATH, conf["env"]) if conf.get("env") else None,
-                schema=os.path.join(PATH, conf["schema"])
-                if conf.get("schema")
-                else None,
+                schema=(
+                    os.path.join(PATH, conf["schema"]) if conf.get("schema") else None
+                ),
                 operation=conf["operation"],
                 input_type=conf["input_type"],
                 group=self.group,
@@ -389,7 +398,7 @@ class NeomarilPipeline(BaseNeomaril):
                 f.truncate()
 
         model = NeomarilModel(
-            model_id=conf.get('model_id', model_id),
+            model_id=conf.get("model_id", model_id),
             login=self.credentials[0],
             password=self.credentials[1],
             group=self.group,
@@ -435,7 +444,9 @@ class NeomarilPipeline(BaseNeomaril):
 
         if self.monitoring_config:
             self.run_monitoring(
-                training_exec_id=(self.__training_id[1] if self.__training_id else None),
+                training_exec_id=(
+                    self.__training_id[1] if self.__training_id else None
+                ),
                 model_id=self.__model_id,
             )
         self.__start = True
@@ -443,8 +454,10 @@ class NeomarilPipeline(BaseNeomaril):
     @property
     def training(self):
         if not self.__start:
-            raise PipelineError("Pipeline didnt run. Run it first before trying to access the training")
-        
+            raise PipelineError(
+                "Pipeline didnt run. Run it first before trying to access the training"
+            )
+
         if not self.train_config:
             raise PipelineError("Training configuration not found.")
 
@@ -454,8 +467,10 @@ class NeomarilPipeline(BaseNeomaril):
     @property
     def training_run(self):
         if not self.__start:
-            raise PipelineError("Pipeline didnt run. Run it first before trying to access the training run")
-        
+            raise PipelineError(
+                "Pipeline didnt run. Run it first before trying to access the training run"
+            )
+
         if not self.train_config:
             raise PipelineError("Training configuration not found.")
 
@@ -465,8 +480,10 @@ class NeomarilPipeline(BaseNeomaril):
     @property
     def model(self):
         if not self.__start:
-            raise PipelineError("Pipeline didnt run. Run it first before trying to access the model")
-        
+            raise PipelineError(
+                "Pipeline didnt run. Run it first before trying to access the model"
+            )
+
         if not self.deploy_config:
             raise PipelineError("Model deployment configuration not found.")
 
