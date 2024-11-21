@@ -64,7 +64,9 @@ class NeomarilPipeline(BaseNeomaril):
         self.monitoring_config = None
         self.__training = None
         self.__training_run = None
+        self.__training_id = None
         self.__model = None
+        self.__model_id = None
 
     def __try_create_group(self, client, group:str):
         groups = client.list_groups()
@@ -387,7 +389,7 @@ class NeomarilPipeline(BaseNeomaril):
                 f.truncate()
 
         model = NeomarilModel(
-            model_id=model_id,
+            model_id=conf.get('model_id', model_id),
             login=self.credentials[0],
             password=self.credentials[1],
             group=self.group,
@@ -427,13 +429,9 @@ class NeomarilPipeline(BaseNeomaril):
 
         if self.train_config:
             self.__training_id = self.run_training()
-        else:
-            self.__training_id = None
 
         if self.deploy_config:
             self.__model_id = self.run_deploy(training_id=self.__training_id)
-        else:
-            self.__model_id = None
 
         if self.monitoring_config:
             self.run_monitoring(
