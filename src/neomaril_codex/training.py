@@ -638,7 +638,6 @@ class NeomarilTrainingExecution(NeomarilExecution):
         if response.status_code == 202:
             logger.info(f"Model host in process - Hash: {model_id}")
 
-
         if response.status_code == 401:
             logger.error(
                 "Login or password are invalid, please check your credentials."
@@ -646,7 +645,9 @@ class NeomarilTrainingExecution(NeomarilExecution):
             raise AuthenticationError("Login not authorized.")
 
         if response.status_code >= 500:
-            logger.error(f"Something went wrong...\n{parse_json_to_yaml(response.json())}")
+            logger.error(
+                f"Something went wrong...\n{parse_json_to_yaml(response.json())}"
+            )
             raise InputError("Invalid parameters for model creation")
 
     def promote_model(
@@ -654,7 +655,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
         *,
         model_name: str,
         operation: str = "Sync",
-        schema: Union[str, dict],
+        schema: Optional[Union[str, dict]] = None,
         model_reference: Optional[str] = None,
         source_file: Optional[str] = None,
         extra_files: Optional[list] = None,

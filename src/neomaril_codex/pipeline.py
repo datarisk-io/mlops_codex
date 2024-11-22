@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional
 
 import yaml
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
 from neomaril_codex.base import BaseNeomaril
 from neomaril_codex.exceptions import ModelError, PipelineError, TrainingError
@@ -56,18 +56,23 @@ class NeomarilPipeline(BaseNeomaril):
     ) -> None:
         super().__init__(login=login, password=password, url=url)
 
+        self.__start = False
         self.group = group
         self.python_version = python_version
         self.train_config = None
         self.deploy_config = None
         self.monitoring_config = None
+        self.__training = None
+        self.__training_run = None
+        self.__training_id = None
+        self.__model = None
+        self.__model_id = None
 
-    def __try_create_group(self, client, group:str):
+    def __try_create_group(self, client, group: str):
         groups = client.list_groups()
 
-        if group not in [g['Name'] for g in groups]:
-            client.create_group(name=group, description='Created with Codex Pipeline')
-
+        if group not in [g["Name"] for g in groups]:
+            client.create_group(name=group, description="Created with Codex Pipeline")
 
     def register_train_config(self, **kwargs) -> dict:
         """
@@ -138,8 +143,11 @@ class NeomarilPipeline(BaseNeomaril):
             except yaml.YAMLError as exc:
                 print(exc)
 
-        load_dotenv()
-        logger.info("Loading .env")
+        loaded = load_dotenv()
+        # Somethings when running as a script the default version might not work
+        if not loaded:
+            load_dotenv(find_dotenv(usecwd=True))
+        logger.info(f"Loading .env")
 
         login = os.getenv("NEOMARIL_USER")
         if not login:
@@ -200,7 +208,7 @@ class NeomarilPipeline(BaseNeomaril):
 
         conf = self.train_config
 
-        training = client.create_training_experiment(
+        self.__training = client.create_training_experiment(
             experiment_name=conf["experiment_name"],
             model_type=conf["model_type"],
             group=self.group,
@@ -211,32 +219,57 @@ class NeomarilPipeline(BaseNeomaril):
         extra_files = conf.get("extra")
 
         if conf["training_type"] == "Custom":
-            run = training.run_training(
+            self.__training_run = self.__training.run_training(
                 run_name=run_name,
                 training_type=conf["training_type"],
                 train_data=os.path.join(PATH, conf["data"]),
                 source_file=os.path.join(PATH, conf["source"]),
                 requirements_file=os.path.join(PATH, conf["packages"]),
                 training_reference=conf["train_function"],
-                extra_files=[os.path.join(PATH, e) for e in extra_files]
-                if extra_files
-                else None,
+                extra_files=(
+                    [os.path.join(PATH, e) for e in extra_files]
+                    if extra_files
+                    else None
+                ),
                 python_version=str(self.python_version),
                 wait_complete=True,
             )
 
         elif conf["training_type"] == "AutoML":
-            run = training.run_training(
+            self.__training_run = self.__training.run_training(
                 run_name=run_name,
                 training_type=os.path.join(PATH, conf["data"]),
                 conf_dict=os.path.join(PATH, conf["config"]),
                 wait_complete=True,
             )
 
-        status = run.get_status()
+        elif conf["training_type"] == "External":
+            self.__training_run = self.__training.run_training(
+                run_name=run_name,
+                training_type=conf["training_type"],
+                X_train=os.path.join(PATH, conf["X_train"]),
+                y_train=os.path.join(PATH, conf["y_train"]),
+                model_outputs=os.path.join(PATH, conf["model_outputs"]),
+                model_file=conf["model_file"],
+                model_metrics=conf["model_metrics"],
+                model_params=conf["model_params"],
+                python_version=conf["python_version"],
+                extra_files=(
+                    [os.path.join(PATH, e) for e in extra_files]
+                    if extra_files
+                    else None
+                ),
+                wait_complete=True,
+            )
+        else:
+            raise TrainingError(
+                f"Invalid training_type {conf['training_type']}. Valid options are Custom, AutoML and External"
+            )
+
+        status = self.__training_run.get_status()
         if status["Status"] == "Succeeded":
             logger.info("Model training finished")
-            return training.training_id, run.exec_id
+            return self.__training.training_id, self.__training_run.exec_id
         else:
             raise TrainingError("Training failed: " + status["Message"])
 
@@ -269,34 +302,28 @@ class NeomarilPipeline(BaseNeomaril):
 
         if training_id:
             logger.info("Deploying scorer from training")
-            training_run = NeomarilTrainingExecution(
-                training_id=training_id[0],
-                group=self.group,
-                exec_id=training_id[1],
-                login=self.credentials[0],
-                password=self.credentials[1],
-                url=self.base_url,
-            )
 
             model_name = conf.get(
-                "name", training_run.execution_data.get("ExperimentName", "")
+                "name", self.__training_run.execution_data.get("ExperimentName", "")
             )
 
-            if training_run.execution_data["TrainingType"] == "Custom":
-                model = training_run.promote_model(
+            if self.__training_run.execution_data["TrainingType"] == "Custom":
+                self.__model = self.__training_run.promote_model(
                     model_name=model_name,
                     model_reference=conf["score_function"],
                     source_file=os.path.join(PATH, conf["source"]),
-                    extra_files=[os.path.join(PATH, e) for e in extra_files]
-                    if extra_files
-                    else None,
+                    extra_files=(
+                        [os.path.join(PATH, e) for e in extra_files]
+                        if extra_files
+                        else None
+                    ),
                     env=os.path.join(PATH, conf["env"]) if conf.get("env") else None,
                     schema=os.path.join(PATH, conf["schema"]),
                     operation=conf["operation"],
                 )
 
-            elif training_run.execution_data["TrainingType"] == "AutoML":
-                model = training_run.promote_model(
+            elif self.__training_run.execution_data["TrainingType"] == "AutoML":
+                self.__model = self.__training_run.promote_model(
                     model_name=model_name, operation=conf["operation"]
                 )
 
@@ -309,34 +336,36 @@ class NeomarilPipeline(BaseNeomaril):
             )
             self.__try_create_group(client, self.group)
 
-            model = client.create_model(
+            self.__model = client.create_model(
                 model_name=conf.get("name"),
                 model_reference=conf["score_function"],
                 source_file=os.path.join(PATH, conf["source"]),
                 model_file=os.path.join(PATH, conf["model"]),
                 requirements_file=os.path.join(PATH, conf["packages"]),
-                extra_files=[os.path.join(PATH, e) for e in extra_files]
-                if extra_files
-                else None,
+                extra_files=(
+                    [os.path.join(PATH, e) for e in extra_files]
+                    if extra_files
+                    else None
+                ),
                 env=os.path.join(PATH, conf["env"]) if conf.get("env") else None,
-                schema=os.path.join(PATH, conf["schema"])
-                if conf.get("schema")
-                else None,
+                schema=(
+                    os.path.join(PATH, conf["schema"]) if conf.get("schema") else None
+                ),
                 operation=conf["operation"],
                 input_type=conf["input_type"],
                 group=self.group,
             )
 
-        while model.status == "Building":
-            model.wait_ready()
+        while self.__model.status == "Building":
+            self.__model.wait_ready()
 
-        if model.status == "Deployed":
+        if self.__model.status == "Deployed":
             logger.info("Model deployement finished")
-            return model.model_id
+            return self.__model.model_id
 
         else:
             raise ModelError(
-                "Model deployement failed: " + model.get_logs(routine="Host")[0]
+                "Model deployement failed: " + self.__model.get_logs(routine="Host")[0]
             )
 
     def run_monitoring(
@@ -369,7 +398,7 @@ class NeomarilPipeline(BaseNeomaril):
                 f.truncate()
 
         model = NeomarilModel(
-            model_id=model_id,
+            model_id=conf.get("model_id", model_id),
             login=self.credentials[0],
             password=self.credentials[1],
             group=self.group,
@@ -408,17 +437,55 @@ class NeomarilPipeline(BaseNeomaril):
             raise PipelineError("Cannot start pipeline without configuration")
 
         if self.train_config:
-            training_id = self.run_training()
-        else:
-            training_id = None
+            self.__training_id = self.run_training()
 
         if self.deploy_config:
-            model_id = self.run_deploy(training_id=training_id)
-        else:
-            model_id = None
+            self.__model_id = self.run_deploy(training_id=self.__training_id)
 
         if self.monitoring_config:
             self.run_monitoring(
-                training_exec_id=(training_id[1] if training_id else None),
-                model_id=model_id,
+                training_exec_id=(
+                    self.__training_id[1] if self.__training_id else None
+                ),
+                model_id=self.__model_id,
             )
+        self.__start = True
+
+    @property
+    def training(self):
+        if not self.__start:
+            raise PipelineError(
+                "Pipeline didnt run. Run it first before trying to access the training"
+            )
+
+        if not self.train_config:
+            raise PipelineError("Training configuration not found.")
+
+        if self.__training:
+            return self.__training
+
+    @property
+    def training_run(self):
+        if not self.__start:
+            raise PipelineError(
+                "Pipeline didnt run. Run it first before trying to access the training run"
+            )
+
+        if not self.train_config:
+            raise PipelineError("Training configuration not found.")
+
+        if self.__training_run:
+            return self.__training_run
+
+    @property
+    def model(self):
+        if not self.__start:
+            raise PipelineError(
+                "Pipeline didnt run. Run it first before trying to access the model"
+            )
+
+        if not self.deploy_config:
+            raise PipelineError("Model deployment configuration not found.")
+
+        if self.__model:
+            return self.__model
