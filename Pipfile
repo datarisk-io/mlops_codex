@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-neomaril-codex = {path = "."}
+mlops_codex = {path = "."}
 
 [dev-packages]
 notebook = "==6.5.2"

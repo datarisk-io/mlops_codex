@@ -1,24 +1,24 @@
-# Neomaril Codex
+# MLOps Codex
 
 Para mudar para a versão em inglês deste README, clique [aqui](./README.md).
 
 ## Sobre
 
-Pacote para interagir com o Neomaril, uma ferramenta para deploy de modelos de Machine Learning (ML).
+Pacote para interagir com o MLOps, uma ferramenta para deploy de modelos de Machine Learning (ML).
 
 ## Começando
 
 ### Instalação
 
 ```
-  pip install neomaril-codex
+  pip install mlops_codex
 ```
 
 ### Como usar
 
-Leia a [documentação](https://datarisk-io.github.io/mlops-neomaril-codex) para mais informações.
+Leia a [documentação](https://datarisk-io.github.io/mlops-mlops_codex) para mais informações.
 
-Disponibilizamos também alguns notebooks de [exemplo](https://github.com/datarisk-io/mlops-neomaril-codex/tree/master/notebooks).
+Disponibilizamos também alguns notebooks de [exemplo](https://github.com/datarisk-io/mlops-mlops_codex/tree/master/notebooks).
 
 ### Para desenvolvedores
 

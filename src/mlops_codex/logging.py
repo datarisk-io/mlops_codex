@@ -1,7 +1,7 @@
 import os, json
 from typing import Union
 
-from neomaril_codex.exceptions import InputError
+from mlops_codex.exceptions import InputError
 
 
 class Logger:
@@ -20,13 +20,13 @@ class Logger:
 
     Example
     --------
-    The logger needs to be implemented inside the function being executed by Neomaril like this:
+    The logger needs to be implemented inside the function being executed by MLOps like this:
 
     .. code-block:: python
 
         from joblib import load
         import pandas as pd
-        from neomaril_codex.logging import Logger
+        from mlops_codex.logging import Logger
 
 
         def score(data_path, model_path):

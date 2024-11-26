@@ -1,7 +1,7 @@
-neomaril\_codex package
+mlops\_codex package
 =======================
 
-The neomaril-codex is a package developed by Datarisk to help people who works with ML to train, deploy, monitor and manage their models.
+The mlops-codex is a package developed by Datarisk to help people who works with ML to train, deploy, monitor and manage their models.
 This page gives an overview of all objects, functions and methods present at the package.
 
 

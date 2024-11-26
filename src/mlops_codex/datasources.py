@@ -4,21 +4,21 @@ from typing import Optional, Union
 
 import requests
 
-from neomaril_codex.__utils import parse_json_to_yaml, refresh_token
-from neomaril_codex.base import BaseNeomaril, BaseNeomarilClient
-from neomaril_codex.exceptions import (
+from mlops_codex.__utils import parse_json_to_yaml, refresh_token
+from mlops_codex.base import BaseMLOps, BaseMLOpsClient
+from mlops_codex.exceptions import (
     AuthenticationError,
     CredentialError,
     DatasetNotFoundError,
     InputError,
     ServerError,
 )
-from neomaril_codex.logger_config import get_logger
+from mlops_codex.logger_config import get_logger
 
 logger = get_logger()
 
 
-class NeomarilDataSourceClient(BaseNeomarilClient):
+class MLOpsDataSourceClient(BaseMLOpsClient):
     """
     Class for client for manage datasources
 
@@ -31,8 +31,8 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
         Password for authenticating with the client.
         You can also use the env variable NEOMARIL_PASSWORD to set this
     url : str
-        URL to Neomaril Server.
-        Default value is https://neomaril.staging.datarisk.net,
+        URL to MLOps Server.
+        Default value is https://mlops.datarisk.net,
         use it to test your deployment first before changing to production.
         You can also use the env variable NEOMARIL_URL to set this
 
@@ -55,7 +55,7 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
         group: str,
     ):
         """
-        Register the user cloud credentials to allow Neomaril to use the provider to download the datasource.
+        Register the user cloud credentials to allow MLOps to use the provider to download the datasource.
 
         Attributes
         ----------
@@ -69,8 +69,8 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
 
         Returns
         ----------
-        NeomarilDataSource
-            A NeomarilDataSource object
+        MLOpsDataSource
+            A MLOpsDataSource object
 
         Example
         -------
@@ -82,7 +82,7 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
         >>> )
         """
 
-        datasource = NeomarilDataSource(
+        datasource = MLOpsDataSource(
             datasource_name=datasource_name,
             provider=provider,
             group=group,
@@ -117,8 +117,8 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
             files=files,
             headers={
                 "Authorization": "Bearer " + token,
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.register_datasource.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.register_datasource.__qualname__,
             },
             timeout=60,
         )
@@ -173,8 +173,8 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
             url=url,
             headers={
                 "Authorization": "Bearer " + token,
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.list_datasources.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.list_datasources.__qualname__,
             },
             timeout=60,
         )
@@ -199,7 +199,7 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
 
     def get_datasource(self, *, datasource_name: str, provider: str, group: str):
         """
-        Get a NeomarilDataSource to make datasource operations.
+        Get a MLOpsDataSource to make datasource operations.
 
         Attributes
         ----------
@@ -211,8 +211,8 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
 
         Returns
         ----------
-        NeomarilDataSource
-            A NeomarilDataSource object
+        MLOpsDataSource
+            A MLOpsDataSource object
 
         Example
         -------
@@ -221,7 +221,7 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
         datasources = self.list_datasources(provider=provider, group=group)
         for datasource in datasources:
             if datasource_name == datasource.get("Name"):
-                return NeomarilDataSource(
+                return MLOpsDataSource(
                     datasource_name=datasource.get("Name"),
                     provider=datasource.get("Provider"),
                     group=datasource.get("Group"),
@@ -232,7 +232,7 @@ class NeomarilDataSourceClient(BaseNeomarilClient):
         raise InputError("Datasource not found!")
 
 
-class NeomarilDataSource(BaseNeomaril):
+class MLOpsDataSource(BaseMLOps):
     """
     Class to operate actions in a datasource.
 
@@ -245,14 +245,14 @@ class NeomarilDataSource(BaseNeomaril):
         Password for authenticating with the client.
         You can also use the env variable NEOMARIL_PASSWORD to set this
     url : str
-        URL to Neomaril Server.
-        Default value is https://neomaril.staging.datarisk.net,
+        URL to MLOps Server.
+        Default value is https://mlops.datarisk.net,
         use it to test your deployment first before changing to production.
         You can also use the env variable NEOMARIL_URL to set this
     datasource_name : str
         Name given previously to the datasource.
     provider : str
-        Providers name, currently, Neomaril supports:
+        Providers name, currently, MLOps supports:
         Azure Blob Storage as "Azure",
         AWS S3 as "AWS",
         Google GCP as "GCP".
@@ -292,8 +292,8 @@ class NeomarilDataSource(BaseNeomaril):
 
         Returns
         ----------
-        NeomarilDataset
-            A NeomarilDataset with the identifier as dataset_hash.
+        MLOpsDataset
+            A MLOpsDataset with the identifier as dataset_hash.
 
         Raises
         ----------
@@ -318,8 +318,8 @@ class NeomarilDataSource(BaseNeomaril):
             data=form_data,
             headers={
                 "Authorization": "Bearer " + token,
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.import_dataset.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.import_dataset.__qualname__,
             },
             timeout=60,
         )
@@ -327,7 +327,7 @@ class NeomarilDataSource(BaseNeomaril):
         if response.status_code == 200:
             dataset_hash = response.json().get("ExternalHash")
 
-            dataset = NeomarilDataset(
+            dataset = MLOpsDataset(
                 dataset_hash=dataset_hash,
                 dataset_name=dataset_name,
                 datasource_name=self.datasource_name,
@@ -355,7 +355,7 @@ class NeomarilDataSource(BaseNeomaril):
 
     def delete(self):
         """
-        Delete the datasource on neomaril.
+        Delete the datasource on mlops.
         Pay attention when doing this action, it is irreversible!
         Returns
         -------
@@ -372,8 +372,8 @@ class NeomarilDataSource(BaseNeomaril):
             url=url,
             headers={
                 "Authorization": "Bearer " + token,
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.delete.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.delete.__qualname__,
             },
             timeout=60,
         )
@@ -381,7 +381,7 @@ class NeomarilDataSource(BaseNeomaril):
 
     def get_dataset(self, *, dataset_hash: str, origin: str = None):
         """
-        Get a NeomarilDataset to make dataset operations.
+        Get a MLOpsDataset to make dataset operations.
 
         Attributes
         ----------
@@ -392,8 +392,8 @@ class NeomarilDataSource(BaseNeomaril):
 
         Returns
         ----------
-        NeomarilDataset
-            A NeomarilDataset with the identifier as dataset_hash.
+        MLOpsDataset
+            A MLOpsDataset with the identifier as dataset_hash.
 
         Raises
         ----------
@@ -408,7 +408,7 @@ class NeomarilDataSource(BaseNeomaril):
 
         for datasource in datasources:
             if dataset_hash == datasource.get("Id"):
-                return NeomarilDataset(
+                return MLOpsDataset(
                     dataset_hash=datasource.get("Id"),
                     dataset_name=datasource.get("Name"),
                     datasource_name=self.datasource_name,
@@ -420,7 +420,7 @@ class NeomarilDataSource(BaseNeomaril):
         raise DatasetNotFoundError("Dataset hash not found!")
 
 
-class NeomarilDataset(BaseNeomaril):
+class MLOpsDataset(BaseMLOps):
     """
     Class to operate actions in a dataset.
 
@@ -433,8 +433,8 @@ class NeomarilDataset(BaseNeomaril):
         Password for authenticating with the client.
         You can also use the env variable NEOMARIL_PASSWORD to set this
     url : str
-        URL to Neomaril Server.
-        Default value is https://neomaril.staging.datarisk.net,
+        URL to MLOps Server.
+        Default value is https://mlops.datarisk.net,
         use it to test your deployment first before changing to production.
         You can also use the env variable NEOMARIL_URL to set this
     dataset_hash : str
@@ -499,8 +499,8 @@ class NeomarilDataset(BaseNeomaril):
             url=url,
             headers={
                 "Authorization": "Bearer " + token,
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.get_status.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.get_status.__qualname__,
             },
             timeout=60,
         )
@@ -528,7 +528,7 @@ class NeomarilDataset(BaseNeomaril):
 
     def delete(self):
         """
-        Delete the dataset on neomaril.
+        Delete the dataset on mlops.
         Pay attention when doing this action, it is irreversible!
 
         Example
@@ -542,8 +542,8 @@ class NeomarilDataset(BaseNeomaril):
             url=url,
             headers={
                 "Authorization": "Bearer " + token,
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.delete.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.delete.__qualname__,
             },
             timeout=60,
         )
@@ -622,8 +622,8 @@ class NeomarilDataset(BaseNeomaril):
             params=query,
             headers={
                 "Authorization": "Bearer " + token,
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.list_datasets.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.list_datasets.__qualname__,
             },
             timeout=60,
         )

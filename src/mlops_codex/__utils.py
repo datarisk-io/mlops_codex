@@ -5,7 +5,7 @@ import requests
 import yaml
 from cachetools.func import ttl_cache
 
-from neomaril_codex.exceptions import AuthenticationError, ServerError
+from mlops_codex.exceptions import AuthenticationError, ServerError
 
 
 def parse_dict_or_file(obj):
@@ -28,7 +28,7 @@ def parse_url(url):
 
 
 def try_login(login: str, password: str, base_url: str) -> tuple[str, str] | Exception:
-    """Try to sign in Neomaril
+    """Try to sign in MLOps
 
     Args:
         login: User email
@@ -51,7 +51,7 @@ def try_login(login: str, password: str, base_url: str) -> tuple[str, str] | Exc
         raise AuthenticationError("Email or password invalid.")
 
     if server_status >= 500:
-        raise ServerError("Neomaril server unavailable at the moment.")
+        raise ServerError("MLOps server unavailable at the moment.")
 
     if server_status != 200:
         raise Exception(f"Unexpected error! {response.text}")

@@ -7,14 +7,14 @@ from typing import Optional
 import requests
 from dotenv import load_dotenv, find_dotenv
 
-from neomaril_codex.__model_states import ModelExecutionState
-from neomaril_codex.__utils import (
+from mlops_codex.__model_states import ModelExecutionState
+from mlops_codex.__utils import (
     parse_json_to_yaml,
     parse_url,
     refresh_token,
     try_login,
 )
-from neomaril_codex.exceptions import (
+from mlops_codex.exceptions import (
     AuthenticationError,
     ExecutionError,
     GroupError,
@@ -22,14 +22,14 @@ from neomaril_codex.exceptions import (
     ModelError,
     ServerError,
 )
-from neomaril_codex.logger_config import get_logger
+from mlops_codex.logger_config import get_logger
 
 logger = get_logger()
 
 
-class BaseNeomaril:
+class BaseMLOps:
     """
-    Super base class to initialize other variables and URLs for other Neomaril classes.
+    Super base class to initialize other variables and URLs for other MLOps classes.
     """
 
     def __init__(
@@ -48,7 +48,7 @@ class BaseNeomaril:
         if url is None:
             url = os.getenv("NEOMARIL_URL")
         if url is None:
-            url = "https://neomaril.staging.datarisk.net/"
+            url = "https://mlops.datarisk.net/"
 
         self.credentials = (
             login if login else os.getenv("NEOMARIL_USER"),
@@ -57,7 +57,7 @@ class BaseNeomaril:
         self.base_url = url
         self.base_url = parse_url(self.base_url)
 
-        if self.base_url == "https://neomaril.staging.datarisk.net/":
+        if self.base_url == "https://mlops.datarisk.net/":
             logger.info(
                 "You are using the test enviroment that will have the data cleaned from time to time. If your model is ready to use change the enviroment to Production"
             )
@@ -67,7 +67,7 @@ class BaseNeomaril:
             self.credentials[1],
             self.base_url,
         )
-        logger.info("Successfully connected to Neomaril")
+        logger.info("Successfully connected to MLOps")
 
     def _logs(
         self,
@@ -128,9 +128,9 @@ class BaseNeomaril:
         raise InputError("Bad Input. Client error")
 
 
-class BaseNeomarilClient(BaseNeomaril):
+class BaseMLOpsClient(BaseMLOps):
     """
-    Base class for Neomaril client side related classes. This is the class that contains some methods related to Client models administration.
+    Base class for MLOps client side related classes. This is the class that contains some methods related to Client models administration.
     Mainly related to initialize environment and its variables, but also to generate groups.
     A group is a way to organize models clustering for different users and also to increase security.
     Each group has a unique token that should be used to run the models that belongs to that.
@@ -142,7 +142,7 @@ class BaseNeomarilClient(BaseNeomaril):
     password : str
         Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
     url : str
-        URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
+        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
 
     Raises
     ------
@@ -155,10 +155,10 @@ class BaseNeomarilClient(BaseNeomaril):
 
     .. code-block:: python
 
-        from neomaril_codex.base import BaseNeomarilClient
+        from mlops_codex.base import BaseMLOpsClient
 
         def start_group(password):
-            client = BaseNeomarilClient(password)
+            client = BaseMLOpsClient(password)
             isCreated = client.create_group('ex_group', 'Group for example purpose')
 
             print(client.list_groups())
@@ -189,8 +189,8 @@ class BaseNeomarilClient(BaseNeomaril):
             url,
             headers={
                 "Authorization": "Bearer " + token,
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.list_groups.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.list_groups.__qualname__,
             },
         )
 
@@ -245,8 +245,8 @@ class BaseNeomarilClient(BaseNeomaril):
             data=data,
             headers={
                 "Authorization": "Bearer " + token,
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.create_group.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.create_group.__qualname__,
             },
         )
 
@@ -305,7 +305,7 @@ class BaseNeomarilClient(BaseNeomaril):
 
         .. code-block:: python
 
-            from neomaril_codex.base import BaseNeomarilClient
+            from mlops_codex.base import BaseMLOpsClient
 
             def update_group_token(model_client, group_name):
                 model_client.refresh_group_token('ex_group', True)
@@ -322,8 +322,8 @@ class BaseNeomarilClient(BaseNeomaril):
             params={"force": str(force).lower()},
             headers={
                 "Authorization": "Bearer " + token,
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.refresh_group_token.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.refresh_group_token.__qualname__,
             },
         )
 
@@ -348,9 +348,9 @@ class BaseNeomarilClient(BaseNeomaril):
         raise InputError("Bad Input. Client error")
 
 
-class NeomarilExecution(BaseNeomaril):
+class MLOpsExecution(BaseMLOps):
     """
-    Base class for Neomaril asynchronous model executions. With this class you can visualize the status of an execution and download the results after and execution has finished.
+    Base class for MLOps asynchronous model executions. With this class you can visualize the status of an execution and download the results after and execution has finished.
 
     Attributes
     ----------
@@ -367,7 +367,7 @@ class NeomarilExecution(BaseNeomaril):
     password : str
         Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
     url : str
-        URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
+        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
 
     Raises
     ------
@@ -382,11 +382,11 @@ class NeomarilExecution(BaseNeomaril):
 
     .. code-block:: python
 
-        from neomaril_codex.base import NeomarilExecution
-        from neomaril_codex.model import NeomarilModelClient
+        from mlops_codex.base import MLOpsExecution
+        from mlops_codex.model import MLOpsModelClient
 
         def get_execution_status(password, data_path):
-            client = BaseNeomarilClient(password)
+            client = BaseMLOpsClient(password)
             model = client.create_model('Example notebook Async',
                                 'score',
                                 data_path+'app.py',
@@ -478,7 +478,7 @@ class NeomarilExecution(BaseNeomaril):
             self.status = ModelExecutionState[self.execution_data["ExecutionState"]]
 
     def __repr__(self) -> str:
-        return f"""Neomaril{self.exec_type}Execution(exec_id="{self.exec_id}", status="{self.status}")"""
+        return f"""MLOps{self.exec_type}Execution(exec_id="{self.exec_id}", status="{self.status}")"""
 
     def __str__(self):
         return f'NEOMARIL {self.exec_type }Execution :{self.exec_id} (Status: {self.status})"'
@@ -577,8 +577,8 @@ class NeomarilExecution(BaseNeomaril):
                 url,
                 headers={
                     "Authorization": "Bearer " + token,
-                    "Neomaril-Origin": "Codex",
-                    "Neomaril-Method": self.download_result.__qualname__,
+                    "MLOps-Origin": "Codex",
+                    "MLOps-Method": self.download_result.__qualname__,
                 },
             )
             if response.status_code not in [200, 410]:

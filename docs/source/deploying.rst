@@ -1,7 +1,7 @@
 Deploying to production
 =======================
 
-When deploying a model to Neomaril we create an API so you can connect your model with other services. You can also use Neomaril Codex to execute your model remotely inside a python application.
+When deploying a model to MLOps we create an API so you can connect your model with other services. You can also use MLOps Codex to execute your model remotely inside a python application.
 
 
 Preparing to production
@@ -15,7 +15,7 @@ The entrypoint function should look like this:
 
 .. code:: python
 
-    # Function that describes the steps for Neomaril to execute the trained model.
+    # Function that describes the steps for MLOps to execute the trained model.
     # The input parameters are:
     #   data:str
     #       The data that will be used by the model must arrive in string format
@@ -28,7 +28,7 @@ The entrypoint function should look like this:
         # if my_var is None:
         #   raise Exception("Could not find `env` variable")
 
-        ## Neomaril environment variable with model file name
+        ## MLOps environment variable with model file name
         # with open(base_path+os.getenv('modelFileName'), 'rb') as f:
 
         # Loads the already trained model to be run based on the model file passed as a parameter
@@ -46,14 +46,14 @@ The first parameter is the JSON data that will be sent to the model (this comes 
 The other one is the path. Like the training you can use it to open the model files and other files you will upload (see next section).
 The return of the function should be a dictionary that can be parsed to a JSON, or a already valid JSON string. 
 
-Keep in mind that some data types (like numpy `int64` and `float64` values) cannot normally be parsed to JSON, so your code should handle that before returning the response to Neomaril. 
+Keep in mind that some data types (like numpy `int64` and `float64` values) cannot normally be parsed to JSON, so your code should handle that before returning the response to MLOps. 
 
 **Async model:** This is for batch scoring. We send files with usually a lot of records at once. Since this might take a while depending on the file size, we run this asynchronously.
 The entrypoint function should look like this:
 
 .. code:: python
 
-    # Function that describes the steps for Neomaril to run the trained model.
+    # Function that describes the steps for MLOps to run the trained model.
     # The input parameters are:
         # data_path : str
             # The path to the data that will be used by the model, which should arrive in string format
@@ -65,14 +65,14 @@ The entrypoint function should look like this:
         # if my_var is None:
         #    raise Exception("Could not find `env` variable")
 
-        ## Environment variable loaded from Neomaril with model file name
+        ## Environment variable loaded from MLOps with model file name
         # with open(base_path+os.getenv('modelFileName'), 'rb') as f:
 
         # Loads the already trained model to be run based on the model file passed as a parameter
         with open(model_path+"/model.pkl", 'rb') as f:
             model = load(f)
 
-        ## Environment variable loaded from Neomaril with database name
+        ## Environment variable loaded from MLOps with database name
         # X = pd.read_csv(data_path+'/'+os.getenv('inputFileName'))
 
         # Loads the input base data from the file into a DataFrame
@@ -102,7 +102,7 @@ Deploying your model
 
 With all files ready we can deploy the model in two ways.
 
-- Using the :py:meth:`neomaril_codex.training.NeomarilTrainingExecution.promote_model` to promote a succeeded training execution.
+- Using the :py:meth:`mlops_codex.training.MLOpsTrainingExecution.promote_model` to promote a succeeded training execution.
 
 .. code:: python
 
@@ -125,7 +125,7 @@ With all files ready we can deploy the model in two ways.
 
 
 
-- Using the :py:meth:`neomaril_codex.model.NeomarilModelClient.create_model` to deploy a model trained outside Neomaril
+- Using the :py:meth:`mlops_codex.model.MLOpsModelClient.create_model` to deploy a model trained outside MLOps
 
 .. code:: python
     
@@ -145,9 +145,9 @@ With all files ready we can deploy the model in two ways.
     )
 
 
-As you can see deploying a model already trained in Neomaril requires less information (the AutoML models require only 2 parameters).
+As you can see deploying a model already trained in MLOps requires less information (the AutoML models require only 2 parameters).
 
-Those methods return a :py:class:`neomaril_codex.model.NeomarilModel`. You can use the *wait_for_ready* parameter on the deployment method or call the :py:meth:`neomaril_codex.model.NeomarilModel.wait_ready` to make sure the :py:class:`neomaril_codex.model.NeomarilModel` instance is ready to use.
+Those methods return a :py:class:`mlops_codex.model.MLOpsModel`. You can use the *wait_for_ready* parameter on the deployment method or call the :py:meth:`mlops_codex.model.MLOpsModel.wait_ready` to make sure the :py:class:`mlops_codex.model.MLOpsModel` instance is ready to use.
 We will install the model dependencies (if you are promoting a training we will use the same as the training execution), and run some tests. For the sync models we require a sample JSON of the expected schema for the API.
 
 If the deployment succeeds you can start using your model.
@@ -155,7 +155,7 @@ If the deployment succeeds you can start using your model.
 Using your model
 ---------------------
 
-We can use the same :py:class:`neomaril_codex.model.NeomarilModel` instance to call the model.
+We can use the same :py:class:`mlops_codex.model.MLOpsModel` instance to call the model.
 
 .. code:: python
 
@@ -163,16 +163,16 @@ We can use the same :py:class:`neomaril_codex.model.NeomarilModel` instance to c
     # >>> {'pred': 0, 'proba': 0.005841062869876623}
     
     execution = async_model.predict(data=PATH+'input.csv')
-    # >>> 2023-05-26 12:04:14.714 | INFO     | neomaril_codex.model:predict:344 - Execution 5 started. Use the id to check its status.
+    # >>> 2023-05-26 12:04:14.714 | INFO     | mlops_codex.model:predict:344 - Execution 5 started. Use the id to check its status.
 
 
-Sync models return a dictionary and async models return a :py:class:`neomaril_codex.base.NeomarilExecution` that you can use to check the status and download the result similar to the training execution.
+Sync models return a dictionary and async models return a :py:class:`mlops_codex.base.MLOpsExecution` that you can use to check the status and download the result similar to the training execution.
 
-To use the models you need a `group token`, that is generated when creating the group (check :ref:`connecting_to_neomaril:creating a group`). You can add this token in the NEOMARIL_GROUP_TOKEN env variable, use the :py:meth:`neomaril_codex.model.NeomarilModel.set_token` method or add in each :py:meth:`neomaril_codex.model.NeomarilModel.predict` call.
+To use the models you need a `group token`, that is generated when creating the group (check :ref:`connecting_to_mlops:creating a group`). You can add this token in the NEOMARIL_GROUP_TOKEN env variable, use the :py:meth:`mlops_codex.model.MLOpsModel.set_token` method or add in each :py:meth:`mlops_codex.model.MLOpsModel.predict` call.
 
 
 Most of the time you might need to used your model outside a python environment, sharing it through a REST API.
-You can call the :py:attr:`neomaril_codex.model.NeomarilModel.docs` attribute to share a OpenAPI Swagger page, or use the :py:meth:`neomaril_codex.model.NeomarilModel.generate_predict_code` method to create a sample request code to your model. 
+You can call the :py:attr:`mlops_codex.model.MLOpsModel.docs` attribute to share a OpenAPI Swagger page, or use the :py:meth:`mlops_codex.model.MLOpsModel.generate_predict_code` method to create a sample request code to your model. 
 
 
 Monitoring your model
@@ -180,7 +180,7 @@ Monitoring your model
 
 Model monitoring means keeping track of how the model is being used in production, so you can update it if it starts making bad predictions.
 
-For now, Neomaril only does indirect monitoring. This means that Neomaril follows the input of the model in production and checks if it is close to the data presented to the model in training.
+For now, MLOps only does indirect monitoring. This means that MLOps follows the input of the model in production and checks if it is close to the data presented to the model in training.
 So, when configuring the monitoring system, we need to know which training generated that model and what features are relevant to monitoring the model.
 
 We offer both "Population Stability Index" (PSI and PSI average) and "SHapley Additive exPlanations" (SHAP and SHAP average) metrics.
@@ -189,7 +189,7 @@ Besides that, we need to know how to correctly handle the features and the model
 
 The production data is saved raw, and the training data is not (check :ref:`training_guide:Running a training execution`). So we need to know the steps in processing the raw production data to get the model features like the ones we saved during training: :ref:`monitoring_parameters:Monitoring configuration`
 
-The first method you need to call is :py:meth:`neomaril_codex.pipeline.NeomarilPipeline.register_monitoring_config`, which is responsible for registering the monitoring configuration at the database.
+The first method you need to call is :py:meth:`mlops_codex.pipeline.MLOpsPipeline.register_monitoring_config`, which is responsible for registering the monitoring configuration at the database.
 
 .. code:: python
     # # We can also add a monitoring configuration for the model
@@ -203,50 +203,50 @@ The first method you need to call is :py:meth:`neomaril_codex.pipeline.NeomarilP
         preprocess_file=PATH+'preprocess_sync.py', # Path of the preprocess script
         requirements_file=PATH+'requirements.txt' # Path of the requirements file                        
     )
-    # >>> 2023-10-26 09:18:46.940 | INFO     | neomaril_codex.model:register_monitoring:604 - Monitoring created - Hash: "M3aa182ff161478a97f4d3b2dc0e9b064d5a9e7330174daeb302e01586b9654c"
+    # >>> 2023-10-26 09:18:46.940 | INFO     | mlops_codex.model:register_monitoring:604 - Monitoring created - Hash: "M3aa182ff161478a97f4d3b2dc0e9b064d5a9e7330174daeb302e01586b9654c"
 
-Next, you can manually run the monitoring process, calling the method :py:meth:`neomaril_codex.pipeline.NeomarilPipeline.run_monitoring`.
+Next, you can manually run the monitoring process, calling the method :py:meth:`mlops_codex.pipeline.MLOpsPipeline.run_monitoring`.
 
 .. code:: python
-    pipeline = NeomarilPipeline.from_config_file('./samples/pipeline-just-model.yml')
+    pipeline = MLOpsPipeline.from_config_file('./samples/pipeline-just-model.yml')
     pipeline.register_monitoring_config(
         directory = "./samples/monitoring", preprocess = "preprocess_async.py", preprocess_function = "score", 
         shap_function = "score", config = "configuration.json", packages = "requirements.txt"
     )
     pipeline.start()
 
-    # >>> 2023-10-25 16:13:01.706 | INFO     | neomaril_codex.pipeline:from_config_file:124 - Loading .env
-    # >>> 2023-10-25 16:13:01.708 | INFO     | neomaril_codex.pipeline:__init__:43 - Loading .env
-    # >>> 2023-10-25 16:13:01.709 | INFO     | neomaril_codex.pipeline:run_deploy:242 - Deploying scorer
-    # >>> 2023-10-25 16:13:01.711 | INFO     | neomaril_codex.model:__init__:722 - Loading .env
-    # >>> 2023-10-25 16:13:01.712 | INFO     | neomaril_codex.base:__init__:90 - Loading .env
-    # >>> 2023-10-25 16:13:03.455 | INFO     | neomaril_codex.base:__init__:102 - Successfully connected to Neomaril
-    # >>> 2023-10-25 16:13:04.849 | ERROR    | neomaril_codex.base:create_group:162 - {"Error":{"Type":"BadInput","Message":"Detail redacted as it may contain sensitive data. Specify \u0027Include Error Detail\u0027 in the connection string to include this information."}}
-    # >>> 2023-10-25 16:13:04.850 | ERROR    | neomaril_codex.base:create_group:163 - Group already exist, nothing was changed.
-    # >>> 2023-10-25 16:13:08.274 | INFO     | neomaril_codex.model:__upload_model:1015 - Model 'Teste' inserted - Hash: "Mc4f6403c5ab466f911c1cc6d2f22390fc5ab572337b42a7944fcc5d478849be"
-    # >>> 2023-10-25 16:13:10.002 | INFO     | neomaril_codex.model:__host_model:1046 - Model host in process - Hash: Mc4f6403c5ab466f911c1cc6d2f22390fc5ab572337b42a7944fcc5d478849be
+    # >>> 2023-10-25 16:13:01.706 | INFO     | mlops_codex.pipeline:from_config_file:124 - Loading .env
+    # >>> 2023-10-25 16:13:01.708 | INFO     | mlops_codex.pipeline:__init__:43 - Loading .env
+    # >>> 2023-10-25 16:13:01.709 | INFO     | mlops_codex.pipeline:run_deploy:242 - Deploying scorer
+    # >>> 2023-10-25 16:13:01.711 | INFO     | mlops_codex.model:__init__:722 - Loading .env
+    # >>> 2023-10-25 16:13:01.712 | INFO     | mlops_codex.base:__init__:90 - Loading .env
+    # >>> 2023-10-25 16:13:03.455 | INFO     | mlops_codex.base:__init__:102 - Successfully connected to MLOps
+    # >>> 2023-10-25 16:13:04.849 | ERROR    | mlops_codex.base:create_group:162 - {"Error":{"Type":"BadInput","Message":"Detail redacted as it may contain sensitive data. Specify \u0027Include Error Detail\u0027 in the connection string to include this information."}}
+    # >>> 2023-10-25 16:13:04.850 | ERROR    | mlops_codex.base:create_group:163 - Group already exist, nothing was changed.
+    # >>> 2023-10-25 16:13:08.274 | INFO     | mlops_codex.model:__upload_model:1015 - Model 'Teste' inserted - Hash: "Mc4f6403c5ab466f911c1cc6d2f22390fc5ab572337b42a7944fcc5d478849be"
+    # >>> 2023-10-25 16:13:10.002 | INFO     | mlops_codex.model:__host_model:1046 - Model host in process - Hash: Mc4f6403c5ab466f911c1cc6d2f22390fc5ab572337b42a7944fcc5d478849be
     # Wating for deploy to be ready.............
-    # >>> 2023-10-25 16:15:28.933 | INFO     | neomaril_codex.model:get_model:820 - Model Mc4f6403c5ab466f911c1cc6d2f22390fc5ab572337b42a7944fcc5d478849be its deployed. Fetching model.
-    # >>> 2023-10-25 16:15:28.936 | INFO     | neomaril_codex.model:__init__:69 - Loading .env
-    # >>> 2023-10-25 16:15:33.139 | INFO     | neomaril_codex.pipeline:run_deploy:257 - Model deployement finished
-    # >>> 2023-10-25 16:15:33.140 | INFO     | neomaril_codex.pipeline:run_monitoring:277 - Configuring monitoring
-    # >>> 2023-10-25 16:15:33.142 | INFO     | neomaril_codex.model:__init__:69 - Loading .env
-    # >>> 2023-10-25 16:15:37.849 | INFO     | neomaril_codex.model:register_monitoring:604 - Monitoring created - Hash: "Mc4f6403c5ab466f911c1cc6d2f22390fc5ab572337b42a7944fcc5d478849be"
+    # >>> 2023-10-25 16:15:28.933 | INFO     | mlops_codex.model:get_model:820 - Model Mc4f6403c5ab466f911c1cc6d2f22390fc5ab572337b42a7944fcc5d478849be its deployed. Fetching model.
+    # >>> 2023-10-25 16:15:28.936 | INFO     | mlops_codex.model:__init__:69 - Loading .env
+    # >>> 2023-10-25 16:15:33.139 | INFO     | mlops_codex.pipeline:run_deploy:257 - Model deployement finished
+    # >>> 2023-10-25 16:15:33.140 | INFO     | mlops_codex.pipeline:run_monitoring:277 - Configuring monitoring
+    # >>> 2023-10-25 16:15:33.142 | INFO     | mlops_codex.model:__init__:69 - Loading .env
+    # >>> 2023-10-25 16:15:37.849 | INFO     | mlops_codex.model:register_monitoring:604 - Monitoring created - Hash: "Mc4f6403c5ab466f911c1cc6d2f22390fc5ab572337b42a7944fcc5d478849be"
 
 
 Using with preprocess script
 ----------------------------
 
-Sometimes you want to run a preprocess script to adjust the model input data before executing it. With Neomaril you can do it.
+Sometimes you want to run a preprocess script to adjust the model input data before executing it. With MLOps you can do it.
 
-You must first instantiate the :py:class:`neomaril_codex.base.NeomarilExecution`:
+You must first instantiate the :py:class:`mlops_codex.base.MLOpsExecution`:
 
 .. code:: python
 
-    model_client = NeomarilModelClient()
-    # >>> 2023-10-26 10:26:42.351 | INFO     | neomaril_codex.model:__init__:722 - Loading .env
-    # >>> 2023-10-26 10:26:42.352 | INFO     | neomaril_codex.base:__init__:90 - Loading .env
-    # >>> 2023-10-26 10:26:43.716 | INFO     | neomaril_codex.base:__init__:102 - Successfully connected to Neomaril
+    model_client = MLOpsModelClient()
+    # >>> 2023-10-26 10:26:42.351 | INFO     | mlops_codex.model:__init__:722 - Loading .env
+    # >>> 2023-10-26 10:26:42.352 | INFO     | mlops_codex.base:__init__:90 - Loading .env
+    # >>> 2023-10-26 10:26:43.716 | INFO     | mlops_codex.base:__init__:102 - Successfully connected to MLOps
 
 And now you just need to run the model using the preprocess script (check :ref:`preprocessing:Preprocessing module`).
 For the **sync model**:
@@ -256,8 +256,8 @@ For the **sync model**:
     sync_model = model_client.get_model(group='datarisk', model_id='M3aa182ff161478a97f4d3b2dc0e9b064d5a9e7330174daeb302e01586b9654c')
 
     sync_model.predict(data=sync_model.schema, preprocessing=sync_preprocessing)
-    # >>> 2023-10-26 10:26:45.121 | INFO     | neomaril_codex.model:get_model:820 - Model M3aa182ff161478a97f4d3b2dc0e9b064d5a9e7330174daeb302e01586b9654c its deployed. Fetching model.
-    # >>> 2023-10-26 10:26:45.123 | INFO     | neomaril_codex.model:__init__:69 - Loading .env
+    # >>> 2023-10-26 10:26:45.121 | INFO     | mlops_codex.model:get_model:820 - Model M3aa182ff161478a97f4d3b2dc0e9b064d5a9e7330174daeb302e01586b9654c its deployed. Fetching model.
+    # >>> 2023-10-26 10:26:45.123 | INFO     | mlops_codex.model:__init__:69 - Loading .env
     # >>> {'pred': 0, 'proba': 0.005841062869876623}
 
 And for the **async model**:
@@ -270,14 +270,14 @@ And for the **async model**:
 
     execution = async_model.predict(data=PATH+'input.csv', preprocessing=async_preprocessing)
     execution.wait_ready()
-    # >>> 2023-10-26 10:26:51.460 | INFO     | neomaril_codex.model:get_model:820 - Model Maa3449c7f474567b6556614a12039d8bfdad0117fec47b2a4e03fcca90b7e7c its deployed. Fetching model.
-    # >>> 2023-10-26 10:26:51.461 | INFO     | neomaril_codex.model:__init__:69 - Loading .env
-    # >>> 2023-10-26 10:26:54.532 | INFO     | neomaril_codex.preprocessing:set_token:123 - Token for group datarisk added.
-    # >>> 2023-10-26 10:26:55.955 | INFO     | neomaril_codex.preprocessing:run:177 - Execution '4' started to generate 'Db84e3baffc3457b9729f39f9f37aa1cd8aada89d3434ea0925e539cb23d7d65'. Use the id to check its status.
-    # >>> 2023-10-26 10:26:55.956 | INFO     | neomaril_codex.base:__init__:279 - Loading .env
-    # >>> 2023-10-26 10:30:12.982 | INFO     | neomaril_codex.base:download_result:413 - Output saved in ./result_preprocessing
-    # >>> 2023-10-26 10:30:14.619 | INFO     | neomaril_codex.model:predict:365 - Execution '5' started. Use the id to check its status.
-    # >>> 2023-10-26 10:30:14.620 | INFO     | neomaril_codex.base:__init__:279 - Loading .env
+    # >>> 2023-10-26 10:26:51.460 | INFO     | mlops_codex.model:get_model:820 - Model Maa3449c7f474567b6556614a12039d8bfdad0117fec47b2a4e03fcca90b7e7c its deployed. Fetching model.
+    # >>> 2023-10-26 10:26:51.461 | INFO     | mlops_codex.model:__init__:69 - Loading .env
+    # >>> 2023-10-26 10:26:54.532 | INFO     | mlops_codex.preprocessing:set_token:123 - Token for group datarisk added.
+    # >>> 2023-10-26 10:26:55.955 | INFO     | mlops_codex.preprocessing:run:177 - Execution '4' started to generate 'Db84e3baffc3457b9729f39f9f37aa1cd8aada89d3434ea0925e539cb23d7d65'. Use the id to check its status.
+    # >>> 2023-10-26 10:26:55.956 | INFO     | mlops_codex.base:__init__:279 - Loading .env
+    # >>> 2023-10-26 10:30:12.982 | INFO     | mlops_codex.base:download_result:413 - Output saved in ./result_preprocessing
+    # >>> 2023-10-26 10:30:14.619 | INFO     | mlops_codex.model:predict:365 - Execution '5' started. Use the id to check its status.
+    # >>> 2023-10-26 10:30:14.620 | INFO     | mlops_codex.base:__init__:279 - Loading .env
 
     execution.download_result()
-    # >>> 2023-10-26 10:32:28.296 | INFO     | neomaril_codex.base:download_result:413 - Output saved in ./output.zip
+    # >>> 2023-10-26 10:32:28.296 | INFO     | mlops_codex.base:download_result:413 - Output saved in ./output.zip

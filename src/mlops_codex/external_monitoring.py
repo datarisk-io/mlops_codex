@@ -8,10 +8,10 @@ from typing import Optional, Union
 
 import requests
 
-from neomaril_codex.__model_states import MonitoringStatus
-from neomaril_codex.__utils import parse_json_to_yaml, refresh_token
-from neomaril_codex.base import BaseNeomaril, BaseNeomarilClient
-from neomaril_codex.exceptions import (
+from mlops_codex.__model_states import MonitoringStatus
+from mlops_codex.__utils import parse_json_to_yaml, refresh_token
+from mlops_codex.base import BaseMLOps, BaseMLOpsClient
+from mlops_codex.exceptions import (
     AuthenticationError,
     ExecutionError,
     ExternalMonitoringError,
@@ -19,12 +19,12 @@ from neomaril_codex.exceptions import (
     InputError,
     ServerError,
 )
-from neomaril_codex.logger_config import get_logger
+from mlops_codex.logger_config import get_logger
 
 logger = get_logger()
 
 
-class NeomarilExternalMonitoring(BaseNeomaril):
+class MLOpsExternalMonitoring(BaseMLOps):
     """
     Class that handles an external monitoring object
     """
@@ -89,8 +89,8 @@ class NeomarilExternalMonitoring(BaseNeomaril):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.upload_file.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.upload_file.__qualname__,
             },
             timeout=60,
         )
@@ -235,8 +235,8 @@ class NeomarilExternalMonitoring(BaseNeomaril):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.host.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.host.__qualname__,
             },
             timeout=60,
         )
@@ -347,13 +347,13 @@ class NeomarilExternalMonitoring(BaseNeomaril):
         )
 
 
-class NeomarilExternalMonitoringClient(BaseNeomarilClient):
+class MLOpsExternalMonitoringClient(BaseMLOpsClient):
     """
-    Class that handles Neomaril External Monitoring Client
+    Class that handles MLOps External Monitoring Client
     """
 
     def __repr__(self) -> str:
-        return f"API version {self.version} - NeomarilExternalMonitoringClient"
+        return f"API version {self.version} - MLOpsExternalMonitoringClient"
 
     def __str__(self):
         return f"NEOMARIL {self.base_url} External Monitoring client:{self.user_token}"
@@ -383,8 +383,8 @@ class NeomarilExternalMonitoringClient(BaseNeomarilClient):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.register_monitoring.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.register_monitoring.__qualname__,
             },
             timeout=60,
         )
@@ -433,8 +433,8 @@ class NeomarilExternalMonitoringClient(BaseNeomarilClient):
         reference_date: Optional[str] = None,
         python_version: Optional[str] = None,
         group: Optional[str] = "datarisk",
-    ) -> NeomarilExternalMonitoring:
-        """Register a Neomaril External Monitoring
+    ) -> MLOpsExternalMonitoring:
+        """Register a MLOps External Monitoring
 
         Args:
             name: External Monitoring name
@@ -451,7 +451,7 @@ class NeomarilExternalMonitoringClient(BaseNeomarilClient):
             group: Name of the group where the monitoring model will be inserted
 
         Returns:
-            NeomarilExternalMonitoring
+            MLOpsExternalMonitoring
         """
 
         base_external_url = f"{self.base_url}/external-monitoring/{group}"
@@ -503,7 +503,7 @@ class NeomarilExternalMonitoringClient(BaseNeomarilClient):
         external_monitoring_hash = self.__register(
             configuration_file=configuration_file, url=base_external_url
         )
-        external_monitoring = NeomarilExternalMonitoring(
+        external_monitoring = MLOpsExternalMonitoring(
             login=self.credentials[0],
             password=self.credentials[1],
             url=self.base_url,
@@ -558,7 +558,7 @@ class NeomarilExternalMonitoringClient(BaseNeomarilClient):
 
     def get_external_monitoring(
         self, group: str, external_monitoring_hash: str
-    ) -> NeomarilExternalMonitoring:
+    ) -> MLOpsExternalMonitoring:
         """Return a external monitoring
 
         Args:
@@ -572,7 +572,7 @@ class NeomarilExternalMonitoringClient(BaseNeomarilClient):
             ExternalMonitoringError
 
         Returns:
-            NeomarilExternalMonitoring
+            MLOpsExternalMonitoring
         """
         url = f"{self.base_url}/external-monitoring/{group}/{external_monitoring_hash}"
         response = requests.get(
@@ -604,7 +604,7 @@ class NeomarilExternalMonitoringClient(BaseNeomarilClient):
             raise ExternalMonitoringError("Could not register the monitoring.")
 
         logger.info("External monitoring found")
-        external_monitoring = NeomarilExternalMonitoring(
+        external_monitoring = MLOpsExternalMonitoring(
             login=self.credentials[0],
             password=self.credentials[1],
             url=self.base_url,

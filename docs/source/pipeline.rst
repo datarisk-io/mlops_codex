@@ -5,10 +5,10 @@ Pipeline module
 This module allows you to configure your model pipeline.
 
 
-neomaril\_codex.pipeline.NeomarilPipeline
+mlops\_codex.pipeline.MLOpsPipeline
 -----------------------------------------
 
-.. autoclass:: neomaril_codex.pipeline.NeomarilPipeline
+.. autoclass:: mlops_codex.pipeline.MLOpsPipeline
    :members:
    :undoc-members:
    :show-inheritance:

@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath('../../src'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'neomaril-codex'
+project = 'mlops_codex'
 copyright = '2023, Datarisk'
 author = 'Datarisk'
 
@@ -51,7 +51,7 @@ exclude_patterns = ['sphinx.ext.autodoc']
 html_theme = 'pydata_sphinx_theme'
 
 html_theme_options = {
-    "github_url": "https://github.com/datarisk-io/mlops-neomaril-codex",
+    "github_url": "https://github.com/datarisk-io/mlops_codex",
     "icon_links": [
         {
             "name": "Datarisk",

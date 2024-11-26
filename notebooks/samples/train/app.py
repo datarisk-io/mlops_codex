@@ -8,12 +8,12 @@ import os
 def train_model(df: pd.DataFrame, base_path:str): # O nome da função (train_model) é que deve ser passado no campo 'training_reference'
     """
     Função usada para treinar o modelo com base em um conjunto de dados fornecido.
-    Essa função deve estruturar os passos que o Neomaril terá que executar para retornar o
+    Essa função deve estruturar os passos que o MLOps terá que executar para retornar o
     conjunto de informações resultantes do treino do modelo. 
 
     Na função o usuário pode usar variáveis de ambiente carregadas a partir de um arquivo .env,
     como exemplificado no código nas linhas 59-62.
-    Caso não queira deixar o nome da base de dados fixo, o Neomaril carrega o nome desse arquivo
+    Caso não queira deixar o nome da base de dados fixo, o MLOps carrega o nome desse arquivo
     na variável de ambiente (exemplo nas linhas 64-65):
     inputFileName : str
         Que contém o nome do arquivo da base de dados que foi feito upload
@@ -26,7 +26,7 @@ def train_model(df: pd.DataFrame, base_path:str): # O nome da função (train_mo
         Esse valor é obrigatório
     base_path : str
         O caminho de pastas para os arquivos que serão usados. 
-        O usuário pode usar um valor default para testes locais, mas no Neomaril será usado o caminho 
+        O usuário pode usar um valor default para testes locais, mas no MLOps será usado o caminho 
         remoto dos arquivos.
         Por exemplo: "/path/to/treino/customizado/experimento1"
 
@@ -79,7 +79,7 @@ def train_model(df: pd.DataFrame, base_path:str): # O nome da função (train_mo
     # Constrói o DataFrame com os resultados
     results = pd.DataFrame({"pred": pipe.predict(X), "proba": pipe.predict_proba(X)[:,1]})  
     
-    # Retorna os resultados do treino segundo os parâmetros esperados pelo Neomaril
+    # Retorna os resultados do treino segundo os parâmetros esperados pelo MLOps
     return {"X_train": X, "y_train": y, "model_output": results, "pipeline": pipe, 
             "metrics": {"auc": auc.mean(), "f1_score": f_score.mean()}}
 

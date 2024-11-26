@@ -1,14 +1,14 @@
-.. neomaril-codex documentation master file, created by
+.. mlops-codex documentation master file, created by
    sphinx-quickstart on Wed Feb  1 16:39:34 2023.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Neomaril-Codex
+MLOps-Codex
 ==============
 
-Its a Package for interacting with Neomaril.
-Neomaril is an API for Machine Learning (ML) models management, allowing the users to train, deploy and monitor those models.
-The users will need to host its Python scripts and notebooks to Neomaril-Codex to use the Neomaril API.
+Its a Package for interacting with MLOps.
+MLOps is an API for Machine Learning (ML) models management, allowing the users to train, deploy and monitor those models.
+The users will need to host its Python scripts and notebooks to MLOps-Codex to use the MLOps API.
 
 
 Installation
@@ -18,13 +18,13 @@ The package is available on PyPI and can thus be installed with:
 
 .. code:: python
 
-   pip install neomaril-codex
+   pip install mlops-codex
 
 
 Getting started
 ---------------
 
-Check our guide on how to use Neomaril Codex to manage models 
+Check our guide on how to use MLOps Codex to manage models 
 
 .. toctree::
    :maxdepth: 2
@@ -32,7 +32,7 @@ Check our guide on how to use Neomaril Codex to manage models
    starters
 
 
-Beside that several `notebooks <https://github.com/datarisk-io/mlops-neomaril-codex/tree/master/notebooks>`_ gives examples of how to use Neomaril-Codex to manage, deploy and other package functionalities.
+Beside that several `notebooks <https://github.com/datarisk-io/mlops-mlops-codex/tree/master/notebooks>`_ gives examples of how to use MLOps-Codex to manage, deploy and other package functionalities.
 You can find it at:
 
 
@@ -40,14 +40,14 @@ Package Reference
 -----------------
 
 Gives an overview of all objects, functions and methods.
-All classes and functions exposed in neomaril_codex.* namespace are public.
+All classes and functions exposed in mlops_codex.* namespace are public.
 
 
 .. toctree::
    :maxdepth: 4
    :caption: Docs:
 
-   neomaril_codex
+   mlops_codex
 
 
 Development Version
@@ -57,7 +57,7 @@ If you want to track the development version of the package, you can install it 
 
 .. code:: python
 
-   pip install git+https://github.com/datarisk-io/mlops-neomaril-codex.git@master
+   pip install git+https://github.com/datarisk-io/mlops-mlops-codex.git@master
 
 Maintainers
 -----------

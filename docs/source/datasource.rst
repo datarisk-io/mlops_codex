@@ -3,28 +3,28 @@ DataSource module
 
 Module with all classes and methods to manage the data sources and data sets 
 
-neomaril\_codex.datasources.NeomarilDataSourceClient
+mlops\_codex.datasources.MLOpsDataSourceClient
 ---------------------------------------------------
 
-.. autoclass:: neomaril_codex.datasources.NeomarilDataSourceClient
+.. autoclass:: mlops_codex.datasources.MLOpsDataSourceClient
     :members:
     :undoc-members:
     :show-inheritance:
 
 
-neomaril\_codex.datasources.NeomarilDataSource
+mlops\_codex.datasources.MLOpsDataSource
 ---------------------------------------------
 
-.. autoclass:: neomaril_codex.datasources.NeomarilDataSourceClient
+.. autoclass:: mlops_codex.datasources.MLOpsDataSourceClient
     :members:
     :undoc-members:
     :show-inheritance:
 
 
-neomaril\_codex.datasources.NeomarilDataset
+mlops\_codex.datasources.MLOpsDataset
 ------------------------------------------
 
-.. autoclass:: neomaril_codex.datasources.NeomarilDataset
+.. autoclass:: mlops_codex.datasources.MLOpsDataset
     :members:
     :undoc-members:
     :show-inheritance:
