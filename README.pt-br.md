@@ -34,10 +34,3 @@ Instale o ambiente do pacote
   pipenv update --dev
   pipenv shell
 ```
-
-Publique no Pypi
-
-```
-  python setup.py sdist
-  twine upload dist/*
-```

@@ -11,7 +11,7 @@ Package for interacting with MLOps, a tool for deploying ML models.
 ### Install
 
 ```
-  pip install datarisk_mlops_codex
+  pip install datarisk-mlops-codex
 ```
 
 ### How to use
