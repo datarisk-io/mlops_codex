@@ -242,7 +242,7 @@ class NeomarilExternalMonitoring(BaseNeomaril):
         )
 
         formatted_msg = parse_json_to_yaml(response.json())
-        if response.status_code == 200:
+        if response.status_code in [200, 201]:
             self.status = MonitoringStatus.Validating
             if wait:
                 self.wait_ready()
@@ -260,11 +260,9 @@ class NeomarilExternalMonitoring(BaseNeomaril):
             raise GroupError("Group not found in the database")
 
         if response.status_code >= 500:
-            logger.error("Server is not available. Please, try it later.")
-            raise ServerError("Server is not available!")
 
-        logger.error(f"Something went wrong...\n{formatted_msg}")
-        raise ExternalMonitoringError("Could not register the monitoring.")
+            logger.error(f"Something went wrong...\n{formatted_msg}")
+            raise ExternalMonitoringError("Could not register the monitoring.")
 
     def wait_ready(self):
         """Check the status of the external monitoring
@@ -316,7 +314,7 @@ class NeomarilExternalMonitoring(BaseNeomaril):
                 logger.debug("Server is not available. Please, try it later.")
                 raise ServerError("Server is not available!")
 
-            if response.status_code != 200:
+            if response.status_code > 300:
                 logger.debug(f"Something went wrong...\n{formatted_msg}")
                 raise ExternalMonitoringError(
                     "Unexpected error. Could not register the monitoring."
@@ -405,6 +403,10 @@ class NeomarilExternalMonitoringClient(BaseNeomarilClient):
             )
             raise AuthenticationError("Login not authorized.")
 
+        if response.status_code > 401 and response.status_code < 500:
+            logger.error(formatted_msg)
+            raise InputError("Invalid inputs")
+
         if response.status_code == 404:
             logger.debug("Group not found in the database")
             raise GroupError("Group not found in the database")
@@ -482,11 +484,11 @@ class NeomarilExternalMonitoringClient(BaseNeomarilClient):
 
         if reference_date:
             try:
-                datetime.strptime(reference_date, format="%d-%m-%Y")
+                datetime.strptime(reference_date, "%Y-%m-%d")
+                configuration_file["ReferenceDate"] = reference_date
             except ValueError as exc:
-                logger.error("Reference date is in incorrect format. Use 'DD-MM-YYYY'")
-                raise InputError("Date is not in the correct format") from exc
-            configuration_file["ReferenceDate"] = reference_date
+                logger.error("Reference date is in incorrect format. Use 'YYYY-MM-DD'")
+                raise InputError("Date is not in the correct format")
 
         if python_version:
             if python_version not in ["3.8", "3.9", "3.10"]:
