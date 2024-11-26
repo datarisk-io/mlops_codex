@@ -1,7 +1,7 @@
 mlops\_codex package
 =======================
 
-The mlops-codex is a package developed by Datarisk to help people who works with ML to train, deploy, monitor and manage their models.
+The mlops_codex is a package developed by Datarisk to help people who works with ML to train, deploy, monitor and manage their models.
 This page gives an overview of all objects, functions and methods present at the package.
 
 

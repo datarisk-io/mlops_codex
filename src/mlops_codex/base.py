@@ -253,9 +253,9 @@ class BaseMLOpsClient(BaseMLOps):
         if response.status_code == 201:
             t = response.json().get("Token")
             logger.info(
-                f"Group '{name}' inserted. Use the token for scoring. Carefully save it as we won't show it again. Token: {t}"
+                f"Group '{name}' inserted. Use the token for scoring. Carefully save it as we won't show it again."
             )
-            return HTTPStatus.OK
+            return t
 
         formatted_msg = parse_json_to_yaml(response.json())
 
@@ -329,8 +329,8 @@ class BaseMLOpsClient(BaseMLOps):
 
         if response.status_code == 201:
             t = response.json()["Token"]
-            logger.info(f"Group '{name}' was refreshed. New token: {t}")
-            return HTTPStatus.OK
+            logger.info(f"Group '{name}' was refreshed.")
+            return t
 
         formatted_msg = parse_json_to_yaml(response.json())
 

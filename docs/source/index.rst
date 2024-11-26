@@ -1,4 +1,4 @@
-.. mlops-codex documentation master file, created by
+.. mlops_codex documentation master file, created by
    sphinx-quickstart on Wed Feb  1 16:39:34 2023.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
@@ -18,7 +18,7 @@ The package is available on PyPI and can thus be installed with:
 
 .. code:: python
 
-   pip install mlops-codex
+   pip install mlops_codex
 
 
 Getting started
@@ -32,7 +32,7 @@ Check our guide on how to use MLOps Codex to manage models
    starters
 
 
-Beside that several `notebooks <https://github.com/datarisk-io/mlops-mlops-codex/tree/master/notebooks>`_ gives examples of how to use MLOps-Codex to manage, deploy and other package functionalities.
+Beside that several `notebooks <https://github.com/datarisk-io/mlops-mlops_codex/tree/master/notebooks>`_ gives examples of how to use MLOps-Codex to manage, deploy and other package functionalities.
 You can find it at:
 
 
@@ -57,7 +57,7 @@ If you want to track the development version of the package, you can install it 
 
 .. code:: python
 
-   pip install git+https://github.com/datarisk-io/mlops-mlops-codex.git@master
+   pip install git+https://github.com/datarisk-io/mlops-mlops_codex.git@master
 
 Maintainers
 -----------
