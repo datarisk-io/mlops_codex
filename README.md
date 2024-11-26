@@ -34,10 +34,3 @@ Install the package enviroment
   pipenv update --dev
   pipenv shell
 ```
-
-Publish to Pypi
-
-```
-  python setup.py sdist
-  twine upload --repository neomaril-codex dist/*
-```
