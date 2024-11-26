@@ -375,9 +375,9 @@ class MLOpsTrainingExecution(MLOpsExecution):
     exec_id : str
         Executiong id for that especific training run
     login : str
-        Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+        Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
     password : str
-        Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+        Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     environment : str
         Enviroment of MLOps you are using.
     run_data : dict
@@ -763,9 +763,9 @@ class MLOpsTrainingExperiment(BaseMLOps):
     Attributes
     ----------
     login : str
-        Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+        Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
     password : str
-        Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+        Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     training_id : str
         Training id (hash) from the experiment you want to access
     group : str
@@ -859,7 +859,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
                                                         )"""
 
     def __str__(self):
-        return f'NEOMARIL training experiment "{self.experiment_name} (Group: {self.group}, Id: {self.training_id})"'
+        return f'MLOPS training experiment "{self.experiment_name} (Group: {self.group}, Id: {self.training_id})"'
 
     def __upload_training(
         self,
@@ -1426,11 +1426,11 @@ class MLOpsTrainingClient(BaseMLOpsClient):
     Attributes
     ----------
     login : str
-        Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+        Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
     password : str
-        Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+        Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     url : str
-        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
+        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
     ------
@@ -1456,7 +1456,7 @@ class MLOpsTrainingClient(BaseMLOpsClient):
         return f'API version {self.version} - MLOpsTrainingClient(url="{self.base_url}", Token="{self.user_token}")'
 
     def __str__(self):
-        return f"NEOMARIL {self.base_url} Training client:{self.user_token}"
+        return f"MLOPS {self.base_url} Training client:{self.user_token}"
 
     def get_training(
         self, *, training_id: str, group: str = "datarisk"

@@ -22,13 +22,13 @@ class MLOpsPipeline(BaseMLOps):
     Attributes
     ----------
     login : str
-        Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+        Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
     password : str
-        Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+        Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     group : str
         Group the model is inserted
     url : str
-        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
+        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
     python_version : str
         Python version for the model environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.9'
 
@@ -149,19 +149,19 @@ class MLOpsPipeline(BaseMLOps):
             load_dotenv(find_dotenv(usecwd=True))
         logger.info(f"Loading .env")
 
-        login = os.getenv("NEOMARIL_USER")
+        login = os.getenv("MLOPS_USER")
         if not login:
             raise PipelineError(
-                "When using a config file the environment variable NEOMARIL_USER must be defined"
+                "When using a config file the environment variable MLOPS_USER must be defined"
             )
 
-        password = os.getenv("NEOMARIL_PASSWORD")
+        password = os.getenv("MLOPS_PASSWORD")
         if not password:
             raise PipelineError(
-                "When using a config file the environment variable NEOMARIL_PASSWORD must be defined"
+                "When using a config file the environment variable MLOPS_PASSWORD must be defined"
             )
 
-        url = os.getenv("NEOMARIL_URL", conf.get("url"))
+        url = os.getenv("MLOPS_URL", conf.get("url"))
 
         pipeline = MLOpsPipeline(
             group=conf["group"],
@@ -402,7 +402,7 @@ class MLOpsPipeline(BaseMLOps):
             login=self.credentials[0],
             password=self.credentials[1],
             group=self.group,
-            group_token=os.getenv("NEOMARIL_GROUP_TOKEN"),
+            group_token=os.getenv("MLOPS_GROUP_TOKEN"),
             url=self.base_url,
         )
 

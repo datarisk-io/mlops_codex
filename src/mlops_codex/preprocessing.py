@@ -32,15 +32,15 @@ class MLOpsPreprocessing(BaseMLOps):
     Attributes
     ----------
     login : str
-        Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+        Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
     password : str
-        Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+        Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     preprocessing_id : str
         Preprocessing script id (hash) from the script you want to access
     group : str
         Group the model is inserted. Default is 'datarisk' (public group)
     base_url : str
-        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
+        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Example
     --------
@@ -72,7 +72,7 @@ class MLOpsPreprocessing(BaseMLOps):
         super().__init__(login=login, password=password, url=url)
         self.preprocessing_id = preprocessing_id
         self.group = group
-        self.__token = group_token if group_token else os.getenv("NEOMARIL_GROUP_TOKEN")
+        self.__token = group_token if group_token else os.getenv("MLOPS_GROUP_TOKEN")
 
         url = f"{self.base_url}/preprocessing/describe/{group}/{preprocessing_id}"
         response = requests.get(
@@ -99,7 +99,7 @@ class MLOpsPreprocessing(BaseMLOps):
                                 )"""
 
     def __str__(self):
-        return f'NEOMARIL preprocessing (Group: {self.group}, Id: {self.preprocessing_id})"'
+        return f'MLOPS preprocessing (Group: {self.group}, Id: {self.preprocessing_id})"'
 
     def wait_ready(self):
         """
@@ -175,7 +175,7 @@ class MLOpsPreprocessing(BaseMLOps):
         Arguments
         ---------
         group_token : str
-            Token for executing the preprocessing (show when creating a group). You can set this using the NEOMARIL_GROUP_TOKEN env variable
+            Token for executing the preprocessing (show when creating a group). You can set this using the MLOPS_GROUP_TOKEN env variable
 
         Example
         -------
@@ -202,7 +202,7 @@ class MLOpsPreprocessing(BaseMLOps):
             If Sync is a dict, the keys that are needed inside this dict are the ones in the `schema` attribute.
             If Async is a string with the file path with the same filename used in the source file.
         group_token : str, optional
-            Token for executing the preprocessing (show when creating a group). It can be informed when getting the preprocessing or when running predictions, or using the env variable NEOMARIL_GROUP_TOKEN
+            Token for executing the preprocessing (show when creating a group). It can be informed when getting the preprocessing or when running predictions, or using the env variable MLOPS_GROUP_TOKEN
         wait_complete: bool, optional
             Boolean that informs if a preprocessing training is completed (True) or not (False). Default value is False
 
@@ -363,11 +363,11 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
     Attributes
     ----------
     login : str
-        Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+        Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
     password : str
-        Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+        Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     url : str
-        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
+        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
     ------
@@ -530,7 +530,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         group : str
             Group the preprocessing is inserted. Default is 'datarisk' (public group)
         group_token : str, optional
-            Token for executing the preprocessing (show when creating a group). It can be informed when getting the preprocessing or when running predictions, or using the env variable NEOMARIL_GROUP_TOKEN
+            Token for executing the preprocessing (show when creating a group). It can be informed when getting the preprocessing or when running predictions, or using the env variable MLOPS_GROUP_TOKEN
         wait_for_ready : bool
             If the preprocessing is being deployed, wait for it to be ready instead of failing the request. Defaults to True
 

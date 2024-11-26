@@ -356,7 +356,7 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
         return f"API version {self.version} - MLOpsExternalMonitoringClient"
 
     def __str__(self):
-        return f"NEOMARIL {self.base_url} External Monitoring client:{self.user_token}"
+        return f"MLOPS {self.base_url} External Monitoring client:{self.user_token}"
 
     def __register(self, configuration_file: Union[str, dict], url: str) -> str:
         """Register a new external monitoring

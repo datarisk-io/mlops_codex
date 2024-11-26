@@ -40,17 +40,17 @@ class MLOpsModel(BaseMLOps):
     Attributes
     ----------
     login : str
-        Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+        Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
     password : str
-        Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+        Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     model_id : str
         Model id (hash) from the model you want to access
     group : str
         Group the model is inserted. Default is 'datarisk' (public group)
     group_token : str
-        Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable NEOMARIL_GROUP_TOKEN
+        Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable MLOPS_GROUP_TOKEN
     url : str
-        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set these
+        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set these
     docs : str
         URL for the model Swagger page
 
@@ -99,7 +99,7 @@ class MLOpsModel(BaseMLOps):
 
         self.model_id = model_id
         self.group = group
-        self.__token = group_token if group_token else os.getenv("NEOMARIL_GROUP_TOKEN")
+        self.__token = group_token if group_token else os.getenv("MLOPS_GROUP_TOKEN")
 
         url = f"{self.base_url}/model/describe/{self.group}/{self.model_id}"
         response = requests.get(
@@ -145,7 +145,7 @@ class MLOpsModel(BaseMLOps):
 
     def __str__(self):
         return (
-            f'NEOMARIL model "{self.name} (Group: {self.group}, Id: {self.model_id})"'
+            f'MLOPS model "{self.name} (Group: {self.group}, Id: {self.model_id})"'
         )
 
     def __get_status(self):
@@ -490,7 +490,7 @@ class MLOpsModel(BaseMLOps):
         Arguments
         ---------
         group_token : str
-            Token for executing the model (show when creating a group). You can set this using the NEOMARIL_GROUP_TOKEN env variable
+            Token for executing the model (show when creating a group). You can set this using the MLOPS_GROUP_TOKEN env variable
 
         Example
         -------
@@ -519,7 +519,7 @@ class MLOpsModel(BaseMLOps):
             If Sync is a dict, the keys that are needed inside this dict are the ones in the `schema` attribute.
             If Async is a string with the file path with the same filename used in the source file.
         group_token : str, optional
-            Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable NEOMARIL_GROUP_TOKEN
+            Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable MLOPS_GROUP_TOKEN
         wait_complete: bool, optional
             Boolean that informs if a model training is completed (True) or not (False). Default value is False
 
@@ -1046,11 +1046,11 @@ class MLOpsModelClient(BaseMLOpsClient):
     Attributes
     ----------
     login : str
-        Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+        Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
     password : str
-        Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+        Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     url : str
-        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
+        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
     ------
@@ -1153,7 +1153,7 @@ class MLOpsModelClient(BaseMLOpsClient):
         return f'API version {self.version} - MLOpsModelClient(url="{self.base_url}", Token="{self.user_token}")'
 
     def __str__(self):
-        return f"NEOMARIL {self.base_url} Model client:{self.user_token}"
+        return f"MLOPS {self.base_url} Model client:{self.user_token}"
 
     def __get_model_status(self, model_id: str, group: str) -> dict:
         """
@@ -1208,7 +1208,7 @@ class MLOpsModelClient(BaseMLOpsClient):
         group : str
             Group the model is inserted. Default is 'datarisk' (public group)
         group_token : str, optional
-            Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable NEOMARIL_GROUP_TOKEN
+            Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable MLOPS_GROUP_TOKEN
         wait_for_ready : bool
             If the model is being deployed, wait for it to be ready instead of failing the request. Defaults to True
 

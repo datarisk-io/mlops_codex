@@ -26,15 +26,15 @@ class MLOpsDataSourceClient(BaseMLOpsClient):
     ----------
     login : str
         Login for authenticating with the client.
-        You can also use the env variable NEOMARIL_USER to set this
+        You can also use the env variable MLOPS_USER to set this
     password : str
         Password for authenticating with the client.
-        You can also use the env variable NEOMARIL_PASSWORD to set this
+        You can also use the env variable MLOPS_PASSWORD to set this
     url : str
         URL to MLOps Server.
         Default value is https://mlops.datarisk.net,
         use it to test your deployment first before changing to production.
-        You can also use the env variable NEOMARIL_URL to set this
+        You can also use the env variable MLOPS_URL to set this
 
     Raises
     ----------
@@ -240,15 +240,15 @@ class MLOpsDataSource(BaseMLOps):
     ----------
     login : str
         Login for authenticating with the client.
-        You can also use the env variable NEOMARIL_USER to set this
+        You can also use the env variable MLOPS_USER to set this
     password : str
         Password for authenticating with the client.
-        You can also use the env variable NEOMARIL_PASSWORD to set this
+        You can also use the env variable MLOPS_PASSWORD to set this
     url : str
         URL to MLOps Server.
         Default value is https://mlops.datarisk.net,
         use it to test your deployment first before changing to production.
-        You can also use the env variable NEOMARIL_URL to set this
+        You can also use the env variable MLOPS_URL to set this
     datasource_name : str
         Name given previously to the datasource.
     provider : str
@@ -428,15 +428,15 @@ class MLOpsDataset(BaseMLOps):
     ----------
     login : str
         Login for authenticating with the client.
-        You can also use the env variable NEOMARIL_USER to set this
+        You can also use the env variable MLOPS_USER to set this
     password : str
         Password for authenticating with the client.
-        You can also use the env variable NEOMARIL_PASSWORD to set this
+        You can also use the env variable MLOPS_PASSWORD to set this
     url : str
         URL to MLOps Server.
         Default value is https://mlops.datarisk.net,
         use it to test your deployment first before changing to production.
-        You can also use the env variable NEOMARIL_URL to set this
+        You can also use the env variable MLOPS_URL to set this
     dataset_hash : str
         The hash that identify the dataset
     dataset_name : str

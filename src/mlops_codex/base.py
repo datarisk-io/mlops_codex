@@ -46,13 +46,13 @@ class BaseMLOps:
         logger.info("Loading .env")
 
         if url is None:
-            url = os.getenv("NEOMARIL_URL")
+            url = os.getenv("MLOPS_URL")
         if url is None:
             url = "https://mlops.datarisk.net/"
 
         self.credentials = (
-            login if login else os.getenv("NEOMARIL_USER"),
-            password if password else os.getenv("NEOMARIL_PASSWORD"),
+            login if login else os.getenv("MLOPS_USER"),
+            password if password else os.getenv("MLOPS_PASSWORD"),
         )
         self.base_url = url
         self.base_url = parse_url(self.base_url)
@@ -138,11 +138,11 @@ class BaseMLOpsClient(BaseMLOps):
     Attributes
     ----------
     login : str
-        Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+        Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
     password : str
-        Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+        Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     url : str
-        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
+        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
     ------
@@ -363,11 +363,11 @@ class MLOpsExecution(BaseMLOps):
     exec_id : str, optional
         Execution id
     login : str
-        Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+        Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
     password : str
-        Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+        Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     url : str
-        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
+        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
     ------
@@ -427,7 +427,7 @@ class MLOpsExecution(BaseMLOps):
         self.exec_id = exec_id
         self.status = ModelExecutionState.Requested
         self.group = group
-        self.__token = group_token if group_token else os.getenv("NEOMARIL_GROUP_TOKEN")
+        self.__token = group_token if group_token else os.getenv("MLOPS_GROUP_TOKEN")
 
         if exec_type == "AsyncModel":
             self.__url_path = "model/async"
@@ -481,7 +481,7 @@ class MLOpsExecution(BaseMLOps):
         return f"""MLOps{self.exec_type}Execution(exec_id="{self.exec_id}", status="{self.status}")"""
 
     def __str__(self):
-        return f'NEOMARIL {self.exec_type }Execution :{self.exec_id} (Status: {self.status})"'
+        return f'MLOPS {self.exec_type }Execution :{self.exec_id} (Status: {self.status})"'
 
     def get_status(self) -> dict:
         """

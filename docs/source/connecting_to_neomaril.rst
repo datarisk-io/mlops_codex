@@ -9,9 +9,9 @@ You need the server URL, an email and a password to access the MLOps. The best w
 
 .. code::
 
-    NEOMARIL_URL='https://mlops.datarisk.net'
-    NEOMARIL_USER='email@email.com'
-    NEOMARIL_PASSWORD='password@123'
+    MLOPS_URL='https://mlops.datarisk.net'
+    MLOPS_USER='email@email.com'
+    MLOPS_PASSWORD='password@123'
 
 If you create this file in the same directory your are running your code we will import it automatically
 
@@ -74,4 +74,4 @@ To create a group you can use any client, we just need its name. But we also cou
 Add your group token to the *.env* file:
 
 .. code::
-    NEOMARIL_GROUP_TOKEN='YOUR_GROUP_TOKEN'
+    MLOPS_GROUP_TOKEN='YOUR_GROUP_TOKEN'

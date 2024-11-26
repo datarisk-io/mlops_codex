@@ -168,7 +168,7 @@ We can use the same :py:class:`mlops_codex.model.MLOpsModel` instance to call th
 
 Sync models return a dictionary and async models return a :py:class:`mlops_codex.base.MLOpsExecution` that you can use to check the status and download the result similar to the training execution.
 
-To use the models you need a `group token`, that is generated when creating the group (check :ref:`connecting_to_mlops:creating a group`). You can add this token in the NEOMARIL_GROUP_TOKEN env variable, use the :py:meth:`mlops_codex.model.MLOpsModel.set_token` method or add in each :py:meth:`mlops_codex.model.MLOpsModel.predict` call.
+To use the models you need a `group token`, that is generated when creating the group (check :ref:`connecting_to_mlops:creating a group`). You can add this token in the MLOPS_GROUP_TOKEN env variable, use the :py:meth:`mlops_codex.model.MLOpsModel.set_token` method or add in each :py:meth:`mlops_codex.model.MLOpsModel.predict` call.
 
 
 Most of the time you might need to used your model outside a python environment, sharing it through a REST API.
