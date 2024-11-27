@@ -9,16 +9,16 @@ from typing import Optional, Union
 
 import requests
 
-from neomaril_codex.__model_states import ModelState
-from neomaril_codex.__utils import (
+from mlops_codex.__model_states import ModelState
+from mlops_codex.__utils import (
     parse_dict_or_file,
     parse_json_to_yaml,
     refresh_token,
     try_login,
 )
-from neomaril_codex.base import BaseNeomaril, BaseNeomarilClient, NeomarilExecution
-from neomaril_codex.datasources import NeomarilDataset
-from neomaril_codex.exceptions import (
+from mlops_codex.base import BaseMLOps, BaseMLOpsClient, MLOpsExecution
+from mlops_codex.datasources import MLOpsDataset
+from mlops_codex.exceptions import (
     AuthenticationError,
     ExecutionError,
     GroupError,
@@ -27,30 +27,30 @@ from neomaril_codex.exceptions import (
     PreprocessingError,
     ServerError,
 )
-from neomaril_codex.logger_config import get_logger
-from neomaril_codex.preprocessing import NeomarilPreprocessing
+from mlops_codex.logger_config import get_logger
+from mlops_codex.preprocessing import MLOpsPreprocessing
 
 logger = get_logger()
 
 
-class NeomarilModel(BaseNeomaril):
+class MLOpsModel(BaseMLOps):
     """
-    Class to manage Models deployed inside Neomaril
+    Class to manage Models deployed inside MLOps
 
     Attributes
     ----------
     login : str
-        Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+        Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
     password : str
-        Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+        Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     model_id : str
         Model id (hash) from the model you want to access
     group : str
         Group the model is inserted. Default is 'datarisk' (public group)
     group_token : str
-        Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable NEOMARIL_GROUP_TOKEN
+        Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable MLOPS_GROUP_TOKEN
     url : str
-        URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set these
+        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set these
     docs : str
         URL for the model Swagger page
 
@@ -67,10 +67,10 @@ class NeomarilModel(BaseNeomaril):
 
     .. code-block:: python
 
-        from neomaril_codex.model import NeomarilModelClient
-        from neomaril_codex.model import NeomarilModel
+        from mlops_codex.model import MLOpsModelClient
+        from mlops_codex.model import MLOpsModel
 
-        client = NeomarilModelClient('123456')
+        client = MLOpsModelClient('123456')
 
         model = client.get_model(model_id='M9c3af308c754ee7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4',
                                  group='ex_group')
@@ -93,13 +93,13 @@ class NeomarilModel(BaseNeomaril):
         password: Optional[str] = None,
         group: str = "datarisk",
         group_token: Optional[str] = None,
-        url: str = "https://neomaril.staging.datarisk.net/",
+        url: str = "https://mlops.datarisk.net/",
     ) -> None:
         super().__init__(login=login, password=password, url=url)
 
         self.model_id = model_id
         self.group = group
-        self.__token = group_token if group_token else os.getenv("NEOMARIL_GROUP_TOKEN")
+        self.__token = group_token if group_token else os.getenv("MLOPS_GROUP_TOKEN")
 
         url = f"{self.base_url}/model/describe/{self.group}/{self.model_id}"
         response = requests.get(
@@ -137,7 +137,7 @@ class NeomarilModel(BaseNeomaril):
 
     def __repr__(self) -> str:
         status = self.__get_status()
-        return f"""NeomarilModel(name="{self.name}", group="{self.group}", 
+        return f"""MLOpsModel(name="{self.name}", group="{self.group}", 
                                 status="{status}",
                                 model_id="{self.model_id}",
                                 operation="{self.operation.title()}",
@@ -145,7 +145,7 @@ class NeomarilModel(BaseNeomaril):
 
     def __str__(self):
         return (
-            f'NEOMARIL model "{self.name} (Group: {self.group}, Id: {self.model_id})"'
+            f'MLOPS model "{self.name} (Group: {self.group}, Id: {self.model_id})"'
         )
 
     def __get_status(self):
@@ -234,8 +234,8 @@ class NeomarilModel(BaseNeomaril):
                 url,
                 headers={
                     "Authorization": "Bearer " + self.__token,
-                    "Neomaril-Origin": "Codex",
-                    "Neomaril-Method": self.health.__qualname__,
+                    "MLOps-Origin": "Codex",
+                    "MLOps-Method": self.health.__qualname__,
                 },
             )
             if response.status_code == 200:
@@ -280,8 +280,8 @@ class NeomarilModel(BaseNeomaril):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.restart_model.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.restart_model.__qualname__,
             },
         )
 
@@ -390,8 +390,8 @@ class NeomarilModel(BaseNeomaril):
             f"{self.base_url}/model/delete/{self.group}/{self.model_id}",
             headers={
                 "Authorization": "Bearer " + token,
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.delete.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.delete.__qualname__,
             },
         )
 
@@ -449,8 +449,8 @@ class NeomarilModel(BaseNeomaril):
             f"{self.base_url}/model/disable/{self.group}/{self.model_id}",
             headers={
                 "Authorization": "Bearer " + token,
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.disable.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.disable.__qualname__,
             },
         )
 
@@ -490,7 +490,7 @@ class NeomarilModel(BaseNeomaril):
         Arguments
         ---------
         group_token : str
-            Token for executing the model (show when creating a group). You can set this using the NEOMARIL_GROUP_TOKEN env variable
+            Token for executing the model (show when creating a group). You can set this using the MLOPS_GROUP_TOKEN env variable
 
         Example
         -------
@@ -503,12 +503,12 @@ class NeomarilModel(BaseNeomaril):
     def predict(
         self,
         *,
-        data: Optional[Union[dict, str, NeomarilExecution]] = None,
-        dataset: Union[str, NeomarilDataset] = None,
-        preprocessing: Optional[NeomarilPreprocessing] = None,
+        data: Optional[Union[dict, str, MLOpsExecution]] = None,
+        dataset: Union[str, MLOpsDataset] = None,
+        preprocessing: Optional[MLOpsPreprocessing] = None,
         group_token: Optional[str] = None,
         wait_complete: Optional[bool] = False,
-    ) -> Union[dict, NeomarilExecution]:
+    ) -> Union[dict, MLOpsExecution]:
         """
         Runs a prediction from the current model.
 
@@ -519,7 +519,7 @@ class NeomarilModel(BaseNeomaril):
             If Sync is a dict, the keys that are needed inside this dict are the ones in the `schema` attribute.
             If Async is a string with the file path with the same filename used in the source file.
         group_token : str, optional
-            Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable NEOMARIL_GROUP_TOKEN
+            Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable MLOPS_GROUP_TOKEN
         wait_complete: bool, optional
             Boolean that informs if a model training is completed (True) or not (False). Default value is False
 
@@ -532,7 +532,7 @@ class NeomarilModel(BaseNeomaril):
 
         Returns
         -------
-        Union[dict, NeomarilExecution]
+        Union[dict, MLOpsExecution]
             The return of the scoring function in the source file for Sync models or the execution class for Async models.
         """
         if not (data or dataset):
@@ -557,8 +557,8 @@ class NeomarilModel(BaseNeomaril):
                         data=json.dumps(model_input),
                         headers={
                             "Authorization": "Bearer " + group_token,
-                            "Neomaril-Origin": "Codex",
-                            "Neomaril-Method": self.predict.__qualname__,
+                            "MLOps-Origin": "Codex",
+                            "MLOps-Method": self.predict.__qualname__,
                         },
                     )
 
@@ -602,8 +602,8 @@ class NeomarilModel(BaseNeomaril):
                         data=form_data,
                         headers={
                             "Authorization": "Bearer " + group_token,
-                            "Neomaril-Origin": "Codex",
-                            "Neomaril-Method": self.predict.__qualname__,
+                            "MLOps-Origin": "Codex",
+                            "MLOps-Method": self.predict.__qualname__,
                         },
                     )
 
@@ -611,7 +611,7 @@ class NeomarilModel(BaseNeomaril):
                         message = req.json()
                         logger.info(message["Message"])
                         exec_id = message["ExecutionId"]
-                        run = NeomarilExecution(
+                        run = MLOpsExecution(
                             parent_id=self.model_id,
                             exec_type="AsyncModel",
                             group=self.group,
@@ -645,8 +645,8 @@ class NeomarilModel(BaseNeomaril):
                 headers={
                     "Authorization": "Bearer "
                     + refresh_token(*self.credentials, self.base_url),
-                    "Neomaril-Origin": "Codex",
-                    "Neomaril-Method": self.predict.__qualname__,
+                    "MLOps-Origin": "Codex",
+                    "MLOps-Method": self.predict.__qualname__,
                 },
             ).json()["Description"]
             if response["Status"] == "Deployed":
@@ -666,7 +666,7 @@ class NeomarilModel(BaseNeomaril):
 
     def generate_predict_code(self, *, language: str = "curl") -> str:
         """
-        Generates predict code for the model to be used outside Neomaril Codex
+        Generates predict code for the model to be used outside MLOps Codex
 
         Arguments
         ---------
@@ -778,7 +778,7 @@ class NeomarilModel(BaseNeomaril):
     def __call__(self, data: dict) -> dict:
         return self.predict(data=data)
 
-    def get_model_execution(self, exec_id: str) -> NeomarilExecution:
+    def get_model_execution(self, exec_id: str) -> MLOpsExecution:
         """
         Get a execution instace for that model.
 
@@ -797,7 +797,7 @@ class NeomarilModel(BaseNeomaril):
         >>> model.get_model_execution('1')
         """
         if self.operation == "async":
-            run = NeomarilExecution(
+            run = MLOpsExecution(
                 parent_id=self.model_id,
                 exec_type="AsyncModel",
                 group=self.group,
@@ -1001,8 +1001,8 @@ class NeomarilModel(BaseNeomaril):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.register_monitoring.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.register_monitoring.__qualname__,
             },
         )
 
@@ -1039,18 +1039,18 @@ class NeomarilModel(BaseNeomaril):
         logger.info(f"Result:\n{parse_json_to_yaml(self.model_data)}")
 
 
-class NeomarilModelClient(BaseNeomarilClient):
+class MLOpsModelClient(BaseMLOpsClient):
     """
-    Class for client to access Neomaril and manage models
+    Class for client to access MLOps and manage models
 
     Attributes
     ----------
     login : str
-        Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+        Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
     password : str
-        Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+        Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     url : str
-        URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
+        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
     ------
@@ -1065,8 +1065,8 @@ class NeomarilModelClient(BaseNeomarilClient):
 
     .. code-block:: python
 
-        from neomaril_codex.model import NeomarilModelClient
-        from neomaril_codex.model import NeomarilModel
+        from mlops_codex.model import MLOpsModelClient
+        from mlops_codex.model import MLOpsModel
 
         def new_sync_model(client, group, data_path):
             model = client.create_model('Model Example Sync',
@@ -1088,7 +1088,7 @@ class NeomarilModelClient(BaseNeomarilClient):
 
             return model.model_id
 
-        client = NeomarilModelClient('123456')
+        client = MLOpsModelClient('123456')
         client.create_group('ex_group', 'Group for example purpose')
 
         data_path = './samples/syncModel/'
@@ -1111,8 +1111,8 @@ class NeomarilModelClient(BaseNeomarilClient):
 
     .. code-block:: python
 
-        from neomaril_codex.model import NeomarilModelClient
-        from neomaril_codex.model import NeomarilModel
+        from mlops_codex.model import MLOpsModelClient
+        from mlops_codex.model import MLOpsModel
 
         def new_async_model(client, group, data_path):
             model = client.create_model('Teste notebook Async',
@@ -1135,7 +1135,7 @@ class NeomarilModelClient(BaseNeomarilClient):
 
             return execution
 
-        client = NeomarilModelClient('123456')
+        client = MLOpsModelClient('123456')
         client.create_group('ex_group', 'Group for example purpose')
 
         data_path = './samples/asyncModel/'
@@ -1150,10 +1150,10 @@ class NeomarilModelClient(BaseNeomarilClient):
     """
 
     def __repr__(self) -> str:
-        return f'API version {self.version} - NeomarilModelClient(url="{self.base_url}", Token="{self.user_token}")'
+        return f'API version {self.version} - MLOpsModelClient(url="{self.base_url}", Token="{self.user_token}")'
 
     def __str__(self):
-        return f"NEOMARIL {self.base_url} Model client:{self.user_token}"
+        return f"MLOPS {self.base_url} Model client:{self.user_token}"
 
     def __get_model_status(self, model_id: str, group: str) -> dict:
         """
@@ -1197,7 +1197,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         group: str = "datarisk",
         group_token: Optional[str] = None,
         wait_for_ready: bool = True,
-    ) -> NeomarilModel:
+    ) -> MLOpsModel:
         """
         Acess a model using its id
 
@@ -1208,7 +1208,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         group : str
             Group the model is inserted. Default is 'datarisk' (public group)
         group_token : str, optional
-            Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable NEOMARIL_GROUP_TOKEN
+            Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable MLOPS_GROUP_TOKEN
         wait_for_ready : bool
             If the model is being deployed, wait for it to be ready instead of failing the request. Defaults to True
 
@@ -1221,8 +1221,8 @@ class NeomarilModelClient(BaseNeomarilClient):
 
         Returns
         -------
-        NeomarilModel
-            A NeomarilModel instance with the model hash from `model_id`
+        MLOpsModel
+            A MLOpsModel instance with the model hash from `model_id`
 
         Example
         -------
@@ -1245,7 +1245,7 @@ class NeomarilModelClient(BaseNeomarilClient):
                     sleep(10)
             else:
                 logger.info("Returning model, but model is not ready.")
-                NeomarilModel(
+                MLOpsModel(
                     model_id=model_id,
                     login=self.credentials[0],
                     password=self.credentials[1],
@@ -1265,7 +1265,7 @@ class NeomarilModelClient(BaseNeomarilClient):
             )
         elif status == "Deployed":
             logger.info(f"Model {model_id} its deployed. Fetching model.")
-            return NeomarilModel(
+            return MLOpsModel(
                 model_id=model_id,
                 login=self.credentials[0],
                 password=self.credentials[1],
@@ -1333,8 +1333,8 @@ class NeomarilModelClient(BaseNeomarilClient):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.search_models.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.search_models.__qualname__,
             },
         )
 
@@ -1347,7 +1347,7 @@ class NeomarilModelClient(BaseNeomarilClient):
                 parsed_results.append(r)
 
             return [
-                NeomarilModel(
+                MLOpsModel(
                     model_id=m["ModelHash"],
                     login=self.credentials[0],
                     password=self.credentials[1],
@@ -1466,7 +1466,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         extra_files : list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
         env : str, optional
-            Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
+            Flag that choose which environment (dev, staging, production) of MLOps you are using. Default is True
         python_version : str, optional
             Python version for the model environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.8'
         operation : str
@@ -1534,8 +1534,8 @@ class NeomarilModelClient(BaseNeomarilClient):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.__upload_model.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.__upload_model.__qualname__,
             },
         )
 
@@ -1586,8 +1586,8 @@ class NeomarilModelClient(BaseNeomarilClient):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.create_model.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.create_model.__qualname__,
             },
         )
         if response.status_code == 202:
@@ -1625,9 +1625,9 @@ class NeomarilModelClient(BaseNeomarilClient):
         operation="Sync",
         input_type: str = "json|csv|parquet",
         wait_for_ready: bool = True,
-    ) -> Union[NeomarilModel, str]:
+    ) -> Union[MLOpsModel, str]:
         """
-        Deploy a new model to Neomaril.
+        Deploy a new model to MLOps.
 
         Arguments
         ---------
@@ -1656,7 +1656,7 @@ class NeomarilModelClient(BaseNeomarilClient):
         input_type : str
             The type of the input file that should be 'json', 'csv' or 'parquet'
         wait_for_ready : bool, optional
-            Wait for model to be ready and returns a NeomarilModel instace with the new model. Defaults to True
+            Wait for model to be ready and returns a MLOpsModel instace with the new model. Defaults to True
 
         Raises
         ------
@@ -1665,7 +1665,7 @@ class NeomarilModelClient(BaseNeomarilClient):
 
         Returns
         -------
-        Union[NeomarilModel, str]
+        Union[MLOpsModel, str]
             Returns the new model, if wait_for_ready=True runs the deployment process synchronously. If it's False, returns nothing after sending all the data to server and runs the deployment asynchronously
 
         Example
@@ -1719,7 +1719,7 @@ class NeomarilModelClient(BaseNeomarilClient):
 
     def get_model_execution(
         self, *, model_id: str, exec_id: str, group: Optional[str] = None
-    ) -> NeomarilExecution:
+    ) -> MLOpsExecution:
         """
         Get a execution instace (Async model only).
 
@@ -1734,7 +1734,7 @@ class NeomarilModelClient(BaseNeomarilClient):
 
         Returns
         -------
-        NeomarilExecution
+        MLOpsExecution
             The new execution
 
         Example

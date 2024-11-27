@@ -10,9 +10,9 @@ from typing import Optional, Union
 
 import requests
 
-from neomaril_codex.__utils import parse_json_to_yaml, refresh_token
-from neomaril_codex.base import BaseNeomaril, BaseNeomarilClient, NeomarilExecution
-from neomaril_codex.exceptions import (
+from mlops_codex.__utils import parse_json_to_yaml, refresh_token
+from mlops_codex.base import BaseMLOps, BaseMLOpsClient, MLOpsExecution
+from mlops_codex.exceptions import (
     AuthenticationError,
     ExecutionError,
     GroupError,
@@ -20,27 +20,27 @@ from neomaril_codex.exceptions import (
     PreprocessingError,
     ServerError,
 )
-from neomaril_codex.logger_config import get_logger
+from mlops_codex.logger_config import get_logger
 
 logger = get_logger()
 
 
-class NeomarilPreprocessing(BaseNeomaril):
+class MLOpsPreprocessing(BaseMLOps):
     """
-    Class to manage Preprocessing scripts deployed inside Neomaril
+    Class to manage Preprocessing scripts deployed inside MLOps
 
     Attributes
     ----------
     login : str
-        Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+        Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
     password : str
-        Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+        Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     preprocessing_id : str
         Preprocessing script id (hash) from the script you want to access
     group : str
         Group the model is inserted. Default is 'datarisk' (public group)
     base_url : str
-        URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
+        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Example
     --------
@@ -48,10 +48,10 @@ class NeomarilPreprocessing(BaseNeomaril):
 
     .. code-block:: python
 
-        from neomaril_codex.preprocessing import NeomarilPreprocessingClient
-        from neomaril_codex.model import NeomarilModelClient
+        from mlops_codex.preprocessing import MLOpsPreprocessingClient
+        from mlops_codex.model import MLOpsModelClient
 
-        client = NeomarilPreprocessingClient('123456')
+        client = MLOpsPreprocessingClient('123456')
 
         client.search_preprocessing()
 
@@ -67,12 +67,12 @@ class NeomarilPreprocessing(BaseNeomaril):
         password: Optional[str] = None,
         group: str = "datarisk",
         group_token: Optional[str] = None,
-        url: str = "https://neomaril.staging.datarisk.net/",
+        url: str = "https://mlops.datarisk.net/",
     ) -> None:
         super().__init__(login=login, password=password, url=url)
         self.preprocessing_id = preprocessing_id
         self.group = group
-        self.__token = group_token if group_token else os.getenv("NEOMARIL_GROUP_TOKEN")
+        self.__token = group_token if group_token else os.getenv("MLOPS_GROUP_TOKEN")
 
         url = f"{self.base_url}/preprocessing/describe/{group}/{preprocessing_id}"
         response = requests.get(
@@ -92,14 +92,14 @@ class NeomarilPreprocessing(BaseNeomaril):
         self.__preprocessing_ready = self.status == "Deployed"
 
     def __repr__(self) -> str:
-        return f"""NeomarilPreprocessing, group="{self.group}", 
+        return f"""MLOpsPreprocessing, group="{self.group}", 
                                 status="{self.status}",
                                 preprocessing_id="{self.preprocessing_id}",
                                 operation="{self.operation.title()}",
                                 )"""
 
     def __str__(self):
-        return f'NEOMARIL preprocessing (Group: {self.group}, Id: {self.preprocessing_id})"'
+        return f'MLOPS preprocessing (Group: {self.group}, Id: {self.preprocessing_id})"'
 
     def wait_ready(self):
         """
@@ -175,7 +175,7 @@ class NeomarilPreprocessing(BaseNeomaril):
         Arguments
         ---------
         group_token : str
-            Token for executing the preprocessing (show when creating a group). You can set this using the NEOMARIL_GROUP_TOKEN env variable
+            Token for executing the preprocessing (show when creating a group). You can set this using the MLOPS_GROUP_TOKEN env variable
 
         Example
         -------
@@ -191,7 +191,7 @@ class NeomarilPreprocessing(BaseNeomaril):
         data: Union[dict, str],
         group_token: Optional[str] = None,
         wait_complete: Optional[bool] = False,
-    ) -> Union[dict, NeomarilExecution]:
+    ) -> Union[dict, MLOpsExecution]:
         """
         Runs a prediction from the current preprocessing.
 
@@ -202,7 +202,7 @@ class NeomarilPreprocessing(BaseNeomaril):
             If Sync is a dict, the keys that are needed inside this dict are the ones in the `schema` attribute.
             If Async is a string with the file path with the same filename used in the source file.
         group_token : str, optional
-            Token for executing the preprocessing (show when creating a group). It can be informed when getting the preprocessing or when running predictions, or using the env variable NEOMARIL_GROUP_TOKEN
+            Token for executing the preprocessing (show when creating a group). It can be informed when getting the preprocessing or when running predictions, or using the env variable MLOPS_GROUP_TOKEN
         wait_complete: bool, optional
             Boolean that informs if a preprocessing training is completed (True) or not (False). Default value is False
 
@@ -213,7 +213,7 @@ class NeomarilPreprocessing(BaseNeomaril):
 
         Returns
         -------
-        Union[dict, NeomarilExecution]
+        Union[dict, MLOpsExecution]
             The return of the scoring function in the source file for Sync preprocessing or the execution class for Async preprocessing.
         """
         if self.__preprocessing_ready:
@@ -231,8 +231,8 @@ class NeomarilPreprocessing(BaseNeomaril):
                         data=json.dumps(preprocessing_input),
                         headers={
                             "Authorization": "Bearer " + group_token,
-                            "Neomaril-Origin": "Codex",
-                            "Neomaril-Method": self.run.__qualname__,
+                            "MLOps-Origin": "Codex",
+                            "MLOps-Method": self.run.__qualname__,
                         },
                     )
 
@@ -248,8 +248,8 @@ class NeomarilPreprocessing(BaseNeomaril):
                         files=files,
                         headers={
                             "Authorization": "Bearer " + group_token,
-                            "Neomaril-Origin": "Codex",
-                            "Neomaril-Method": self.run.__qualname__,
+                            "MLOps-Origin": "Codex",
+                            "MLOps-Method": self.run.__qualname__,
                         },
                     )
 
@@ -258,7 +258,7 @@ class NeomarilPreprocessing(BaseNeomaril):
                         message = req.json()
                         logger.info(message["Message"])
                         exec_id = message["ExecutionId"]
-                        run = NeomarilExecution(
+                        run = MLOpsExecution(
                             parent_id=self.preprocessing_id,
                             exec_type="AsyncPreprocessing",
                             exec_id=exec_id,
@@ -292,7 +292,7 @@ class NeomarilPreprocessing(BaseNeomaril):
 
         return run
 
-    def get_preprocessing_execution(self, exec_id: str) -> NeomarilExecution:
+    def get_preprocessing_execution(self, exec_id: str) -> MLOpsExecution:
         """
         Get an execution instance for that preprocessing.
 
@@ -311,7 +311,7 @@ class NeomarilPreprocessing(BaseNeomaril):
         >>> preprocessing.get_preprocessing_execution('1')
         """
         if self.operation == "async":
-            return NeomarilExecution(
+            return MLOpsExecution(
                 parent_id=self.preprocessing_id,
                 exec_type="AsyncPreprocessing",
                 exec_id=exec_id,
@@ -356,18 +356,18 @@ class NeomarilPreprocessing(BaseNeomaril):
         raise PreprocessingError("Preprocessing has failed")
 
 
-class NeomarilPreprocessingClient(BaseNeomarilClient):
+class MLOpsPreprocessingClient(BaseMLOpsClient):
     """
-    Class for client to access Neomaril and manage Preprocessing scripts
+    Class for client to access MLOps and manage Preprocessing scripts
 
     Attributes
     ----------
     login : str
-        Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+        Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
     password : str
-        Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+        Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     url : str
-        URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
+        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
     ------
@@ -382,10 +382,10 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
 
     .. code-block:: python
 
-        from neomaril_codex.preprocessing import NeomarilPreprocessingClient
-        from neomaril_codex.model import NeomarilModelClient
+        from mlops_codex.preprocessing import MLOpsPreprocessingClient
+        from mlops_codex.model import MLOpsModelClient
 
-        client = NeomarilPreprocessingClient('123456')
+        client = MLOpsPreprocessingClient('123456')
         PATH = './samples/syncPreprocessing/'
 
         sync_preprocessing = client.create('Teste preprocessing Sync', # model_name
@@ -409,10 +409,10 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
 
     .. code-block:: python
 
-        from neomaril_codex.preprocessing import NeomarilPreprocessingClient
-        from neomaril_codex.model import NeomarilModelClient
+        from mlops_codex.preprocessing import MLOpsPreprocessingClient
+        from mlops_codex.model import MLOpsModelClient
 
-        client = NeomarilPreprocessingClient('123456')
+        client = MLOpsPreprocessingClient('123456')
         PATH = './samples/asyncPreprocessing/'
 
         async_preprocessing = client.create('Teste preprocessing Async', # model_name
@@ -441,13 +441,13 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
 
     .. code-block:: python
 
-        from neomaril_codex.preprocessing import NeomarilPreprocessingClient
-        from neomaril_codex.model import NeomarilModelClient
+        from mlops_codex.preprocessing import MLOpsPreprocessingClient
+        from mlops_codex.model import MLOpsModelClient
 
         # the sync preprocess script configuration presented before
         # ...
 
-        model_client = NeomarilModelClient('123456')
+        model_client = MLOpsModelClient('123456')
 
         sync_model = model_client.get_model(group='datarisk', model_id='M3aa182ff161478a97f4d3b2dc0e9b064d5a9e7330174daeb302e01586b9654c')
 
@@ -457,8 +457,8 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
 
     .. code-block:: python
 
-        from neomaril_codex.preprocessing import NeomarilPreprocessingClient
-        from neomaril_codex.model import NeomarilModelClient
+        from mlops_codex.preprocessing import MLOpsPreprocessingClient
+        from mlops_codex.model import MLOpsModelClient
 
         # the async preprocess script configuration presented before
         # ...
@@ -519,7 +519,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         group: str = "datarisk",
         group_token: Optional[str] = None,
         wait_for_ready: bool = True,
-    ) -> NeomarilPreprocessing:
+    ) -> MLOpsPreprocessing:
         """
         Access a preprocessing using its id
 
@@ -530,7 +530,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         group : str
             Group the preprocessing is inserted. Default is 'datarisk' (public group)
         group_token : str, optional
-            Token for executing the preprocessing (show when creating a group). It can be informed when getting the preprocessing or when running predictions, or using the env variable NEOMARIL_GROUP_TOKEN
+            Token for executing the preprocessing (show when creating a group). It can be informed when getting the preprocessing or when running predictions, or using the env variable MLOPS_GROUP_TOKEN
         wait_for_ready : bool
             If the preprocessing is being deployed, wait for it to be ready instead of failing the request. Defaults to True
 
@@ -543,8 +543,8 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
 
         Returns
         -------
-        NeomarilPreprocessing
-            A NeomarilPreprocessing instance with the preprocessing hash from `preprocessing_id`
+        MLOpsPreprocessing
+            A MLOpsPreprocessing instance with the preprocessing hash from `preprocessing_id`
 
         Example
         -------
@@ -571,7 +571,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
                     sleep(10)
             else:
                 logger.info("Returning preprocessing, but preprocessing is not ready.")
-                NeomarilPreprocessing(
+                MLOpsPreprocessing(
                     preprocessing_id=preprocessing_id,
                     login=self.credentials[0],
                     password=self.credentials[1],
@@ -593,7 +593,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
             logger.info(
                 f"Preprocessing {preprocessing_id} its deployed. Fetching preprocessing."
             )
-            return NeomarilPreprocessing(
+            return MLOpsPreprocessing(
                 preprocessing_id=preprocessing_id,
                 login=self.credentials[0],
                 password=self.credentials[1],
@@ -661,8 +661,8 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.search_preprocessing.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.search_preprocessing.__qualname__,
             },
         )
 
@@ -776,7 +776,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         extra_files : list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
         env : str, optional
-            Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
+            Flag that choose which environment (dev, staging, production) of MLOps you are using. Default is True
         python_version : str, optional
             Python version for the preprocessing environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.8'
         operation : str
@@ -899,8 +899,8 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.create.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.create.__qualname__,
             },
         )
 
@@ -938,9 +938,9 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         operation="Sync",
         input_type: str = "json|csv|parquet",
         wait_for_ready: bool = True,
-    ) -> Union[NeomarilPreprocessing, str]:
+    ) -> Union[MLOpsPreprocessing, str]:
         """
-        Deploy a new preprocessing to Neomaril.
+        Deploy a new preprocessing to MLOps.
 
         Arguments
         ---------
@@ -959,7 +959,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         extra_files : list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
         env : str, optional
-            Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
+            Flag that choose which environment (dev, staging, production) of MLOps you are using. Default is True
         python_version : str, optional
             Python version for the preprocessing environment. Avaliable versions are 3.8, 3.9, 3.10. Defaults to '3.8'
         operation : str
@@ -967,7 +967,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
         input_type : str
             The type of the input file that should be 'json', 'csv' or 'parquet'
         wait_for_ready : bool, optional
-            Wait for preprocessing to be ready and returns a NeomarilPreprocessing instace with the new preprocessing. Defaults to True
+            Wait for preprocessing to be ready and returns a MLOpsPreprocessing instace with the new preprocessing. Defaults to True
 
         Raises
         ------
@@ -976,7 +976,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
 
         Returns
         -------
-        Union[NeomarilPreprocessing, str]
+        Union[MLOpsPreprocessing, str]
             Returns the new preprocessing, if wait_for_ready=True runs the deployment process synchronously. If it's False, returns nothing after sending all the data to server and runs the deployment asynchronously
 
         Example
@@ -1033,7 +1033,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
 
     def get_execution(
         self, preprocessing_id: str, exec_id: str, group: Optional[str] = None
-    ) -> NeomarilExecution:
+    ) -> MLOpsExecution:
         """
         Get a execution instace (Async preprocessing only).
 
@@ -1048,7 +1048,7 @@ class NeomarilPreprocessingClient(BaseNeomarilClient):
 
         Returns
         -------
-        NeomarilExecution
+        MLOpsExecution
             The new execution
 
         Example

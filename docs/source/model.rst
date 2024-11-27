@@ -2,22 +2,22 @@ Model module
 ============================
 
 
-Module with all classes and methods to manage the Machine Learning (ML) models deployed at Neomaril.
+Module with all classes and methods to manage the Machine Learning (ML) models deployed at MLOps.
 
 
-neomaril\_codex.model.NeomarilModel
+mlops\_codex.model.MLOpsModel
 -----------------------------------
 
-.. autoclass:: neomaril_codex.model.NeomarilModel
+.. autoclass:: mlops_codex.model.MLOpsModel
    :members:
    :undoc-members:
    :show-inheritance:
 
 
-neomaril\_codex.model.NeomarilModelClient
+mlops\_codex.model.MLOpsModelClient
 -----------------------------------------
 
-.. autoclass:: neomaril_codex.model.NeomarilModelClient
+.. autoclass:: mlops_codex.model.MLOpsModelClient
    :members:
    :undoc-members:
    :show-inheritance:

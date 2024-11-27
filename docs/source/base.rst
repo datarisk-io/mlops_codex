@@ -2,31 +2,31 @@ Base module
 ===============================
 
 
-Module with the base classes used at Neomaril.
+Module with the base classes used at MLOps.
 
 
-neomaril\_codex.base.BaseNeomaril
+mlops\_codex.base.BaseMLOps
 --------------------------------------------------
 
-.. autoclass:: neomaril_codex.base.BaseNeomaril
+.. autoclass:: mlops_codex.base.BaseMLOps
    :members:
    :undoc-members:
    :show-inheritance:
 
 
-neomaril\_codex.base.BaseNeomarilClient
+mlops\_codex.base.BaseMLOpsClient
 ---------------------------------------------------
 
-.. autoclass:: neomaril_codex.base.BaseNeomarilClient
+.. autoclass:: mlops_codex.base.BaseMLOpsClient
    :members:
    :undoc-members:
    :show-inheritance:
 
 
-neomaril\_codex.base.NeomarilExecution
+mlops\_codex.base.MLOpsExecution
 --------------------------------------------------
 
-.. autoclass:: neomaril_codex.base.NeomarilExecution
+.. autoclass:: mlops_codex.base.MLOpsExecution
    :members:
    :undoc-members:
    :show-inheritance:

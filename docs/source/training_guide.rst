@@ -1,9 +1,9 @@
 Training your model
 ===================
 
-Training your model in Neomaril helps by logging everything in a model registry, while also saving time by running experiments in parallel.
+Training your model in MLOps helps by logging everything in a model registry, while also saving time by running experiments in parallel.
 
-Also, the training module is connected to the deploying and monitoring module, so using the training in Neomaril saves time in the next steps.
+Also, the training module is connected to the deploying and monitoring module, so using the training in MLOps saves time in the next steps.
 
 
 Training types
@@ -15,17 +15,17 @@ First we need to create a training experiment. We aggregate multiple train runs 
 
 **AutoML:** Is when the training is pre defined using the AutoML module. The required files are the training data and some configuration parameters for the package.
 
-**External:** Is when you perform the model training on your machine or any other place, external to Neomaril. You need to upload it, if you want to monitor your model in our environment.
+**External:** Is when you perform the model training on your machine or any other place, external to MLOps. You need to upload it, if you want to monitor your model in our environment.
 
 Creating the training experiment
 --------------------------------
 
-We can create the experiment using the :py:meth:`neomaril_codex.training.NeomarilTrainingClient.create_training_experiment` method.
+We can create the experiment using the :py:meth:`mlops_codex.training.MLOpsTrainingClient.create_training_experiment` method.
 
 .. code:: python
 
     # Start the client
-    training_client =  NeomarilTrainingClient()
+    training_client =  MLOpsTrainingClient()
 
     # Creating a new training experiment
     training = training_client.create_training_experiment(
@@ -35,7 +35,7 @@ We can create the experiment using the :py:meth:`neomaril_codex.training.Neomari
     )
 
 
-The return of the method is a :py:class:`neomaril_codex.training.NeomarilTrainingExperiment`, where you can create multiple executions that works like versions of the main experiment.
+The return of the method is a :py:class:`mlops_codex.training.MLOpsTrainingExperiment`, where you can create multiple executions that works like versions of the main experiment.
 Then you need to actually upload a dataset and a training code for your execution (if is a Custom experiment) or the configuration (for the AutoML experiment).
 
 Running a training execution
@@ -62,10 +62,10 @@ For the custom experiment you need a entrypoint function like this:
         # if my_var is None:
         #   raise Exception("Could not find `env` variable")
 
-        ## Environment variable loaded from Neomaril with database name (used alternatively to line 61)
+        ## Environment variable loaded from MLOps with database name (used alternatively to line 61)
         # df = pd.read_csv(base_path+'/'+os.getenv('inputFileName'))
         df = pd.read_csv(base_path+"/data.csv")    # Load the database (data.csv) which must have the same name
-                                                    # file sent to Neomaril in the 'train_data' field
+                                                    # file sent to MLOps in the 'train_data' field
         
         # The data sent must be the complete data for training and validation (excluding the validation sample),
         # it is at the user's discretion how to treat the data here
@@ -82,12 +82,12 @@ For the custom experiment you need a entrypoint function like this:
         # Build the DataFrame with the results
         results = pd.DataFrame({"pred": pipe.predict(X), "proba": pipe.predict_proba(X)[:,1]})  
         
-        # Returns the training results according to the parameters expected by Neomaril
+        # Returns the training results according to the parameters expected by MLOps
         return {"X_train": X, "y_train": y, "model_output": results, "pipeline": pipe, 
                 "metrics": {"auc": auc.mean(), "f1_score": f_score.mean()}}
 
 
-The only parameter on the function is the path for the data file. This way we can execute it when the files are uploaded to Neomaril.
+The only parameter on the function is the path for the data file. This way we can execute it when the files are uploaded to MLOps.
 In the custom training experiment you can do whatever you want, test multiple algorithms, optimize hyperparameters, validate on multiple segments of the data.
 The important thing is the return of the function, where we get information about the final model of this version so we can log it. The return must be a dictionary with the following keys:
 
@@ -100,7 +100,7 @@ The important thing is the return of the function, where we get information abou
 
 Besides that we also need the information for the environment (python version and package requirements). 
 
-Then we can call the :py:meth:`neomaril_codex.training.NeomarilTrainingExperiment.run_training` method.
+Then we can call the :py:meth:`mlops_codex.training.MLOpsTrainingExperiment.run_training` method.
 
 .. code:: python
 
@@ -137,7 +137,7 @@ For the AutoML we just need the data and the configuration parameters. You can c
 See the example below, using a python script to perform and save an External training:
 
 .. code:: python
-    from neomaril_codex.training import NeomarilTrainingClient
+    from mlops_codex.training import MLOpsTrainingClient
     import pandas as pd
     from lightgbm import LGBMClassifier
     from sklearn.impute import SimpleImputer
@@ -146,7 +146,7 @@ See the example below, using a python script to perform and save an External tra
     import matplotlib.pyplot as plt
 
     # Start the model client
-    client = NeomarilTrainingClient()
+    client = MLOpsTrainingClient()
 
     # Create an experiment
     training = client.create_training_experiment('Teste', 'Classification', group='datarisk')
@@ -197,7 +197,7 @@ See the example below, using a python script to perform and save an External tra
 Checking the execution results
 ------------------------------
 
-The return of the :py:meth:`neomaril_codex.training.NeomarilTrainingExperiment.run_training` is a :py:class:`neomaril_codex.training.NeomarilTrainingExecution` instance
+The return of the :py:meth:`mlops_codex.training.MLOpsTrainingExperiment.run_training` is a :py:class:`mlops_codex.training.MLOpsTrainingExecution` instance
 With this class we can follow the asynchronous execution of that experiment version and check information on it. 
 
 .. code:: python
@@ -226,6 +226,6 @@ We can also download the results (model file and files saved in the `extra` key)
 
     run1.download_result()
     
-    #>>> 2023-05-26 10:02:13.441 | INFO     | neomaril_codex.base:download_result:376 - Output saved in ./output_2.zip
+    #>>> 2023-05-26 10:02:13.441 | INFO     | mlops_codex.base:download_result:376 - Output saved in ./output_2.zip
 
 If the model is good enough we can start the deploying process.

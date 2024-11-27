@@ -16,10 +16,10 @@ import pandas as pd
 import requests
 from lazy_imports import try_import
 
-from neomaril_codex.__utils import parse_dict_or_file, parse_json_to_yaml, refresh_token
-from neomaril_codex.base import BaseNeomaril, BaseNeomarilClient, NeomarilExecution
-from neomaril_codex.datasources import NeomarilDataset
-from neomaril_codex.exceptions import (
+from mlops_codex.__utils import parse_dict_or_file, parse_json_to_yaml, refresh_token
+from mlops_codex.base import BaseMLOps, BaseMLOpsClient, MLOpsExecution
+from mlops_codex.datasources import MLOpsDataset
+from mlops_codex.exceptions import (
     AuthenticationError,
     ExecutionError,
     GroupError,
@@ -28,15 +28,15 @@ from neomaril_codex.exceptions import (
     ServerError,
     TrainingError,
 )
-from neomaril_codex.logger_config import get_logger
-from neomaril_codex.model import NeomarilModel
+from mlops_codex.logger_config import get_logger
+from mlops_codex.model import MLOpsModel
 
 patt = re.compile(r"(\d+)")
 logger = get_logger()
 
 
-class NeomarilTrainingLogger:
-    """A class for logging Neomaril training runs.
+class MLOpsTrainingLogger:
+    """A class for logging MLOps training runs.
 
     Example
     -------
@@ -73,7 +73,7 @@ class NeomarilTrainingLogger:
         save_path: Optional[str] = None,
     ):
         """
-        Initialize a new NeomarilTrainingLogger.
+        Initialize a new MLOpsTrainingLogger.
 
         Args:
             name: The name of the training run.
@@ -362,7 +362,7 @@ class NeomarilTrainingLogger:
             self.metrics = self.__to_json("metrics", self.metrics)
 
 
-class NeomarilTrainingExecution(NeomarilExecution):
+class MLOpsTrainingExecution(MLOpsExecution):
     """
     Class to manage trained models.
 
@@ -375,11 +375,11 @@ class NeomarilTrainingExecution(NeomarilExecution):
     exec_id : str
         Executiong id for that especific training run
     login : str
-        Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+        Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
     password : str
-        Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+        Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     environment : str
-        Enviroment of Neomaril you are using.
+        Enviroment of MLOps you are using.
     run_data : dict
         Metadata from the execution.
 
@@ -395,10 +395,10 @@ class NeomarilTrainingExecution(NeomarilExecution):
 
     .. code-block:: python
 
-        from neomaril_codex.training import NeomarilTrainingClient
-        from neomaril_codex.base import NeomarilExecution
+        from mlops_codex.training import MLOpsTrainingClient
+        from mlops_codex.base import MLOpsExecution
 
-        client = NeomarilTrainingClient('123456')
+        client = MLOpsTrainingClient('123456')
         client.create_group('ex_group', 'Group for example purpose')
         training = client.create_training_experiment('Training example', 'Classification', 'ex_group')
         print(client.get_training(training.training_id, 'ex_group').training_data)
@@ -441,7 +441,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
         self.run_data = self.execution_data["RunData"]
 
     def __repr__(self) -> str:
-        return f"""Neomaril{self.exec_type}Execution(name="{self.name}",
+        return f"""MLOps{self.exec_type}Execution(name="{self.name}",
                                         exec_id="{self.exec_id}", status="{self.status}")"""
 
     def __upload_model(
@@ -475,7 +475,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
         requirements_file : str, optional
             Path of the requirements file. This will override the requirements used in training. The packages versions must be fixed eg: pandas==1.0
         env : str, optional
-            Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is None
+            Flag that choose which environment (dev, staging, production) of MLOps you are using. Default is None
         operation : str
             Defines which kind operation is being executed (Sync or Async). Default value is Sync
         input_type : str
@@ -576,8 +576,8 @@ class NeomarilTrainingExecution(NeomarilExecution):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.get_status.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.get_status.__qualname__,
             },
         )
         if response.status_code not in [200, 410]:
@@ -596,8 +596,8 @@ class NeomarilTrainingExecution(NeomarilExecution):
                 headers={
                     "Authorization": "Bearer "
                     + refresh_token(*self.credentials, self.base_url),
-                    "Neomaril-Origin": "Codex",
-                    "Neomaril-Method": self.get_status.__qualname__,
+                    "MLOps-Origin": "Codex",
+                    "MLOps-Method": self.get_status.__qualname__,
                 },
             )
             self.execution_data = response.json()["Description"]
@@ -631,8 +631,8 @@ class NeomarilTrainingExecution(NeomarilExecution):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.promote_model.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.promote_model.__qualname__,
             },
         )
         if response.status_code == 202:
@@ -662,9 +662,9 @@ class NeomarilTrainingExecution(NeomarilExecution):
         requirements_file: Optional[str] = None,
         env: Optional[str] = None,
         input_type: str = None,
-    ) -> NeomarilModel:
+    ) -> MLOpsModel:
         """
-        Upload models trained inside Neomaril.
+        Upload models trained inside MLOps.
 
         Arguments
         ---------
@@ -681,7 +681,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
         requirements_file : str, optional
             Path of the requirements file. This will override the requirements used in trainning. The packages versions must be fixed eg: pandas==1.0
         env : str, optional
-            Flag that choose which environment (dev, staging, production) of Neomaril you are using. Default is True
+            Flag that choose which environment (dev, staging, production) of MLOps you are using. Default is True
         operation : str
             Defines which kind operation is being executed (Sync or Async). Default value is Sync
         input_type : str
@@ -694,7 +694,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
 
         Returns
         -------
-        NeomarilModel
+        MLOpsModel
             The new training model
 
         Example
@@ -747,7 +747,7 @@ class NeomarilTrainingExecution(NeomarilExecution):
         if model_id:
             self.__host_model(operation=operation.lower(), model_id=model_id)
 
-            return NeomarilModel(
+            return MLOpsModel(
                 model_id=model_id,
                 login=self.credentials[0],
                 password=self.credentials[1],
@@ -756,22 +756,22 @@ class NeomarilTrainingExecution(NeomarilExecution):
             )
 
 
-class NeomarilTrainingExperiment(BaseNeomaril):
+class MLOpsTrainingExperiment(BaseMLOps):
     """
-    Class to manage models being trained inside Neomaril
+    Class to manage models being trained inside MLOps
 
     Attributes
     ----------
     login : str
-        Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+        Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
     password : str
-        Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+        Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     training_id : str
         Training id (hash) from the experiment you want to access
     group : str
         Group the training is inserted. Default is 'datarisk' (public group)
     environment : str
-        Flag that choose which environment of Neomaril you are using. Test your deployment first before changing to production. Default is True
+        Flag that choose which environment of MLOps you are using. Test your deployment first before changing to production. Default is True
     executions : List[int]
         Ids for the executions in that training
 
@@ -788,10 +788,10 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
     .. code-block:: python
 
-        from neomaril_codex.training import NeomarilTrainingClient
-        from neomaril_codex.base import NeomarilExecution
+        from mlops_codex.training import MLOpsTrainingClient
+        from mlops_codex.base import MLOpsExecution
 
-        client = NeomarilTrainingClient('123456')
+        client = MLOpsTrainingClient('123456')
         client.create_group('ex_group', 'Group for example purpose')
         training = client.create_training_experiment('Training example', 'Classification', 'ex_group')
         print(client.get_training(training.training_id, 'ex_group').training_data)
@@ -811,7 +811,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         login: Optional[str] = None,
         password: Optional[str] = None,
         group: str = "datarisk",
-        url: str = "https://neomaril.staging.datarisk.net/",
+        url: str = "https://mlops.datarisk.net/",
     ) -> None:
         super().__init__(login=login, password=password, url=url)
 
@@ -852,14 +852,14 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         self.executions = self.training_data["Executions"]
 
     def __repr__(self) -> str:
-        return f"""NeomarilTrainingExperiment(name="{self.experiment_name}", 
+        return f"""MLOpsTrainingExperiment(name="{self.experiment_name}", 
                                                         group="{self.group}", 
                                                         training_id="{self.training_id}",
                                                         model_type={str(self.model_type)}
                                                         )"""
 
     def __str__(self):
-        return f'NEOMARIL training experiment "{self.experiment_name} (Group: {self.group}, Id: {self.training_id})"'
+        return f'MLOPS training experiment "{self.experiment_name} (Group: {self.group}, Id: {self.training_id})"'
 
     def __upload_training(
         self,
@@ -868,7 +868,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         training_type: str = "External",
         description: Optional[str] = None,
         train_data: Optional[str] = None,
-        dataset: Union[str, NeomarilDataset] = None,
+        dataset: Union[str, MLOpsDataset] = None,
         training_reference: Optional[str] = None,
         python_version: str = "3.8",
         conf_dict: Optional[Union[str, dict]] = None,
@@ -1082,8 +1082,8 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.run_training.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.run_training.__qualname__,
             },
         )
         if response.status_code == 200:
@@ -1144,7 +1144,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         training_type: str = "External",
         description: Optional[str] = None,
         train_data: Optional[str] = None,
-        dataset: Union[str, NeomarilDataset] = None,
+        dataset: Union[str, MLOpsDataset] = None,
         training_reference: Optional[str] = None,
         python_version: str = "3.8",
         conf_dict: Optional[Union[str, dict]] = None,
@@ -1160,7 +1160,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         model_params: Optional[Union[str, dict]] = None,
         model_hash: Optional[str] = None,
         wait_complete: Optional[bool] = False,
-    ) -> Union[dict, NeomarilExecution]:
+    ) -> Union[dict, MLOpsExecution]:
         """
         Runs a prediction from the current model.
 
@@ -1198,7 +1198,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
         Returns
         -------
-        Union[dict, NeomarilExecution]
+        Union[dict, MLOpsExecution]
             The return of the scoring function in the source file for Sync models or the execution class for Async models.
 
         Example
@@ -1307,7 +1307,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         if exec_id:
             self.__execute_training(exec_id)
             self.__refresh_execution_list()
-            run = NeomarilTrainingExecution(
+            run = MLOpsTrainingExecution(
                 training_id=self.training_id,
                 group=self.group,
                 exec_id=exec_id,
@@ -1332,7 +1332,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
     def get_training_execution(
         self, exec_id: Optional[str] = None
-    ) -> NeomarilTrainingExecution:
+    ) -> MLOpsTrainingExecution:
         """
         Get the execution instance.
 
@@ -1343,7 +1343,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
         Returns
         -------
-        NeomarilExecution
+        MLOpsExecution
             The chosen execution
         """
         if not exec_id:
@@ -1357,7 +1357,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
                 "Unvalid execution Id informed or this training dont have a successful execution yet."
             )
 
-        exec = NeomarilTrainingExecution(
+        exec = MLOpsTrainingExecution(
             training_id=self.training_id,
             group=self.group,
             exec_id=exec_id,
@@ -1369,13 +1369,13 @@ class NeomarilTrainingExperiment(BaseNeomaril):
 
         return exec
 
-    def get_all_training_executions(self) -> List[NeomarilTrainingExecution]:
+    def get_all_training_executions(self) -> List[MLOpsTrainingExecution]:
         """
         Get all executions from that experiment.
 
         Returns
         -------
-        List[NeomarilTrainingExecution]
+        List[MLOpsTrainingExecution]
             All executions from that training
         """
         self.__refresh_execution_list()
@@ -1392,7 +1392,7 @@ class NeomarilTrainingExperiment(BaseNeomaril):
         save_path: Optional[str] = None,
     ):
         try:
-            self.trainer = NeomarilTrainingLogger(
+            self.trainer = MLOpsTrainingLogger(
                 name=name,
                 X_train=X_train,
                 y_train=y_train,
@@ -1419,18 +1419,18 @@ class NeomarilTrainingExperiment(BaseNeomaril):
             )
 
 
-class NeomarilTrainingClient(BaseNeomarilClient):
+class MLOpsTrainingClient(BaseMLOpsClient):
     """
-    Class for client for accessing Neomaril and manage models
+    Class for client for accessing MLOps and manage models
 
     Attributes
     ----------
     login : str
-        Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+        Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
     password : str
-        Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+        Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     url : str
-        URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
+        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
     ------
@@ -1443,9 +1443,9 @@ class NeomarilTrainingClient(BaseNeomarilClient):
     -------
     .. code-block:: python
 
-        from neomaril_codex.training import NeomarilTrainingClient
+        from mlops_codex.training import MLOpsTrainingClient
 
-        client = NeomarilTrainingClient('123456')
+        client = MLOpsTrainingClient('123456')
         client.create_group('ex_group', 'Group for example purpose')
         training = client.create_training_experiment('Training example', 'Classification',  'Custom', 'ex_group')
         print(client.get_training(training.training_id, 'ex_group').training_data)
@@ -1453,14 +1453,14 @@ class NeomarilTrainingClient(BaseNeomarilClient):
     """
 
     def __repr__(self) -> str:
-        return f'API version {self.version} - NeomarilTrainingClient(url="{self.base_url}", Token="{self.user_token}")'
+        return f'API version {self.version} - MLOpsTrainingClient(url="{self.base_url}", Token="{self.user_token}")'
 
     def __str__(self):
-        return f"NEOMARIL {self.base_url} Training client:{self.user_token}"
+        return f"MLOPS {self.base_url} Training client:{self.user_token}"
 
     def get_training(
         self, *, training_id: str, group: str = "datarisk"
-    ) -> NeomarilTrainingExperiment:
+    ) -> MLOpsTrainingExperiment:
         """
         Acess a model using its id
 
@@ -1480,15 +1480,15 @@ class NeomarilTrainingClient(BaseNeomarilClient):
 
         Returns
         -------
-        NeomarilTrainingExperiment
-            A NeomarilTrainingExperiment instance with the training hash from `training_id`
+        MLOpsTrainingExperiment
+            A MLOpsTrainingExperiment instance with the training hash from `training_id`
 
         Example
         -------
         >>> training = get_training('Tfb3274827a24dc39d5b78603f348aee8d3dbfe791574dc4a6681a7e2a6622fa')
         """
 
-        return NeomarilTrainingExperiment(
+        return MLOpsTrainingExperiment(
             training_id=training_id,
             login=self.credentials[0],
             password=self.credentials[1],
@@ -1597,8 +1597,8 @@ class NeomarilTrainingClient(BaseNeomarilClient):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.__create.__qualname__,
+                "MLOps-Origin": "Codex",
+                "MLOps-Method": self.__create.__qualname__,
             },
         )
 
@@ -1634,9 +1634,9 @@ class NeomarilTrainingClient(BaseNeomarilClient):
         model_type: str,
         group: str = "datarisk",
         force: bool = False,
-    ) -> NeomarilTrainingExperiment:
+    ) -> MLOpsTrainingExperiment:
         """
-        Create a new training experiment on Neomaril.
+        Create a new training experiment on MLOps.
 
         Arguments
         ---------
@@ -1658,8 +1658,8 @@ class NeomarilTrainingClient(BaseNeomarilClient):
 
         Returns
         -------
-        NeomarilTrainingExperiment
-            A NeomarilTrainingExperiment instance with the training hash from `training_id`
+        MLOpsTrainingExperiment
+            A MLOpsTrainingExperiment instance with the training hash from `training_id`
 
         Example
         -------
@@ -1707,7 +1707,7 @@ class NeomarilTrainingClient(BaseNeomarilClient):
                 experiment_name=experiment_name, model_type=model_type, group=group
             )
 
-        return NeomarilTrainingExperiment(
+        return MLOpsTrainingExperiment(
             training_id=training_id,
             login=self.credentials[0],
             password=self.credentials[1],

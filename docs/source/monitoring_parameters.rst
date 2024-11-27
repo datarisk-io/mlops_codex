@@ -7,7 +7,7 @@ Monitoring configuration
 {
     "period": "week", <string, Mandatory> indicates monitoring frequency running. Can be `day`, `week`, `month` or `year`
     "train_data" : {
-        "NeomarilTrainingExecution": "1", <string, Mandatory for model trained inside Neomaril> executionId from training promoted at Neomaril
+        "MLOpsTrainingExecution": "1", <string, Mandatory for model trained inside MLOps> executionId from training promoted at MLOps
         // "train_date_col": "date", <string, Mandatory if no field "train_date_ref" was inserted> name of the date column for the records
         "train_date_ref": "2022-09-01", <string, Mandatory if no field "train_date_col" was inserted> date the model data was acquired
     }

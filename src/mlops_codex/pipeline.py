@@ -6,29 +6,29 @@ from typing import Optional
 import yaml
 from dotenv import load_dotenv, find_dotenv
 
-from neomaril_codex.base import BaseNeomaril
-from neomaril_codex.exceptions import ModelError, PipelineError, TrainingError
-from neomaril_codex.logger_config import get_logger
-from neomaril_codex.model import NeomarilModel, NeomarilModelClient
-from neomaril_codex.training import NeomarilTrainingClient, NeomarilTrainingExecution
+from mlops_codex.base import BaseMLOps
+from mlops_codex.exceptions import ModelError, PipelineError, TrainingError
+from mlops_codex.logger_config import get_logger
+from mlops_codex.model import MLOpsModel, MLOpsModelClient
+from mlops_codex.training import MLOpsTrainingClient, MLOpsTrainingExecution
 
 logger = get_logger()
 
 
-class NeomarilPipeline(BaseNeomaril):
+class MLOpsPipeline(BaseMLOps):
     """
-    Class to construct and orchestrates the flow data of the models inside Neomaril.
+    Class to construct and orchestrates the flow data of the models inside MLOps.
 
     Attributes
     ----------
     login : str
-        Login for authenticating with the client. You can also use the env variable NEOMARIL_USER to set this
+        Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
     password : str
-        Password for authenticating with the client. You can also use the env variable NEOMARIL_PASSWORD to set this
+        Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     group : str
         Group the model is inserted
     url : str
-        URL to Neomaril Server. Default value is https://neomaril.staging.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable NEOMARIL_URL to set this
+        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
     python_version : str
         Python version for the model environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.9'
 
@@ -37,9 +37,9 @@ class NeomarilPipeline(BaseNeomaril):
 
     .. code-block:: python
 
-        from neomaril_codex.pipeline import NeomarilPipeline
+        from mlops_codex.pipeline import MLOpsPipeline
 
-        pipeline = NeomarilPipeline.from_config_file('./samples/pipeline.yml')
+        pipeline = MLOpsPipeline.from_config_file('./samples/pipeline.yml')
         pipeline.register_monitoring_config(directory = "./samples/monitoring", preprocess = "preprocess.py", preprocess_function = "score", shap_function = "score", config = "configuration.json", packages = "requirements.txt")
         pipeline.start()
         pipeline.run_monitoring('2', 'Mb29d61da4324a39a8bc2e0946f213b4959643916d354bf39940de2124f1e9d8')
@@ -51,7 +51,7 @@ class NeomarilPipeline(BaseNeomaril):
         group: str,
         login: Optional[str] = None,
         password: Optional[str] = None,
-        url: str = "https://neomaril.staging.datarisk.net/",
+        url: str = "https://mlops.datarisk.net/",
         python_version: float = 3.9,
     ) -> None:
         super().__init__(login=login, password=password, url=url)
@@ -128,12 +128,12 @@ class NeomarilPipeline(BaseNeomaril):
 
         Returns
         -------
-        NeomarilPipeline
+        MLOpsPipeline
             The new pipeline
 
         Example
         --------
-        >>> pipeline = NeomarilPipeline.from_config_file('./samples/pipeline-just-model.yml')
+        >>> pipeline = MLOpsPipeline.from_config_file('./samples/pipeline-just-model.yml')
         >>> pipeline.register_monitoring_config(directory = "./samples/monitoring", preprocess = "preprocess.py", preprocess_function = "score", shap_function = "score", config = "configuration.json", packages = "requirements.txt")
         >>> pipeline.start()
         """
@@ -149,21 +149,21 @@ class NeomarilPipeline(BaseNeomaril):
             load_dotenv(find_dotenv(usecwd=True))
         logger.info(f"Loading .env")
 
-        login = os.getenv("NEOMARIL_USER")
+        login = os.getenv("MLOPS_USER")
         if not login:
             raise PipelineError(
-                "When using a config file the environment variable NEOMARIL_USER must be defined"
+                "When using a config file the environment variable MLOPS_USER must be defined"
             )
 
-        password = os.getenv("NEOMARIL_PASSWORD")
+        password = os.getenv("MLOPS_PASSWORD")
         if not password:
             raise PipelineError(
-                "When using a config file the environment variable NEOMARIL_PASSWORD must be defined"
+                "When using a config file the environment variable MLOPS_PASSWORD must be defined"
             )
 
-        url = os.getenv("NEOMARIL_URL", conf.get("url"))
+        url = os.getenv("MLOPS_URL", conf.get("url"))
 
-        pipeline = NeomarilPipeline(
+        pipeline = MLOpsPipeline(
             group=conf["group"],
             login=login,
             password=password,
@@ -201,7 +201,7 @@ class NeomarilPipeline(BaseNeomaril):
         >>> pipeline.run_training()
         """
         logger.info("Running training")
-        client = NeomarilTrainingClient(
+        client = MLOpsTrainingClient(
             login=self.credentials[0], password=self.credentials[1], url=self.base_url
         )
         self.__try_create_group(client, self.group)
@@ -329,7 +329,7 @@ class NeomarilPipeline(BaseNeomaril):
 
         else:
             logger.info("Deploying scorer")
-            client = NeomarilModelClient(
+            client = MLOpsModelClient(
                 login=self.credentials[0],
                 password=self.credentials[1],
                 url=self.base_url,
@@ -393,16 +393,16 @@ class NeomarilPipeline(BaseNeomaril):
             with open(os.path.join(PATH, conf["config"]), "r+") as f:
                 conf_dict = json.load(f)
                 f.seek(0)
-                conf_dict["TrainData"]["NeomarilTrainingExecution"] = training_exec_id
+                conf_dict["TrainData"]["MLOpsTrainingExecution"] = training_exec_id
                 json.dump(conf_dict, f)
                 f.truncate()
 
-        model = NeomarilModel(
+        model = MLOpsModel(
             model_id=conf.get("model_id", model_id),
             login=self.credentials[0],
             password=self.credentials[1],
             group=self.group,
-            group_token=os.getenv("NEOMARIL_GROUP_TOKEN"),
+            group_token=os.getenv("MLOPS_GROUP_TOKEN"),
             url=self.base_url,
         )
 
@@ -427,7 +427,7 @@ class NeomarilPipeline(BaseNeomaril):
 
         Example
         -------
-        >>> pipeline = NeomarilPipeline.from_config_file('./samples/pipeline.yml').start()
+        >>> pipeline = MLOpsPipeline.from_config_file('./samples/pipeline.yml').start()
         """
         if (
             (not self.train_config)

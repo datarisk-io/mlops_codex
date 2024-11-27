@@ -5,28 +5,28 @@ Training module
 Module with the classes that allows to manage your training experiments.
 
 
-neomaril\_codex.training.NeomarilTrainingExecution
+mlops\_codex.training.MLOpsTrainingExecution
 --------------------------------------------------
 
-.. autoclass:: neomaril_codex.training.NeomarilTrainingExecution
+.. autoclass:: mlops_codex.training.MLOpsTrainingExecution
    :members:
    :undoc-members:
    :show-inheritance:
 
 
-neomaril\_codex.training.NeomarilTrainingExperiment
+mlops\_codex.training.MLOpsTrainingExperiment
 ---------------------------------------------------
 
-.. autoclass:: neomaril_codex.training.NeomarilTrainingExperiment
+.. autoclass:: mlops_codex.training.MLOpsTrainingExperiment
    :members:
    :undoc-members:
    :show-inheritance:
 
 
-neomaril\_codex.training.NeomarilTrainingClient
+mlops\_codex.training.MLOpsTrainingClient
 --------------------------------------------------
 
-.. autoclass:: neomaril_codex.training.NeomarilTrainingClient
+.. autoclass:: mlops_codex.training.MLOpsTrainingClient
    :members:
    :undoc-members:
    :show-inheritance:
