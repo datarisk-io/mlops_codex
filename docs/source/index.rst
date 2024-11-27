@@ -11,6 +11,7 @@ Datarisk MLOps is an platform for Machine Learning (ML) models management, allow
 The users will need to host its Python scripts and notebooks to MLOps Codex to use the MLOps API.
 
 
+
 Installation
 ---------------
 
@@ -58,6 +59,7 @@ If you want to track the development version of the package, you can install it 
 .. code:: python
 
    pip install git+https://github.com/datarisk-io/mlops_codex.git@master
+
 
 Maintainers
 -----------
