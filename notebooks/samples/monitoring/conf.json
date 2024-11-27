@@ -1,7 +1,6 @@
 {
     "Period": "Week",
     "TrainData": {
-        "MLOpsTrainingExecution": "1",
         "TrainDateRef": "2022-09-01"
     },
     "InputCols": ["mean_radius", "mean_texture", "mean_perimeter", "mean_area", "mean_smoothness", "mean_compactness", "mean_concavity", 
