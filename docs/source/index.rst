@@ -3,12 +3,13 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-MLOps-Codex
+MLOps Codex
 ==============
 
 Its a Package for interacting with MLOps.
-MLOps is an API for Machine Learning (ML) models management, allowing the users to train, deploy and monitor those models.
-The users will need to host its Python scripts and notebooks to MLOps-Codex to use the MLOps API.
+Datarisk MLOps is an platform for Machine Learning (ML) models management, allowing the users to train, deploy and monitor those models.
+The users will need to host its Python scripts and notebooks to MLOps Codex to use the MLOps API.
+
 
 
 Installation
@@ -18,7 +19,7 @@ The package is available on PyPI and can thus be installed with:
 
 .. code:: python
 
-   pip install mlops_codex
+   pip install datarisk-mlops-codex
 
 
 Getting started
@@ -32,7 +33,7 @@ Check our guide on how to use MLOps Codex to manage models
    starters
 
 
-Beside that several `notebooks <https://github.com/datarisk-io/mlops-mlops_codex/tree/master/notebooks>`_ gives examples of how to use MLOps-Codex to manage, deploy and other package functionalities.
+Beside that several `notebooks <https://github.com/datarisk-io/mlops_codex/tree/master/notebooks>`_ gives examples of how to use MLOps-Codex to manage, deploy and other package functionalities.
 You can find it at:
 
 
@@ -57,7 +58,8 @@ If you want to track the development version of the package, you can install it 
 
 .. code:: python
 
-   pip install git+https://github.com/datarisk-io/mlops-mlops_codex.git@master
+   pip install git+https://github.com/datarisk-io/mlops_codex.git@master
+
 
 Maintainers
 -----------
