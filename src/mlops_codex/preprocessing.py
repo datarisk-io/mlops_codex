@@ -21,6 +21,7 @@ from mlops_codex.exceptions import (
     ServerError,
 )
 from mlops_codex.logger_config import get_logger
+from mlops_codex.validations import validate_group_existence, validate_python_version
 
 logger = get_logger()
 
@@ -930,8 +931,8 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         preprocessing_reference: str,
         source_file: str,
         requirements_file: str,
-        schema: Optional[Union[str, dict]] = None,
         group: str,
+        schema: Optional[Union[str, dict]] = None,
         extra_files: Optional[list] = None,
         env: Optional[str] = None,
         python_version: str = "3.8",
@@ -984,28 +985,8 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         >>> preprocessing = client.create('Pre processing Example Sync', 'score',  './samples/syncPreprocessing/app.py', './samples/syncPreprocessing/'preprocessing.pkl', './samples/syncPreprocessing/requirements.txt','./samples/syncPreprocessing/schema.json', group=group, operation="Sync")
         """
 
-        if python_version not in ["3.8", "3.9", "3.10"]:
-            raise InputError(
-                "Invalid python version. Avaliable versions are 3.8, 3.9, 3.10"
-            )
-
-        if group:
-            group = (
-                group.lower()
-                .strip()
-                .replace(" ", "_")
-                .replace(".", "_")
-                .replace("-", "_")
-            )
-
-            groups = groups = [g.get("Name") for g in self.list_groups()]
-
-            if group not in groups:
-                raise GroupError("Group dont exist. Create a group first.")
-
-        else:
-            group = "datarisk"
-            logger.info("Group not informed, using default 'datarisk' group")
+        validate_group_existence(group, self)
+        validate_python_version(python_version)
 
         preprocessing_id = self.__upload_preprocessing(
             preprocessing_name=preprocessing_name,

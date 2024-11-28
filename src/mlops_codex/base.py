@@ -40,7 +40,7 @@ class BaseMLOps:
         url: Optional[str] = None,
     ) -> None:
         loaded = load_dotenv()
-        # Somethings when running as a script the default version might not work
+        # Something's when running as a script the default version might not work
         if not loaded:
             load_dotenv(find_dotenv(usecwd=True))
         logger.info("Loading .env")
