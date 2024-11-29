@@ -20,6 +20,7 @@ from mlops_codex.exceptions import (
     ServerError,
 )
 from mlops_codex.logger_config import get_logger
+from mlops_codex.validations import validate_python_version
 
 logger = get_logger()
 
@@ -176,11 +177,7 @@ class MLOpsExternalMonitoring(BaseMLOps):
                 logger.error(f"You must pass the following arguments: {missing_args}")
                 raise InputError("Missing files, function entrypoint or python version")
 
-        if python_version not in ["3.8", "3.9", "3.10"]:
-            logger.error(f"{python_version} is not available")
-            raise InputError(
-                "Invalid python version. Available versions are 3.8, 3.9, 3.10"
-            )
+        validate_python_version(python_version)
 
         python_version = "Python" + python_version.replace(".", "")
 
@@ -491,10 +488,7 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
                 raise InputError("Date is not in the correct format")
 
         if python_version:
-            if python_version not in ["3.8", "3.9", "3.10"]:
-                raise InputError(
-                    "Invalid python version. Available versions are 3.8, 3.9, 3.10"
-                )
+            validate_python_version(python_version)
 
             python_version = "Python" + python_version.replace(".", "")
 

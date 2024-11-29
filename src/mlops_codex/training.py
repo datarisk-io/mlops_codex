@@ -30,6 +30,7 @@ from mlops_codex.exceptions import (
 )
 from mlops_codex.logger_config import get_logger
 from mlops_codex.model import MLOpsModel
+from mlops_codex.validations import validate_group_existence
 
 patt = re.compile(r"(\d+)")
 logger = get_logger()
@@ -1632,8 +1633,8 @@ class MLOpsTrainingClient(BaseMLOpsClient):
         *,
         experiment_name: str,
         model_type: str,
-        group: str = "datarisk",
-        force: bool = False,
+        group: str,
+        force: Optional[bool] = False,
     ) -> MLOpsTrainingExperiment:
         """
         Create a new training experiment on MLOps.
@@ -1666,23 +1667,7 @@ class MLOpsTrainingClient(BaseMLOpsClient):
         >>> training = client.create_training_experiment('Training example', 'Classification', 'ex_group')
         """
 
-        if group:
-            group = (
-                group.lower()
-                .strip()
-                .replace(" ", "_")
-                .replace(".", "_")
-                .replace("-", "_")
-            )
-
-            groups = [g.get("Name") for g in self.list_groups()]
-
-            if group not in groups:
-                raise GroupError("Group dont exist. Create a group first.")
-
-        else:
-            group = "datarisk"
-            logger.info("Group not informed, using default 'datarisk' group")
+        validate_group_existence(group, self)
 
         if model_type not in ["Classification", "Regression", "Unsupervised"]:
             raise InputError(

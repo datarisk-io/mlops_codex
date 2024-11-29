@@ -21,7 +21,6 @@ from mlops_codex.datasources import MLOpsDataset
 from mlops_codex.exceptions import (
     AuthenticationError,
     ExecutionError,
-    GroupError,
     InputError,
     ModelError,
     PreprocessingError,
@@ -29,6 +28,7 @@ from mlops_codex.exceptions import (
 )
 from mlops_codex.logger_config import get_logger
 from mlops_codex.preprocessing import MLOpsPreprocessing
+from mlops_codex.validations import validate_group_existence, validate_python_version
 
 logger = get_logger()
 
@@ -1617,8 +1617,8 @@ class MLOpsModelClient(BaseMLOpsClient):
         source_file: str,
         model_file: str,
         requirements_file: str,
+        group: str,
         schema: Optional[Union[str, dict]] = None,
-        group: str = None,
         extra_files: Optional[list] = None,
         env: Optional[str] = None,
         python_version: str = "3.8",
@@ -1644,7 +1644,7 @@ class MLOpsModelClient(BaseMLOpsClient):
         schema : Union[str, dict]
             Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be sending as well. Mandatory for Sync models
         group : str
-            Group the model is inserted. Default to 'datarisk' (public group)
+            Group the model is inserted.
         extra_files : list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
         env : str, optional
@@ -1673,28 +1673,8 @@ class MLOpsModelClient(BaseMLOpsClient):
         >>> model = client.create_model('Model Example Sync', 'score',  './samples/syncModel/app.py', './samples/syncModel/'model.pkl', './samples/syncModel/requirements.txt','./samples/syncModel/schema.json', group=group, operation="Sync")
         """
 
-        if python_version not in ["3.8", "3.9", "3.10"]:
-            raise InputError(
-                "Invalid python version. Available versions are 3.8, 3.9, 3.10"
-            )
-
-        if group:
-            group = (
-                group.lower()
-                .strip()
-                .replace(" ", "_")
-                .replace(".", "_")
-                .replace("-", "_")
-            )
-
-            groups = [g.get("Name") for g in self.list_groups()]
-
-            if group not in groups:
-                raise GroupError("Group dont exist. Create a group first.")
-
-        else:
-            group = "datarisk"
-            logger.info("Group not informed, using default 'datarisk' group")
+        validate_python_version(python_version)
+        validate_group_existence(group, self)
 
         model_id = self.__upload_model(
             model_name=model_name,
