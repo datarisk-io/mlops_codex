@@ -9,7 +9,7 @@ You need the server URL, an email and a password to access the MLOps. The best w
 
 .. code::
 
-    MLOPS_URL='https://mlops.datarisk.net'
+    MLOPS_URL='https://neomaril.datarisk.net'
     MLOPS_USER='email@email.com'
     MLOPS_PASSWORD='password@123'
 

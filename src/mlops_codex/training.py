@@ -812,7 +812,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
         login: Optional[str] = None,
         password: Optional[str] = None,
         group: str = "datarisk",
-        url: str = "https://mlops.datarisk.net/",
+        url: str = "https://neomaril.datarisk.net/",
     ) -> None:
         super().__init__(login=login, password=password, url=url)
 
@@ -1431,7 +1431,7 @@ class MLOpsTrainingClient(BaseMLOpsClient):
     password : str
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     url : str
-        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
+        URL to MLOps Server. Default value is https://neomaril.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
     ------

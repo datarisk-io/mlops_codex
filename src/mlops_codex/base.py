@@ -48,7 +48,7 @@ class BaseMLOps:
         if url is None:
             url = os.getenv("MLOPS_URL")
         if url is None:
-            url = "https://mlops.datarisk.net/"
+            url = "https://neomaril.datarisk.net/"
 
         self.credentials = (
             login if login else os.getenv("MLOPS_USER"),
@@ -56,11 +56,6 @@ class BaseMLOps:
         )
         self.base_url = url
         self.base_url = parse_url(self.base_url)
-
-        if self.base_url == "https://mlops.datarisk.net/":
-            logger.info(
-                "You are using the test enviroment that will have the data cleaned from time to time. If your model is ready to use change the enviroment to Production"
-            )
 
         self.user_token, self.version = try_login(
             self.credentials[0],
@@ -142,7 +137,7 @@ class BaseMLOpsClient(BaseMLOps):
     password : str
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     url : str
-        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
+        URL to MLOps Server. Default value is https://neomaril.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
     ------
@@ -367,7 +362,7 @@ class MLOpsExecution(BaseMLOps):
     password : str
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     url : str
-        URL to MLOps Server. Default value is https://mlops.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
+        URL to MLOps Server. Default value is https://neomaril.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
     ------
