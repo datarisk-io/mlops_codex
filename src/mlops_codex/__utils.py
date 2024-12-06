@@ -4,7 +4,7 @@ import json
 import requests
 import yaml
 from cachetools.func import ttl_cache
-from typing import Union
+from typing import Union, Tuple
 
 from mlops_codex.exceptions import AuthenticationError, ServerError
 
@@ -28,7 +28,7 @@ def parse_url(url):
     return url
 
 
-def try_login(login: str, password: str, base_url: str) -> Union[tuple[str, str], Exception]:
+def try_login(login: str, password: str, base_url: str) -> Union[Tuple[str, str], Exception]:
     """Try to sign in MLOps
 
     Args:
