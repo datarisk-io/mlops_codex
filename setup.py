@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 MODULE_NAME = 'datarisk_mlops_codex'
 MODULE_NAME_IMPORT = 'mlops_codex'
 REPO_NAME = 'mlops_codex'
-MODULE_VERSION='2.2.4'
+MODULE_VERSION='2.2.5'
 
 
 def requirements_from_pip(filename='requirements.txt'):

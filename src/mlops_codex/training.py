@@ -1499,7 +1499,7 @@ class MLOpsTrainingClient(BaseMLOpsClient):
 
     def __get_repeated_thash(
         self, model_type: str, experiment_name: str, group: str
-    ) -> str | None:
+    ) -> Union[str, None]:
         """Look for a previous train experiment.
 
         Args:
