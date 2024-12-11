@@ -4,12 +4,12 @@ External Monitoring Module
 
 from datetime import datetime
 from time import sleep
-from typing import Optional, Union
+from typing import Optional, NamedTuple, Union
 
 import requests
 
 from mlops_codex.__model_states import MonitoringStatus
-from mlops_codex.__utils import parse_json_to_yaml, refresh_token
+from mlops_codex.__utils import parse_json_to_yaml, refresh_token, validate_kwargs
 from mlops_codex.base import BaseMLOps, BaseMLOpsClient
 from mlops_codex.exceptions import (
     AuthenticationError,
@@ -348,34 +348,49 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
     Class that handles MLOps External Monitoring Client
     """
 
+    class ExternalMonitoringData(NamedTuple):
+        name: str
+        group: str
+        training_execution_id: int
+        period: str
+        input_cols: list
+        output_cols: list
+        datasource_name: str
+        extraction_type: str
+        datasource_uri: str
+        column_name: Optional[str]
+        reference_date: Optional[str]
+        python_version: Optional[str]
+
+    @validate_kwargs(ExternalMonitoringData)
+    def validate(self, **kwargs):
+        pass
+
     def __repr__(self) -> str:
         return f"API version {self.version} - MLOpsExternalMonitoringClient"
 
     def __str__(self):
         return f"MLOPS {self.base_url} External Monitoring client:{self.user_token}"
 
-    def __register(self, configuration_file: Union[str, dict], url: str) -> str:
+    def __register(self, configuration: dict, url: str) -> str:
         """Register a new external monitoring
 
-        Attributes:
-        -----------
-        configuration_file (Union[str, dict]): Dict with configuration
-        url (str): Url to register the external monitoring
+        Args:
+            configuration dict: Dict with configuration
+            url (str): Url to register the external monitoring
 
         Raises:
-        -------
-        AuthenticationError
-        GroupError
-        ServerError
-        ExternalMonitoringError
+            AuthenticationError
+            GroupError
+            ServerError
+            ExternalMonitoringError
 
         Returns:
-        --------
-        str: External monitoring Hash
+            External monitoring Hash
         """
         response = requests.post(
             url,
-            json=configuration_file,
+            json=configuration,
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
@@ -414,95 +429,89 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
         logger.debug(f"Something went wrong...\n{formatted_msg}")
         raise ExternalMonitoringError("Could not register the monitoring.")
 
-    def register_monitoring(
-        self,
-        *,
-        name: str,
-        group: str,
-        training_execution_id: int,
-        period: str,
-        input_cols: list,
-        output_cols: list,
-        datasource_name: str,
-        extraction_type: str,
-        datasource_uri: str,
-        column_name: Optional[str] = None,
-        reference_date: Optional[str] = None,
-        python_version: Optional[str] = None,
-    ) -> MLOpsExternalMonitoring:
+    def register_monitoring(self,**kwargs) -> Optional[MLOpsExternalMonitoring]:
         """Register a MLOps External Monitoring
 
         Args:
-            name: External Monitoring name
-            group: External Monitoring group. The group is the same used for the external training and datasource
-            training_execution_id: Valid Mlops training execution id
-            period: The frequency the monitoring will run. It can be: "Day" | "Week" | "Quarter" | "Month" | "Year"
-            input_cols: Array with input columns name
-            output_cols: Array with output columns name
-            datasource_name: Valid Mlops datasource name
-            extraction_type: Type of extraction. It can be "Incremental" | "Full"
-            datasource_uri: Valid datasource Uri
-            column_name: Column name of the data column
-            reference_date: Reference extraction date
-            python_version: Python version used to run preprocessing scripts. It can be "3.8" | "3.9" | "3.10"
-            group: Name of the group where the monitoring model will be inserted
+            name (str): External Monitoring name
+            group (str): External Monitoring group. The group is the same used for the external training and datasource
+            training_execution_id (int): Valid Mlops training execution id
+            period (str): The frequency the monitoring will run. It can be: "Day" | "Week" | "Quarter" | "Month" | "Year"
+            input_cols (list): List with input columns name
+            output_cols (list): List with output columns name
+            datasource_name (str): Valid Mlops datasource name
+            extraction_type (str): Type of extraction. It can be "Incremental" | "Full"
+            datasource_uri (str): Valid datasource Uri
+            column_name (str): Optional column name of the data column
+            reference_date (str): Optional reference extraction date
+            python_version (str): Optional python version used to run preprocessing scripts. It can be "3.8" | "3.9" | "3.10"
+
+        Raises:
+            InputError
 
         Returns:
             MLOpsExternalMonitoring
         """
 
+        try:
+            self.validate(**kwargs)
+        except ValueError as e:
+            print("Validation error:", e)
+            return
+        except TypeError as e:
+            print("Type error:", e)
+            return
+
         base_external_url = f"{self.base_url}/external-monitoring"
 
-        if period not in ["Day", "Week", "Quarter", "Month", "Year"]:
+        if kwargs["period"] not in ["Day", "Week", "Quarter", "Month", "Year"]:
             logger.error(
-                f"{period} is not available. Must be Day | Week | Quarter | Month | Year"
+                f"{kwargs['period']} is not available. Must be Day | Week | Quarter | Month | Year"
             )
             raise InputError("Period is not valid")
 
-        if extraction_type not in ["Full", "Incremental"]:
+        if kwargs["extraction_type"] not in ["Full", "Incremental"]:
             logger.error(
-                f"{extraction_type} is not available. Must be 'Full' or 'Incremental'"
+                f"{kwargs['extraction_type']} is not available. Must be 'Full' or 'Incremental'"
             )
             raise InputError("Extraction Type is not valid")
 
         configuration_file = {
-            "Name": name,
-            "Group": group,
-            "TrainingExecutionId": training_execution_id,
-            "Period": period,
-            "InputCols": input_cols,
-            "OutputCols": output_cols,
-            "DataSourceName": datasource_name,
-            "ExtractionType": extraction_type,
-            "DataSourceUri": datasource_uri,
+            "Name": kwargs["name"],
+            "Group": kwargs["group"],
+            "TrainingExecutionId": kwargs["training_execution_id"],
+            "Period": kwargs["period"],
+            "InputCols": kwargs["input_cols"],
+            "OutputCols": kwargs["output_cols"],
+            "DataSourceName": kwargs["datasource_name"],
+            "ExtractionType": kwargs["extraction_type"],
+            "DataSourceUri": kwargs["datasource_uri"],
         }
 
-        if column_name:
-            configuration_file["ColumnName"] = column_name
+        if kwargs.get("column_name"):
+            configuration_file["ColumnName"] = kwargs["column_name"]
 
-        if reference_date:
+        if kwargs.get("reference_date"):
             try:
-                datetime.strptime(reference_date, "%Y-%m-%d")
-                configuration_file["ReferenceDate"] = reference_date
+                datetime.strptime(kwargs.get("reference_date"), "%Y-%m-%d")
+                configuration_file["ReferenceDate"] = kwargs.get("reference_date")
             except ValueError as exc:
                 logger.error("Reference date is in incorrect format. Use 'YYYY-MM-DD'")
-                raise InputError("Date is not in the correct format")
+                raise InputError("Date is not in the correct format") from exc
 
-        if python_version:
-            validate_python_version(python_version)
-
-            python_version = "Python" + python_version.replace(".", "")
-
+        if kwargs.get("python_version"):
+            validate_python_version(kwargs.get("python_version"))
+            python_version = "Python" + kwargs.get("python_version").replace(".", "")
             configuration_file["PythonVersion"] = python_version
 
         external_monitoring_hash = self.__register(
-            configuration_file=configuration_file, url=base_external_url
+            configuration=configuration_file, url=base_external_url
         )
         external_monitoring = MLOpsExternalMonitoring(
             login=self.credentials[0],
             password=self.credentials[1],
             url=self.base_url,
-            group=group,
+            group=kwargs["group"],
             ex_monitoring_hash=external_monitoring_hash,
             status=MonitoringStatus.Unvalidated,
         )
