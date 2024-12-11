@@ -40,7 +40,7 @@ class MLOpsExternalMonitoring(BaseMLOps):
         url: Optional[str] = None,
     ):
         super().__init__(login=login, password=password, url=url)
-        self.external_monitoring_url = f"{self.base_url}/external-monitoring/{group}"
+        self.external_monitoring_url = f"{self.base_url}/external-monitoring"
         self.ex_monitoring_hash = ex_monitoring_hash
         self.group = group
         self.status = status
@@ -239,7 +239,7 @@ class MLOpsExternalMonitoring(BaseMLOps):
         )
 
         formatted_msg = parse_json_to_yaml(response.json())
-        if response.status_code in [200, 201]:
+        if response.status_code == 202:
             self.status = MonitoringStatus.Validating
             if wait:
                 self.wait_ready()
@@ -259,14 +259,12 @@ class MLOpsExternalMonitoring(BaseMLOps):
         if response.status_code >= 500:
 
             logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ExternalMonitoringError("Could not register the monitoring.")
+            raise ServerError("Server Error. Could not register the monitoring.")
+
+        raise Exception("Unknown error. Please contact administrator.")
 
     def wait_ready(self):
         """Check the status of the external monitoring
-
-        Args:
-            url (str): Url to check the status of the external monitoring
-            external_monitoring_hash (str): External monitoring Hash
 
         Returns:
             str: external monitoring
@@ -339,9 +337,9 @@ class MLOpsExternalMonitoring(BaseMLOps):
             end (str): end date to look for the records. The format must be dd-MM-yyyy
         """
         url = f"{self.base_url}/monitoring/search/records/{self.group}/{self.ex_monitoring_hash}"
-        return parse_json_to_yaml(
+        print(parse_json_to_yaml(
             self._logs(url=url, credentials=self.credentials, start=start, end=end)
-        )
+        ))
 
 
 class MLOpsExternalMonitoringClient(BaseMLOpsClient):
@@ -419,6 +417,7 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
         self,
         *,
         name: str,
+        group: str,
         training_execution_id: int,
         period: str,
         input_cols: list,
@@ -429,12 +428,12 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
         column_name: Optional[str] = None,
         reference_date: Optional[str] = None,
         python_version: Optional[str] = None,
-        group: Optional[str] = "datarisk",
     ) -> MLOpsExternalMonitoring:
         """Register a MLOps External Monitoring
 
         Args:
             name: External Monitoring name
+            group: External Monitoring group. The group is the same used for the external training and datasource
             training_execution_id: Valid Mlops training execution id
             period: The frequency the monitoring will run. It can be: "Day" | "Week" | "Quarter" | "Month" | "Year"
             input_cols: Array with input columns name
@@ -451,7 +450,7 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
             MLOpsExternalMonitoring
         """
 
-        base_external_url = f"{self.base_url}/external-monitoring/{group}"
+        base_external_url = f"{self.base_url}/external-monitoring"
 
         if period not in ["Day", "Week", "Quarter", "Month", "Year"]:
             logger.error(
@@ -467,6 +466,7 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
 
         configuration_file = {
             "Name": name,
+            "Group": group,
             "TrainingExecutionId": training_execution_id,
             "Period": period,
             "InputCols": input_cols,
@@ -512,9 +512,7 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
 
         return external_monitoring
 
-    def list_hosted_external_monitorings(self) -> None:
-        """List all hosted external monitoring"""
-
+    def __list_external_monitoring(self):
         url = f"{self.base_url}/external-monitoring"
         response = requests.get(
             url=url,
@@ -544,66 +542,40 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
             logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ExternalMonitoringError("Could not register the monitoring.")
 
-        results = response.json()["Result"]
-        count = response.json()["Count"]
-        logger.info(f"Found {count} monitorings")
-        for result in results:
+
+        for external_monitoring in response.json()["Result"]:
+            yield external_monitoring
+
+    def list_hosted_external_monitorings(self) -> None:
+        """List all hosted external monitoring"""
+        for result in self.__list_external_monitoring():
             print(parse_json_to_yaml(result))
 
-    def get_external_monitoring(
-        self, group: str, external_monitoring_hash: str
-    ) -> MLOpsExternalMonitoring:
-        """Return a external monitoring
+    def get_external_monitoring(self, external_monitoring_hash: str) -> MLOpsExternalMonitoring:
+        """Return an external monitoring
 
         Args:
-            group (str): Group where external monitoring was inserted
             external_monitoring_hash (str): External Monitoring Hash
 
         Raises:
-            AuthenticationError
-            GroupError
-            ServerError
             ExternalMonitoringError
 
         Returns:
             MLOpsExternalMonitoring
         """
-        url = f"{self.base_url}/external-monitoring/{group}/{external_monitoring_hash}"
-        response = requests.get(
-            url=url,
-            headers={
-                "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url),
-            },
-            timeout=60,
-        )
 
-        if response.status_code == 401:
-            logger.error(
-                "Login or password are invalid, please check your credentials."
-            )
-            raise AuthenticationError("Login not authorized.")
+        for external_monitoring_dict in self.__list_external_monitoring():
+            if external_monitoring_dict["Hash"] == external_monitoring_hash:
+                logger.info("External monitoring found")
 
-        if response.status_code == 404:
-            logger.error("Group not found in the database")
-            raise GroupError("Group not found in the database")
-
-        if response.status_code >= 500:
-            logger.error("Server is not available. Please, try it later.")
-            raise ServerError("Server is not available!")
-
-        if response.status_code != 200:
-            formatted_msg = parse_json_to_yaml(response.json())
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ExternalMonitoringError("Could not register the monitoring.")
-
-        logger.info("External monitoring found")
-        external_monitoring = MLOpsExternalMonitoring(
-            login=self.credentials[0],
-            password=self.credentials[1],
-            url=self.base_url,
-            group=group,
-            ex_monitoring_hash=external_monitoring_hash,
-        )
-        external_monitoring.wait_ready()
-        return external_monitoring
+                group = external_monitoring_dict["Group"]
+                external_monitoring = MLOpsExternalMonitoring(
+                    login=self.credentials[0],
+                    password=self.credentials[1],
+                    url=self.base_url,
+                    group=group,
+                    ex_monitoring_hash=external_monitoring_hash,
+                )
+                external_monitoring.wait_ready()
+                return external_monitoring
+        raise ExternalMonitoringError(f"External monitoring not found for {external_monitoring_hash}")
