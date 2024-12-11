@@ -257,7 +257,6 @@ class MLOpsExternalMonitoring(BaseMLOps):
             raise GroupError("Group not found in the database")
 
         if response.status_code >= 500:
-
             logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ServerError("Server Error. Could not register the monitoring.")
 
@@ -337,9 +336,11 @@ class MLOpsExternalMonitoring(BaseMLOps):
             end (str): end date to look for the records. The format must be dd-MM-yyyy
         """
         url = f"{self.base_url}/monitoring/search/records/{self.group}/{self.ex_monitoring_hash}"
-        print(parse_json_to_yaml(
-            self._logs(url=url, credentials=self.credentials, start=start, end=end)
-        ))
+        print(
+            parse_json_to_yaml(
+                self._logs(url=url, credentials=self.credentials, start=start, end=end)
+            )
+        )
 
 
 class MLOpsExternalMonitoringClient(BaseMLOpsClient):
@@ -542,7 +543,6 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
             logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ExternalMonitoringError("Could not register the monitoring.")
 
-
         for external_monitoring in response.json()["Result"]:
             yield external_monitoring
 
@@ -551,7 +551,9 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
         for result in self.__list_external_monitoring():
             print(parse_json_to_yaml(result))
 
-    def get_external_monitoring(self, external_monitoring_hash: str) -> MLOpsExternalMonitoring:
+    def get_external_monitoring(
+        self, external_monitoring_hash: str
+    ) -> MLOpsExternalMonitoring:
         """Return an external monitoring
 
         Args:
@@ -578,4 +580,6 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
                 )
                 external_monitoring.wait_ready()
                 return external_monitoring
-        raise ExternalMonitoringError(f"External monitoring not found for {external_monitoring_hash}")
+        raise ExternalMonitoringError(
+            f"External monitoring not found for {external_monitoring_hash}"
+        )
