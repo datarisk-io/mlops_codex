@@ -1,10 +1,12 @@
 import io
 import json
+from functools import wraps
+from typing import Tuple, Union, Type, Callable
+import typing
 
 import requests
 import yaml
 from cachetools.func import ttl_cache
-from typing import Union, Tuple
 
 from mlops_codex.exceptions import AuthenticationError, ServerError
 
@@ -28,7 +30,9 @@ def parse_url(url):
     return url
 
 
-def try_login(login: str, password: str, base_url: str) -> Union[Tuple[str, str], Exception]:
+def try_login(
+    login: str, password: str, base_url: str
+) -> Union[Tuple[str, str], Exception]:
     """Try to sign in MLOps
 
     Args:
@@ -84,3 +88,32 @@ def parse_json_to_yaml(data) -> str:
         str: data in the yaml format
     """
     return yaml.dump(data, allow_unicode=True, default_flow_style=False)
+
+
+def validate_kwargs(model: Type) -> Callable:
+    """
+    Decorator to validate keyword arguments against a TypedDict.
+
+    Args:
+        model (Type): The Type class used for validation.
+
+    Returns:
+        Callable: The decorated method with validation applied.
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self, **kwargs):
+            missing_keys = [
+                field for field, field_type in model.__annotations__.items()
+                if type(None) not in typing.get_args(field_type) and field not in kwargs
+            ]
+            if missing_keys:
+                raise TypeError(f"Missing required argument(s): {', '.join(missing_keys)}")
+            for key, expected_type in model.__annotations__.items():
+                if key in kwargs and not isinstance(kwargs[key], expected_type):
+                    raise ValueError(
+                        f"Failed validation: Key '{key}' must be of type {expected_type}, but got {type(kwargs[key]).__name__}"
+                    )
+            return func(self, **kwargs)
+        return wrapper
+    return decorator
