@@ -413,7 +413,7 @@ class MLOpsExecution(BaseMLOps):
     ) -> None:
         super().__init__(login=login, password=password, url=url)
         loaded = load_dotenv()
-        # Somethings when running as a script the default version might not work
+        # Something when running as a script the default version might not work
         if not loaded:
             load_dotenv(find_dotenv(usecwd=True))
         logger.info("Loading .env")
