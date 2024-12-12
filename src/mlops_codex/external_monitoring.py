@@ -260,7 +260,7 @@ class MLOpsExternalMonitoring(BaseMLOps):
             logger.error(f"Something went wrong...\n{formatted_msg}")
             raise ServerError("Server Error. Could not register the monitoring.")
 
-        raise Exception("Unknown error. Please contact administrator.")
+        raise ExternalMonitoringError("Unknown error. Please contact administrator.")
 
     def wait_ready(self):
         """Check the status of the external monitoring
@@ -349,6 +349,7 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
     """
 
     class ExternalMonitoringData(NamedTuple):
+        """External monitoring data"""
         name: str
         group: str
         training_execution_id: int
@@ -364,6 +365,10 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
 
     @validate_kwargs(ExternalMonitoringData)
     def validate(self, **kwargs):
+        """Method to validate data
+        NOTE: This method is necessary if I want to use the try/except in line 460. 
+              Maybe in the future would be nice to migrate this to an generic interface
+        """
         pass
 
     def __repr__(self) -> str:
