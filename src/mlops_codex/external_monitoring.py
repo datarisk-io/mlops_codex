@@ -367,7 +367,7 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
     def validate(self, **kwargs):
         """Method to validate data
         NOTE: This method is necessary if I want to use the try/except in line 460. 
-              Maybe in the future would be nice to migrate this to an generic interface
+              Maybe in the future would be nice to migrate this to a generic interface
         """
         pass
 
