@@ -234,8 +234,8 @@ class MLOpsModel(BaseMLOps):
                 url,
                 headers={
                     "Authorization": "Bearer " + self.__token,
-                    "MLOps-Origin": "Codex",
-                    "MLOps-Method": self.health.__qualname__,
+                    "Neomaril-Origin": "Codex",
+                    "Neomaril-Method": self.health.__qualname__,
                 },
             )
             if response.status_code == 200:
@@ -280,8 +280,8 @@ class MLOpsModel(BaseMLOps):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.restart_model.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.restart_model.__qualname__,
             },
         )
 
@@ -390,8 +390,8 @@ class MLOpsModel(BaseMLOps):
             f"{self.base_url}/model/delete/{self.group}/{self.model_id}",
             headers={
                 "Authorization": "Bearer " + token,
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.delete.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.delete.__qualname__,
             },
         )
 
@@ -449,8 +449,8 @@ class MLOpsModel(BaseMLOps):
             f"{self.base_url}/model/disable/{self.group}/{self.model_id}",
             headers={
                 "Authorization": "Bearer " + token,
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.disable.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.disable.__qualname__,
             },
         )
 
@@ -557,8 +557,8 @@ class MLOpsModel(BaseMLOps):
                         data=json.dumps(model_input),
                         headers={
                             "Authorization": "Bearer " + group_token,
-                            "MLOps-Origin": "Codex",
-                            "MLOps-Method": self.predict.__qualname__,
+                            "Neomaril-Origin": "Codex",
+                            "Neomaril-Method": self.predict.__qualname__,
                         },
                     )
 
@@ -602,8 +602,8 @@ class MLOpsModel(BaseMLOps):
                         data=form_data,
                         headers={
                             "Authorization": "Bearer " + group_token,
-                            "MLOps-Origin": "Codex",
-                            "MLOps-Method": self.predict.__qualname__,
+                            "Neomaril-Origin": "Codex",
+                            "Neomaril-Method": self.predict.__qualname__,
                         },
                     )
 
@@ -645,8 +645,8 @@ class MLOpsModel(BaseMLOps):
                 headers={
                     "Authorization": "Bearer "
                     + refresh_token(*self.credentials, self.base_url),
-                    "MLOps-Origin": "Codex",
-                    "MLOps-Method": self.predict.__qualname__,
+                    "Neomaril-Origin": "Codex",
+                    "Neomaril-Method": self.predict.__qualname__,
                 },
             ).json()["Description"]
             if response["Status"] == "Deployed":
@@ -1001,8 +1001,8 @@ class MLOpsModel(BaseMLOps):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.register_monitoring.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.register_monitoring.__qualname__,
             },
         )
 
@@ -1333,8 +1333,8 @@ class MLOpsModelClient(BaseMLOpsClient):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.search_models.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.search_models.__qualname__,
             },
         )
 
@@ -1534,8 +1534,8 @@ class MLOpsModelClient(BaseMLOpsClient):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.__upload_model.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.__upload_model.__qualname__,
             },
         )
 
@@ -1586,8 +1586,8 @@ class MLOpsModelClient(BaseMLOpsClient):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.create_model.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.create_model.__qualname__,
             },
         )
         if response.status_code == 202:

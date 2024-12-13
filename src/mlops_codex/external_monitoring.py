@@ -90,8 +90,8 @@ class MLOpsExternalMonitoring(BaseMLOps):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.upload_file.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.upload_file.__qualname__,
             },
             timeout=60,
         )
@@ -232,8 +232,8 @@ class MLOpsExternalMonitoring(BaseMLOps):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.host.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.host.__qualname__,
             },
             timeout=60,
         )
@@ -399,8 +399,8 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.register_monitoring.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.register_monitoring.__qualname__,
             },
             timeout=60,
         )

@@ -117,8 +117,8 @@ class MLOpsDataSourceClient(BaseMLOpsClient):
             files=files,
             headers={
                 "Authorization": "Bearer " + token,
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.register_datasource.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.register_datasource.__qualname__,
             },
             timeout=60,
         )
@@ -173,8 +173,8 @@ class MLOpsDataSourceClient(BaseMLOpsClient):
             url=url,
             headers={
                 "Authorization": "Bearer " + token,
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.list_datasources.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.list_datasources.__qualname__,
             },
             timeout=60,
         )
@@ -318,8 +318,8 @@ class MLOpsDataSource(BaseMLOps):
             data=form_data,
             headers={
                 "Authorization": "Bearer " + token,
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.import_dataset.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.import_dataset.__qualname__,
             },
             timeout=60,
         )
@@ -372,8 +372,8 @@ class MLOpsDataSource(BaseMLOps):
             url=url,
             headers={
                 "Authorization": "Bearer " + token,
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.delete.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.delete.__qualname__,
             },
             timeout=60,
         )
@@ -499,8 +499,8 @@ class MLOpsDataset(BaseMLOps):
             url=url,
             headers={
                 "Authorization": "Bearer " + token,
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.get_status.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.get_status.__qualname__,
             },
             timeout=60,
         )
@@ -542,8 +542,8 @@ class MLOpsDataset(BaseMLOps):
             url=url,
             headers={
                 "Authorization": "Bearer " + token,
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.delete.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.delete.__qualname__,
             },
             timeout=60,
         )
@@ -622,8 +622,8 @@ class MLOpsDataset(BaseMLOps):
             params=query,
             headers={
                 "Authorization": "Bearer " + token,
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.list_datasets.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.list_datasets.__qualname__,
             },
             timeout=60,
         )

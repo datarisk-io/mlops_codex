@@ -184,8 +184,8 @@ class BaseMLOpsClient(BaseMLOps):
             url,
             headers={
                 "Authorization": "Bearer " + token,
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.list_groups.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.list_groups.__qualname__,
             },
         )
 
@@ -240,8 +240,8 @@ class BaseMLOpsClient(BaseMLOps):
             data=data,
             headers={
                 "Authorization": "Bearer " + token,
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.create_group.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.create_group.__qualname__,
             },
         )
 
@@ -317,8 +317,8 @@ class BaseMLOpsClient(BaseMLOps):
             params={"force": str(force).lower()},
             headers={
                 "Authorization": "Bearer " + token,
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.refresh_group_token.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.refresh_group_token.__qualname__,
             },
         )
 
@@ -572,8 +572,8 @@ class MLOpsExecution(BaseMLOps):
                 url,
                 headers={
                     "Authorization": "Bearer " + token,
-                    "MLOps-Origin": "Codex",
-                    "MLOps-Method": self.download_result.__qualname__,
+                    "Neomaril-Origin": "Codex",
+                    "Neomaril-Method": self.download_result.__qualname__,
                 },
             )
             if response.status_code not in [200, 410]:

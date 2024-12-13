@@ -577,8 +577,8 @@ class MLOpsTrainingExecution(MLOpsExecution):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.get_status.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.get_status.__qualname__,
             },
         )
         if response.status_code not in [200, 410]:
@@ -597,8 +597,8 @@ class MLOpsTrainingExecution(MLOpsExecution):
                 headers={
                     "Authorization": "Bearer "
                     + refresh_token(*self.credentials, self.base_url),
-                    "MLOps-Origin": "Codex",
-                    "MLOps-Method": self.get_status.__qualname__,
+                    "Neomaril-Origin": "Codex",
+                    "Neomaril-Method": self.get_status.__qualname__,
                 },
             )
             self.execution_data = response.json()["Description"]
@@ -632,8 +632,8 @@ class MLOpsTrainingExecution(MLOpsExecution):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.promote_model.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.promote_model.__qualname__,
             },
         )
         if response.status_code == 202:
@@ -1083,8 +1083,8 @@ class MLOpsTrainingExperiment(BaseMLOps):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.run_training.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.run_training.__qualname__,
             },
         )
         if response.status_code == 200:
@@ -1598,8 +1598,8 @@ class MLOpsTrainingClient(BaseMLOpsClient):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.__create.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.__create.__qualname__,
             },
         )
 

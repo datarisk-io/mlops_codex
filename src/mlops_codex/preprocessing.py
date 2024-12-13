@@ -232,8 +232,8 @@ class MLOpsPreprocessing(BaseMLOps):
                         data=json.dumps(preprocessing_input),
                         headers={
                             "Authorization": "Bearer " + group_token,
-                            "MLOps-Origin": "Codex",
-                            "MLOps-Method": self.run.__qualname__,
+                            "Neomaril-Origin": "Codex",
+                            "Neomaril-Method": self.run.__qualname__,
                         },
                     )
 
@@ -249,8 +249,8 @@ class MLOpsPreprocessing(BaseMLOps):
                         files=files,
                         headers={
                             "Authorization": "Bearer " + group_token,
-                            "MLOps-Origin": "Codex",
-                            "MLOps-Method": self.run.__qualname__,
+                            "Neomaril-Origin": "Codex",
+                            "Neomaril-Method": self.run.__qualname__,
                         },
                     )
 
@@ -662,8 +662,8 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.search_preprocessing.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.search_preprocessing.__qualname__,
             },
         )
 
@@ -900,8 +900,8 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
             headers={
                 "Authorization": "Bearer "
                 + refresh_token(*self.credentials, self.base_url),
-                "MLOps-Origin": "Codex",
-                "MLOps-Method": self.create.__qualname__,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.create.__qualname__,
             },
         )
 
