@@ -3,7 +3,7 @@ DataSource module
 
 Module with all classes and methods to manage the data sources and data sets 
 
-mlops\_codex.datasources.MLOpsDataSourceClient
+MLOpsDataSourceClient
 ---------------------------------------------------
 
 .. autoclass:: mlops_codex.datasources.MLOpsDataSourceClient
@@ -12,7 +12,7 @@ mlops\_codex.datasources.MLOpsDataSourceClient
     :show-inheritance:
 
 
-mlops\_codex.datasources.MLOpsDataSource
+MLOpsDataSource
 ---------------------------------------------
 
 .. autoclass:: mlops_codex.datasources.MLOpsDataSourceClient
@@ -21,7 +21,7 @@ mlops\_codex.datasources.MLOpsDataSource
     :show-inheritance:
 
 
-mlops\_codex.datasources.MLOpsDataset
+MLOpsDataset
 ------------------------------------------
 
 .. autoclass:: mlops_codex.datasources.MLOpsDataset
