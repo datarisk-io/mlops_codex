@@ -22,7 +22,7 @@ class MLOpsDataSourceClient(BaseMLOpsClient):
     """
     Class for client for manage datasources
 
-    Attributes
+    Parameters
     ----------
     login : str
         Login for authenticating with the client.
@@ -32,12 +32,12 @@ class MLOpsDataSourceClient(BaseMLOpsClient):
         You can also use the env variable MLOPS_PASSWORD to set this
     url : str
         URL to MLOps Server.
-        Default value is https://neomaril.datarisk.net,
+        Default value is https://mlops.datarisk.net,
         use it to test your deployment first before changing to production.
         You can also use the env variable MLOPS_URL to set this
 
     Raises
-    ----------
+    ------
     ServerError
         Database produced an unexpected error.
     AuthenticationError
@@ -57,7 +57,7 @@ class MLOpsDataSourceClient(BaseMLOpsClient):
         """
         Register the user cloud credentials to allow MLOps to use the provider to download the datasource.
 
-        Attributes
+        Parameters
         ----------
         group : str
             Name of the group where we will search the datasources.
@@ -134,13 +134,21 @@ class MLOpsDataSourceClient(BaseMLOpsClient):
                 raise AuthenticationError("User is not in the master group.")
         raise CredentialError("Cloud Credential Error")
 
-    def credentials_to_json(self, input_data: dict):
+    def credentials_to_json(self, input_data: dict) -> str:
         """
         Transform dict to json.
 
-        Args:
-            input_data (dict): A dictionary to save.
+        Parameters
+        ----------
+        input_data : dict
+            A dictionary to save.
+
+        Returns
+        -------
+        str
+            Path to the credentials file.
         """
+
         path = "./credentials.json"
         with open(path, "w", encoding="utf-8") as f:
             json.dump(input_data, f)
@@ -150,11 +158,20 @@ class MLOpsDataSourceClient(BaseMLOpsClient):
         """
         List all datasources of the group with this provider type.
 
-        Attributes
+        Parameters
         ----------
         group : str
             Name of the group where we will search the datasources
         provider : str ("Azure" | "AWS" | "GCP")
+
+        Raises
+        ------
+        AuthenticationError
+            Raised if there is an authentication issue.
+        ServerError
+            Raised if the server encounters an issue.
+        InputError
+            Raised if something went wrong.
 
         Returns
         ----------
@@ -201,13 +218,14 @@ class MLOpsDataSourceClient(BaseMLOpsClient):
         """
         Get a MLOpsDataSource to make datasource operations.
 
-        Attributes
+        Parameters
         ----------
-        group : str
-            Name of the group where we will search the datasources
         datasource_name : str
             Name given previously to the datasource.
-        provider : str ("Azure" | "AWS" | "GCP")
+        provider : str
+            It can be "Azure" | "AWS" | "GCP"
+        group : str
+            Name of the group where we will search the datasources
 
         Returns
         ----------
@@ -236,7 +254,7 @@ class MLOpsDataSource(BaseMLOps):
     """
     Class to operate actions in a datasource.
 
-    Attributes
+    Parameters
     ----------
     login : str
         Login for authenticating with the client.
@@ -246,7 +264,7 @@ class MLOpsDataSource(BaseMLOps):
         You can also use the env variable MLOPS_PASSWORD to set this
     url : str
         URL to MLOps Server.
-        Default value is https://neomaril.datarisk.net,
+        Default value is https://mlops.datarisk.net/,
         use it to test your deployment first before changing to production.
         You can also use the env variable MLOPS_URL to set this
     datasource_name : str
@@ -281,7 +299,7 @@ class MLOpsDataSource(BaseMLOps):
         """
         Import a dataset inside a datasource.
 
-        Attributes
+        Parameters
         ----------
         dataset_uri : str
             Datasource cloud URI path.
@@ -297,6 +315,10 @@ class MLOpsDataSource(BaseMLOps):
 
         Raises
         ----------
+        AuthenticationError
+            Raised if there is an authentication issue.
+        ServerError
+            Raised if the server encounters an issue.
         InputError
             If any data sent is invalidated on server.
 
@@ -355,11 +377,7 @@ class MLOpsDataSource(BaseMLOps):
 
     def delete(self):
         """
-        Delete the datasource on mlops.
-        Pay attention when doing this action, it is irreversible!
-        Returns
-        -------
-        None
+        Delete the datasource on mlops. Pay attention when doing this action, it is irreversible!
 
         Example
         -------
@@ -379,11 +397,11 @@ class MLOpsDataSource(BaseMLOps):
         )
         logger.info(response.json().get("Message"))
 
-    def get_dataset(self, *, dataset_hash: str, origin: str = None):
+    def get_dataset(self, *, dataset_hash: str, origin: Optional[str] = None):
         """
         Get a MLOpsDataset to make dataset operations.
 
-        Attributes
+        Parameters
         ----------
         dataset_hash : str
             Name given previously to the datasource.
@@ -424,7 +442,7 @@ class MLOpsDataset(BaseMLOps):
     """
     Class to operate actions in a dataset.
 
-    Attributes
+    Parameters
     ----------
     login : str
         Login for authenticating with the client.
@@ -434,7 +452,7 @@ class MLOpsDataset(BaseMLOps):
         You can also use the env variable MLOPS_PASSWORD to set this
     url : str
         URL to MLOps Server.
-        Default value is https://neomaril.datarisk.net,
+        Default value is https://mlops.datarisk.net/,
         use it to test your deployment first before changing to production.
         You can also use the env variable MLOPS_URL to set this
     dataset_hash : str
@@ -528,8 +546,7 @@ class MLOpsDataset(BaseMLOps):
 
     def delete(self):
         """
-        Delete the dataset on mlops.
-        Pay attention when doing this action, it is irreversible!
+        Delete the dataset on mlops. Pay attention when doing this action, it is irreversible!
 
         Example
         ----------
@@ -577,15 +594,15 @@ class MLOpsDataset(BaseMLOps):
         """
         List datasets from datasources.
 
-        Attributes
+        Parameters
         ----------
-            origin: Optional[str]
+            origin: Optional[str], optional
                 Origin of a dataset. It can be "Training", "Preprocessing", "Datasource" or "Model"
-            origin_id: Optional[str]
+            origin_id: Optional[str], optinal
                 Integer that represents the id of a dataset, given an origin
-            datasource_name: Optional[str]
+            datasource_name: Optional[str], optinal
                 Name of the datasource
-            group: Optional[str]
+            group: Optional[str], optinal
                 Name of the group where we will search the datasource
 
         Returns
