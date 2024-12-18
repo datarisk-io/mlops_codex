@@ -3,17 +3,35 @@ Connecting to MLOps
 
 For interacting with MLOps we need to access the clients. 
 
-We have 3 of them: :py:class:`mlops_codex.training.MLOpsTrainingClient`, :py:class:`mlops_codex.model.MLOpsModelClient` and :py:class:`mlops_codex.datasource.MLOpsDataSourceClient`.
+To interact with the MLOps platform, you will need to access the provided clients.  
+
+**MLOps Codex** offers three primary clients:  
+
+- :py:class:`mlops_codex.training.MLOpsTrainingClient`  
+  Used for accessing and managing the training of Machine Learning models.
+
+- :py:class:`mlops_codex.model.MLOpsModelClient`  
+  Designed for handling model-related operations, including deployment and monitoring.  
+
+- :py:class:`mlops_codex.datasources.MLOpsDataSourceClient`
+  Enables integration and management of data sources for your ML workflows.
+
+- :py:class:`mlops_codex.preprocessing.MLOpsPreprocessingClient`
+  Provides tools for managing and automating data preprocessing tasks in Machine Learning workflows.
+
+- :py:class:`mlops_codex.external_monitoring.MLOpsExternalMonitoringClient`
+  Enables monitoring of deployed Machine Learning models trained on your own machine.
+
 
 You need the server URL, an email and a password to access the MLOps. The best way to do it is using a *.env* file with the following env variables
 
-.. code::
+.. code-block:: env
 
     MLOPS_URL='https://neomaril.datarisk.net'
     MLOPS_USER='email@email.com'
     MLOPS_PASSWORD='password@123'
 
-If you create this file in the same directory your are running your code we will import it automatically
+If you create the `.env` file in the same directory where you are running your code, it will be automatically imported.
 
 .. code:: python
 
@@ -21,49 +39,45 @@ If you create this file in the same directory your are running your code we will
     from mlops_codex.model import MLOpsModelClient
     from mlops_codex.training import MLOpsTrainingClient
     from mlops_codex.datasources import MLOpsDataSourceClient
+    from mlops_codex.preprocessing import MLOpsPreprocessingClient
+    from mlops_codex.external_monitoring import MLOpsExternalMonitoringClient
 
     # Start the client via model client
     model_client = MLOpsModelClient()
-    #>>> 2023-10-25 08:37:50.465 | INFO     | mlops_codex.model:__init__:722 - Loading .env
-    #>>> 2023-10-25 08:37:50.466 | INFO     | mlops_codex.base:__init__:90 - Loading .env
-    #>>> 2023-10-25 08:37:52.698 | INFO     | mlops_codex.base:__init__:102 - Successfully connected to MLOps
 
     # Start the client via training client
     training_client = MLOpsTrainingClient()
-    #>>> 2023-05-24 10:58:24.855 | INFO     | mlops_codex.base:__init__:87 - Loading .env
-    #>>> 2023-05-24 10:58:25.028 | INFO     | mlops_codex.base:__init__:99 - Successfully connected to MLOps
-    #>>> 2023-05-24 10:58:25.028 | INFO     | mlops_codex.base:__init__:102 - Successfully connected to MLOps
 
     # Start the client via data source client
     datasource_client = MLOpsDataSourceClient()
-    #>>> 2024-03-20 19:19:35.385 | INFO     | mlops_codex.base:__init__:20 - Loading .env
-    #>>> 2024-03-20 19:19:37.219 | INFO     | mlops_codex.base:__init__:30 - Successfully connected to MLOps
+
+    # Start the client via preprocessing client
+    preprocessing_client = MLOpsPreprocessingClient()
+
+    # Start the client via external monitoring client
+    external_monitoring_client = MLOpsExternalMonitoringClient()
+
 
 Creating a group
 ----------------
 
-Groups are a way to separate training experiments and models that might have different end-users. 
-We use it to organize the file system and network in a way that we can create a isolated process for a group. When a group is created a unique token is created to it, this is used to run the models and also increase the security of the platform.
+Groups provide a way to organize training experiments and models that may have different end-users or purposes, enabling the creation of isolated environments for each group. When a group is created, a unique token is generated, which is used to run models and enhance platform security. This token will expire after one year.
+Every resource you create in MLOps should belong to a group, making the creation of a group the first step in your workflow.
+You can create a group using any of the available clients, simply by providing its name and a description to the group for better clarity and organization.
 
-Every resource you create in MLOps should be in a group, so creating one should be the first thing you do.
 
-To create a group you can use any client, we just need its name. But we also could add description to it.
+.. code-block:: python
 
-.. code:: python
-
-   # Import the client
+    # Import the client
     from mlops_codex.training import MLOpsTrainingClient
 
-    model_client = MLOpsModelClient()
+    training_client = MLOpsTrainingClient()
 
-    model_client.create_group(
-        name='nb_demo', # Group name
-        description='Group for the demo' # A small description
+    training_client.create_group(
+        name='nb_demo',
+        description='Group for the demo'
     )
 
-    #>>> 2023-05-24 10:58:25.634 | INFO     | mlops_codex.base:create_group:155 - Group 'nb_demo' inserted. Use the following token for scoring: 'f376c18092314246a432a2882c3cc8fd'. Carefully save it as we won't show it again.' 
-
-    # We create a separate group token to be used in model predictions, so it can be shared with the clients
     # This token has a 1 year expiration date, to generate a new one use the refresh method
 
     model_client.refresh_group_token(
@@ -73,5 +87,6 @@ To create a group you can use any client, we just need its name. But we also cou
 
 Add your group token to the *.env* file:
 
-.. code::
+.. code-block:: txt
+
     MLOPS_GROUP_TOKEN='YOUR_GROUP_TOKEN'
