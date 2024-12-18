@@ -39,6 +39,17 @@ class MLOpsExternalMonitoring(BaseMLOps):
         password: Optional[str] = None,
         url: Optional[str] = None,
     ):
+        """
+        Parameters
+        ----------
+        group:
+        ex_monitoring_hash:
+        status:
+        login:
+        password:
+        url:
+        """
+
         super().__init__(login=login, password=password, url=url)
         self.external_monitoring_url = f"{self.base_url}/external-monitoring"
         self.ex_monitoring_hash = ex_monitoring_hash
@@ -129,19 +140,30 @@ class MLOpsExternalMonitoring(BaseMLOps):
         shap_reference: Optional[str] = None,
         python_version: Optional[str] = "3.10",
     ):
-        """Validate inputs before send files
+        """
+        Validate inputs before sending files.
 
-        Args:
-            model_file (Optional[str], optional): Path to your model.pkl file. Defaults to None.
-            requirements_file (Optional[str]): Path to your requirements.txt file. Defaults to None.
-            preprocess_file (Optional[str]): Path to your preprocessing file. Defaults to None.
-            preprocess_reference (Optional[str]): Preprocessing function entrypoint. Defaults to None.
-            shap_reference (Optional[str]): Shap function entrypoint. Defaults to None.
-            python_version (Optional[str], optional): Python version. Can be "3.8", "3.9" or "3.10". Defaults to "3.10".
+        Parameters
+        ----------
+        model_file : Optional[str], optional
+            Path to your `model.pkl` file. Defaults to None.
+        requirements_file : Optional[str], optional
+            Path to your `requirements.txt` file. Defaults to None.
+        preprocess_file : Optional[str], optional
+            Path to your preprocessing file. Defaults to None.
+        preprocess_reference : Optional[str], optional
+            Preprocessing function entrypoint. Defaults to None.
+        shap_reference : Optional[str], optional
+            Shap function entrypoint. Defaults to None.
+        python_version : Optional[str], optional
+            Python version. Can be "3.8", "3.9", or "3.10". Defaults to "3.10".
 
-        Raises:
-            InputError
-            InputError
+        Raises
+        ------
+        InputError
+            Raised if there is an error with the input `model_file`.
+        InputError
+            Raised if there is an error with the input `requirements_file`.
         """
 
         if model_file is not None:
@@ -203,22 +225,29 @@ class MLOpsExternalMonitoring(BaseMLOps):
                 logger.info(f"{file} file uploaded successfully")
 
     def host(self, wait: Optional[bool] = False):
-        """Host the new external monitoring
+        """
+        Host the new external monitoring.
 
-        Attributes:
-        -----------
-        url (str): Url to host the external monitoring
+        Parameters
+        ----------
+        wait : Optional[bool], optional
+            If true, wait until the host is validated or invalidate.
 
-        Raises:
-        -------
+        Raises
+        ------
         AuthenticationError
+            Raised if there is an authentication issue.
         GroupError
+            Raised if there is an error related to the group.
         ServerError
+            Raised if the server encounters an issue.
         ExternalMonitoringError
+            Raised if there is an error specific to external monitoring.
 
         Returns
         -------
-        bool: True if host the new external monitoring
+        str
+            The external monitoring hash if the new external monitoring is successfully hosted.
         """
 
         if self.status == MonitoringStatus.Validated:
@@ -263,10 +292,13 @@ class MLOpsExternalMonitoring(BaseMLOps):
         raise ExternalMonitoringError("Unknown error. Please contact administrator.")
 
     def wait_ready(self):
-        """Check the status of the external monitoring
+        """
+        Check the status of the external monitoring.
 
-        Returns:
-            str: external monitoring
+        Returns
+        -------
+        str
+            The status of the external monitoring.
         """
         response = requests.get(
             url=f"{self.external_monitoring_url}/{self.ex_monitoring_hash}/status",
@@ -329,11 +361,15 @@ class MLOpsExternalMonitoring(BaseMLOps):
         )
 
     def logs(self, start: str, end: str):
-        """Get the logs of an external monitoring
+        """
+        Get the logs of an external monitoring.
 
-        Args:
-            start (str): start date to look for the records. The format must be dd-MM-yyyy
-            end (str): end date to look for the records. The format must be dd-MM-yyyy
+        Parameters
+        ----------
+        start : str
+            Start date to look for the records. The format must be `dd-MM-yyyy`.
+        end : str
+            End date to look for the records. The format must be `dd-MM-yyyy`.
         """
         url = f"{self.base_url}/monitoring/search/records/{self.group}/{self.ex_monitoring_hash}"
         print(
@@ -435,27 +471,46 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
         raise ExternalMonitoringError("Could not register the monitoring.")
 
     def register_monitoring(self,**kwargs) -> Optional[MLOpsExternalMonitoring]:
-        """Register a MLOps External Monitoring
+        """
+        Register a MLOps External Monitoring.
 
-        Args:
-            name (str): External Monitoring name
-            group (str): External Monitoring group. The group is the same used for the external training and datasource
-            training_execution_id (int): Valid Mlops training execution id
-            period (str): The frequency the monitoring will run. It can be: "Day" | "Week" | "Quarter" | "Month" | "Year"
-            input_cols (list): List with input columns name
-            output_cols (list): List with output columns name
-            datasource_name (str): Valid Mlops datasource name
-            extraction_type (str): Type of extraction. It can be "Incremental" | "Full"
-            datasource_uri (str): Valid datasource Uri
-            column_name (str): Optional column name of the data column
-            reference_date (str): Optional reference extraction date
-            python_version (str): Optional python version used to run preprocessing scripts. It can be "3.8" | "3.9" | "3.10"
+        Parameters
+        ----------
+        name : str
+            External Monitoring name.
+        group : str
+            External Monitoring group. The group is the same used for the external training and datasource.
+        training_execution_id : int
+            Valid MLOps training execution id.
+        period : str
+            The frequency the monitoring will run. It can be one of the following: "Day", "Week", "Quarter",
+            "Month", "Year".
+        input_cols : list
+            List with input column names.
+        output_cols : list
+            List with output column names.
+        datasource_name : str
+            Valid MLOps datasource name.
+        extraction_type : str
+            Type of extraction. It can be one of the following: "Incremental", "Full".
+        datasource_uri : str
+            Valid datasource URI.
+        column_name : Optional[str], optional
+            Column name of the data column.
+        reference_date : Optional[str], optional
+            Reference extraction date.
+        python_version : Optional[str], optional
+            Python version used to run preprocessing scripts. It can be one of the following: "3.8", "3.9", "3.10". Defaults to "3.10".
 
-        Raises:
-            InputError
+        Raises
+        ------
+        InputError
+            Raised if there is an error with the provided input.
 
-        Returns:
-            MLOpsExternalMonitoring
+        Returns
+        -------
+        MLOpsExternalMonitoring
+            The newly registered MLOps external monitoring instance.
         """
 
         try:
@@ -568,16 +623,23 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
     def get_external_monitoring(
         self, external_monitoring_hash: str
     ) -> MLOpsExternalMonitoring:
-        """Return an external monitoring
+        """
+        Return an external monitoring.
 
-        Args:
-            external_monitoring_hash (str): External Monitoring Hash
+        Parameters
+        ----------
+        external_monitoring_hash : str
+            External Monitoring Hash.
 
-        Raises:
-            ExternalMonitoringError
+        Raises
+        ------
+        ExternalMonitoringError
+            Raised if there is an error fetching the external monitoring.
 
-        Returns:
-            MLOpsExternalMonitoring
+        Returns
+        -------
+        MLOpsExternalMonitoring
+            The requested MLOps external monitoring instance.
         """
 
         for external_monitoring_dict in self.__list_external_monitoring():
