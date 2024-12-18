@@ -19,7 +19,7 @@ class MLOpsPipeline(BaseMLOps):
     """
     Class to construct and orchestrates the flow data of the models inside MLOps.
 
-    Attributes
+    Parameters
     ----------
     login : str
         Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
@@ -28,7 +28,7 @@ class MLOpsPipeline(BaseMLOps):
     group : str
         Group the model is inserted
     url : str
-        URL to MLOps Server. Default value is https://neomaril.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
+        URL to MLOps Server. Default value is https://mlops.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
     python_version : str
         Python version for the model environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.9'
 
@@ -277,9 +277,9 @@ class MLOpsPipeline(BaseMLOps):
         """
         Run the deployment process
 
-        Arguments
+        Parameters
         ----------
-        training_id : str, optional
+        training_id : Optional[str], optional
             The id for the training process that you want to deploy now
 
         Raises
@@ -374,11 +374,12 @@ class MLOpsPipeline(BaseMLOps):
         """
         Run the monitoring process
 
-        Arguments
+        Parameters
         ----------
-        training_exec_id : str, optional
+        training_exec_id : Optional[str], optional
             The id for the training execution process that you want to monitore now
-        model_id : str, optional
+        model_id : Optional[str], optional
+            Model hash
 
         Example
         -------
