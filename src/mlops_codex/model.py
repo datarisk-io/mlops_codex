@@ -37,7 +37,7 @@ class MLOpsModel(BaseMLOps):
     """
     Class to manage Models deployed inside MLOps
 
-    Attributes
+    Parameters
     ----------
     login : str
         Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
@@ -50,16 +50,14 @@ class MLOpsModel(BaseMLOps):
     group_token : str
         Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable MLOPS_GROUP_TOKEN
     url : str
-        URL to MLOps Server. Default value is https://neomaril.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set these
-    docs : str
-        URL for the model Swagger page
+        URL to MLOps Server. Default value is https://mlops.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set these
 
     Raises
     ------
     ModelError
         When the model can't be accessed in the server
     AuthenticationError
-        Unvalid credentials
+        Invalid credentials
 
     Example
     --------
@@ -207,6 +205,15 @@ class MLOpsModel(BaseMLOps):
         """
         Get the model deployment process health state.
 
+        Raises
+        ------
+        AuthenticationError
+            Raised if there is an authentication issue.
+        ServerError
+            Raised if the server encounters an issue.
+        ModelError
+            Raised if it can not get the health of the model
+
         Returns
         -------
         str
@@ -268,6 +275,15 @@ class MLOpsModel(BaseMLOps):
         -----------
         wait_for_ready : bool
             If the model is being deployed, wait for it to be ready instead of failing the request. Defaults to True
+
+        Raises
+        ------
+        AuthenticationError
+            Raised if there is an authentication issue.
+        ServerError
+            Raised if the server encounters an issue.
+        ModelError
+            Raised if could not restart the model.
 
         Example
         -------
@@ -340,7 +356,7 @@ class MLOpsModel(BaseMLOps):
 
         Returns
         -------
-        json
+        dict
             Logs list
 
         Example
@@ -371,6 +387,8 @@ class MLOpsModel(BaseMLOps):
 
         Raises
         ------
+        AuthenticationError
+            Raised if there is an authentication issue.
         ServerError
             Model deleting failed
 
@@ -429,12 +447,14 @@ class MLOpsModel(BaseMLOps):
 
         Raises
         ------
+        AuthenticationError
+            Raised if there is an authentication issue.
         ServerError
-            Model deleting failed
+            Model disable failed
 
         Returns
         -------
-        str
+        dict
             status=Deployed: disables the model and return a json.
             If it isn't Deployed it returns the message that the model is under another state
 
@@ -487,8 +507,8 @@ class MLOpsModel(BaseMLOps):
         """
         Saves the group token for this model instance.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         group_token : str
             Token for executing the model (show when creating a group). You can set this using the MLOPS_GROUP_TOKEN env variable
 
@@ -512,8 +532,8 @@ class MLOpsModel(BaseMLOps):
         """
         Runs a prediction from the current model.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         data : Union[dict, str]
             The same data that is used in the source file.
             If Sync is a dict, the keys that are needed inside this dict are the ones in the `schema` attribute.
@@ -668,8 +688,8 @@ class MLOpsModel(BaseMLOps):
         """
         Generates predict code for the model to be used outside MLOps Codex
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         language : str
             The generated code language. Supported languages are 'curl', 'python' or 'javascript'
 
@@ -780,10 +800,10 @@ class MLOpsModel(BaseMLOps):
 
     def get_model_execution(self, exec_id: str) -> MLOpsExecution:
         """
-        Get a execution instace for that model.
+        Get an execution instace for that model.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         exec_id : str
             Execution id
 
@@ -816,8 +836,8 @@ class MLOpsModel(BaseMLOps):
         """
         Get the host status for the monitoring configuration
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         group : str
             Group the model is inserted. Default is 'datarisk' (public group)
         model_id : str
@@ -874,8 +894,8 @@ class MLOpsModel(BaseMLOps):
         """
         Host the monitoring configuration
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         group : str
             Group the model is inserted. Default is 'datarisk' (public group)
         model_id : str
@@ -929,8 +949,8 @@ class MLOpsModel(BaseMLOps):
         """
         Register the model monitoring configuration at the database
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         preprocess_reference : str
             Name of the preprocess reference
         shap_reference : str
@@ -941,7 +961,6 @@ class MLOpsModel(BaseMLOps):
             Path of the preprocess script
         requirements_file : str
             Path of the requirements file
-
 
         Raises
         ------
@@ -1043,7 +1062,7 @@ class MLOpsModelClient(BaseMLOpsClient):
     """
     Class for client to access MLOps and manage models
 
-    Attributes
+    Parameters
     ----------
     login : str
         Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
@@ -1194,22 +1213,22 @@ class MLOpsModelClient(BaseMLOpsClient):
         self,
         *,
         model_id: str,
-        group: str = "datarisk",
+        group: str,
         group_token: Optional[str] = None,
-        wait_for_ready: bool = True,
+        wait_for_ready: Optional[bool] = True,
     ) -> MLOpsModel:
         """
         Acess a model using its id
 
-        Arguments
-        ---------
-        model_id : str
+        Parameters
+        ----------
+        model_id: str
             Model id (hash) that needs to be acessed
-        group : str
-            Group the model is inserted. Default is 'datarisk' (public group)
-        group_token : str, optional
+        group: str
+            Group the model is inserted.
+        group_token: Optional[str], optional
             Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable MLOPS_GROUP_TOKEN
-        wait_for_ready : bool
+        wait_for_ready: Optional[bool], optional
             If the model is being deployed, wait for it to be ready instead of failing the request. Defaults to True
 
         Raises
@@ -1287,15 +1306,15 @@ class MLOpsModelClient(BaseMLOpsClient):
         """
         Search for models using the name of the model
 
-        Arguments
-        ---------
-        name : str, optional
+        Parameters
+        ----------
+        name: Optional[str], optional
             Text that it's expected to be on the model name. It runs similar to a LIKE query on SQL
-        state : str, optional
+        state: Optional[str], optional
             Text that it's expected to be on the state. It runs similar to a LIKE query on SQL
-        group : str, optional
+        group: Optional[str], optional
             Text that it's expected to be on the group name. It runs similar to a LIKE query on SQL
-        only_deployed : bool, optional
+        only_deployed: Optional[bool], optional
             If it's True, filter only models ready to be used (status == "Deployed"). Defaults to False
 
         Raises
@@ -1306,7 +1325,7 @@ class MLOpsModelClient(BaseMLOpsClient):
         Returns
         -------
         list
-            List with the models data, it can works like a filter depending on the arguments values
+            A list with the models data, it can works like a filter depending on the arguments values
         Example
         -------
         >>> client.search_models(group='ex_group', only_deployed=True)
@@ -1404,7 +1423,7 @@ class MLOpsModelClient(BaseMLOpsClient):
 
         Returns
         -------
-        json
+        dict
             Logs list
 
         Example
@@ -1447,8 +1466,8 @@ class MLOpsModelClient(BaseMLOpsClient):
         """
         Upload the files to the server
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         model_name : str
             The name of the model, in less than 32 characters
         model_reference : str
@@ -1564,8 +1583,8 @@ class MLOpsModelClient(BaseMLOpsClient):
         """
         Builds the model execution environment
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         operation : str
             The model operation type (Sync or Async)
         model_id : str
@@ -1629,8 +1648,8 @@ class MLOpsModelClient(BaseMLOpsClient):
         """
         Deploy a new model to MLOps.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         model_name : str
             The name of the model, in less than 32 characters
         model_reference : str
@@ -1701,10 +1720,10 @@ class MLOpsModelClient(BaseMLOpsClient):
         self, *, model_id: str, exec_id: str, group: Optional[str] = None
     ) -> MLOpsExecution:
         """
-        Get a execution instace (Async model only).
+        Get an execution instace (Async model only).
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         model_id : str
             Model id (hash)
         exec_id : str
