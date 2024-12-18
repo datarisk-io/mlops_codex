@@ -5,7 +5,7 @@ Model module
 Module with all classes and methods to manage the Machine Learning (ML) models deployed at MLOps.
 
 
-mlops\_codex.model.MLOpsModel
+MLOpsModel
 -----------------------------------
 
 .. autoclass:: mlops_codex.model.MLOpsModel
@@ -14,7 +14,7 @@ mlops\_codex.model.MLOpsModel
    :show-inheritance:
 
 
-mlops\_codex.model.MLOpsModelClient
+MLOpsModelClient
 -----------------------------------------
 
 .. autoclass:: mlops_codex.model.MLOpsModelClient
