@@ -41,7 +41,7 @@ class MLOpsPreprocessing(BaseMLOps):
     group : str
         Group the model is inserted.
     base_url : str
-        URL to MLOps Server. Default value is https://mlops.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
+        URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Example
     --------
@@ -66,9 +66,9 @@ class MLOpsPreprocessing(BaseMLOps):
         preprocessing_id: str,
         login: Optional[str] = None,
         password: Optional[str] = None,
-        group: str = "datarisk",
+        group: Optional[str] = None,
         group_token: Optional[str] = None,
-        url: str = "https://neomaril.datarisk.net/",
+        url: Optional[str] = None,
     ) -> None:
         super().__init__(login=login, password=password, url=url)
         self.preprocessing_id = preprocessing_id
@@ -373,7 +373,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
     password : str
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     url : str
-        URL to MLOps Server. Default value is https://mlops.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
+        URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
     ------
@@ -758,7 +758,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         group: Optional[str],
         extra_files: Optional[list] = None,
         env: Optional[str] = None,
-        python_version: str = "3.8",
+        python_version: str = "3.10",
         operation: str = "Sync",
         input_type: str = None,
     ) -> str:
@@ -784,7 +784,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         env : str, optional
             Flag that choose which environment (dev, staging, production) of MLOps you are using. Default is True
         python_version : str, optional
-            Python version for the preprocessing environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.8'
+            Python version for the preprocessing environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.10'
         operation : str
             Defines which kind operation is being executed (Sync or Async). Default value is Sync
         input_type : str
@@ -940,7 +940,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         schema: Optional[Union[str, dict]] = None,
         extra_files: Optional[list] = None,
         env: Optional[str] = None,
-        python_version: str = "3.8",
+        python_version: str = "3.10",
         operation="Sync",
         input_type: str = "json|csv|parquet",
         wait_for_ready: bool = True,
@@ -967,7 +967,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         env : Optional[str], optional
             Flag that choose which environment (dev, staging, production) of MLOps you are using. Default is True
         python_version : Optional[str], optional
-            Python version for the preprocessing environment. Avaliable versions are 3.8, 3.9, 3.10. Defaults to '3.8'
+            Python version for the preprocessing environment. Avaliable versions are 3.8, 3.9, 3.10. Defaults to '3.10'
         operation : str
             Defines wich kind operation is beeing executed (Sync or Async). Default value is Sync
         input_type : str
