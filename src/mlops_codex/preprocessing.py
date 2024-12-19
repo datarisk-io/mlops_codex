@@ -961,7 +961,9 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         group: str
             Group the preprocessing is inserted.
         schema: Optional[Union[str, dict]]
-            Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be sending as well. Mandatory for Sync preprocessing
+            Path to a JSON, XML, CSV or PARQUET file with a sample of the input for the entrypoint function. A dict with the sample input can be sending as well.
+            For async models, send a parquet or csv file
+            For sync models, send a json or xml file
         extra_files: Optional[list], optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
         env: Optional[str], optional
