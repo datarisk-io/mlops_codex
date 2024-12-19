@@ -382,8 +382,30 @@ class MLOpsExternalMonitoring(BaseMLOps):
 class MLOpsExternalMonitoringClient(BaseMLOpsClient):
     """
     Class that handles MLOps External Monitoring Client
+
+    Parameters
+    ----------
+    login : str
+        Login for authenticating with the client.
+        You can also use the env variable MLOPS_USER to set this
+    password : str
+        Password for authenticating with the client.
+        You can also use the env variable MLOPS_PASSWORD to set this
+    url : str
+        URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
+
+    Raises
+    ------
+    ServerError
+        Database produced an unexpected error.
+    AuthenticationError
+        If user is not in the master group.
+    CredentialError
+        If the Cloud Credential is Invalid
     """
 
+    # TODO: It would be more appropriate to move this to an internal creation method, as its current placement seems illogical.
+    #       btw, it is my mistake!!
     class ExternalMonitoringData(NamedTuple):
         """External monitoring data"""
         name: str
