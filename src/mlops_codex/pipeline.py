@@ -28,7 +28,7 @@ class MLOpsPipeline(BaseMLOps):
     group : str
         Group the model is inserted
     url : str
-        URL to MLOps Server. Default value is https://mlops.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
+        URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
     python_version : str
         Python version for the model environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.9'
 
@@ -51,7 +51,7 @@ class MLOpsPipeline(BaseMLOps):
         group: str,
         login: Optional[str] = None,
         password: Optional[str] = None,
-        url: str = "https://neomaril.datarisk.net/",
+        url: Optional[str] = None,
         python_version: float = 3.9,
     ) -> None:
         super().__init__(login=login, password=password, url=url)
