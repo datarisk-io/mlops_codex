@@ -24,13 +24,13 @@ class MLOpsDataSourceClient(BaseMLOpsClient):
 
     Parameters
     ----------
-    login : str
+    login: str
         Login for authenticating with the client.
         You can also use the env variable MLOPS_USER to set this
-    password : str
+    password: str
         Password for authenticating with the client.
         You can also use the env variable MLOPS_PASSWORD to set this
-    url : str
+    url: str
         URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
@@ -56,12 +56,12 @@ class MLOpsDataSourceClient(BaseMLOpsClient):
 
         Parameters
         ----------
-        group : str
+        group: str
             Name of the group where we will search the datasources.
-        datasource_name : str
+        datasource_name: str
             Name given previously to the datasource.
-        provider : str ("Azure" | "AWS" | "GCP")
-        cloud_credentials : str | Union[dict,str]
+        provider: str ("Azure" | "AWS" | "GCP")
+        cloud_credentials: str | Union[dict,str]
             Path or dict to a JSON with the credentials to access the provider.
 
         Returns
@@ -137,7 +137,7 @@ class MLOpsDataSourceClient(BaseMLOpsClient):
 
         Parameters
         ----------
-        input_data : dict
+        input_data: dict
             A dictionary to save.
 
         Returns
@@ -157,9 +157,9 @@ class MLOpsDataSourceClient(BaseMLOpsClient):
 
         Parameters
         ----------
-        group : str
+        group: str
             Name of the group where we will search the datasources
-        provider : str ("Azure" | "AWS" | "GCP")
+        provider: str ("Azure" | "AWS" | "GCP")
 
         Raises
         ------
@@ -217,11 +217,11 @@ class MLOpsDataSourceClient(BaseMLOpsClient):
 
         Parameters
         ----------
-        datasource_name : str
+        datasource_name: str
             Name given previously to the datasource.
-        provider : str
+        provider: str
             It can be "Azure" | "AWS" | "GCP"
-        group : str
+        group: str
             Name of the group where we will search the datasources
 
         Returns
@@ -253,22 +253,22 @@ class MLOpsDataSource(BaseMLOps):
 
     Parameters
     ----------
-    login : str
+    login: str
         Login for authenticating with the client.
         You can also use the env variable MLOPS_USER to set this
-    password : str
+    password: str
         Password for authenticating with the client.
         You can also use the env variable MLOPS_PASSWORD to set this
-    url : str
+    url: str
         URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
-    datasource_name : str
+    datasource_name: str
         Name given previously to the datasource.
-    provider : str
+    provider: str
         Providers name, currently, MLOps supports:
         Azure Blob Storage as "Azure",
         AWS S3 as "AWS",
         Google GCP as "GCP".
-    group : str
+    group: str
         Name of the group where we will search the datasources
     """
 
@@ -295,11 +295,11 @@ class MLOpsDataSource(BaseMLOps):
 
         Parameters
         ----------
-        dataset_uri : str
+        dataset_uri: str
             Datasource cloud URI path.
-        dataset_name : str
+        dataset_name: str
             The dataset defined name
-        force : bool
+        force: bool
             Optional[boolean]: when it is true it will force the datasource download from the provider.
 
         Returns
@@ -397,9 +397,9 @@ class MLOpsDataSource(BaseMLOps):
 
         Parameters
         ----------
-        dataset_hash : str
+        dataset_hash: str
             Name given previously to the datasource.
-        origin : Optional[str]
+        origin: Optional[str]
             Can be an EHash or a SHash
 
         Returns
@@ -438,21 +438,21 @@ class MLOpsDataset(BaseMLOps):
 
     Parameters
     ----------
-    login : str
+    login: str
         Login for authenticating with the client.
         You can also use the env variable MLOPS_USER to set this
-    password : str
+    password: str
         Password for authenticating with the client.
         You can also use the env variable MLOPS_PASSWORD to set this
-    url : str
+    url: str
         URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
-    dataset_hash : str
+    dataset_hash: str
         The hash that identify the dataset
-    dataset_name : str
+    dataset_name: str
         The dataset defined name
-    datasource_name : str
+    datasource_name: str
         Name given previously to the datasource.
-    group : str
+    group: str
         Name of the group where we will search the datasource
     """
 
@@ -482,8 +482,8 @@ class MLOpsDataset(BaseMLOps):
         dict
             when success
             {
-                status : 'Succeeded',
-                log : ''
+                status: 'Succeeded',
+                log: ''
             }
             when failed
             {

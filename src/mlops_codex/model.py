@@ -39,17 +39,17 @@ class MLOpsModel(BaseMLOps):
 
     Parameters
     ----------
-    login : str
+    login: str
         Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
-    password : str
+    password: str
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
-    model_id : str
+    model_id: str
         Model id (hash) from the model you want to access
-    group : str
+    group: str
         Group the model is inserted.
-    group_token : str
+    group_token: str
         Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable MLOPS_GROUP_TOKEN
-    url : str
+    url: str
         URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set these
 
     Raises
@@ -273,7 +273,7 @@ class MLOpsModel(BaseMLOps):
 
         Parameters
         -----------
-        wait_for_ready : bool
+        wait_for_ready: bool
             If the model is being deployed, wait for it to be ready instead of failing the request. Defaults to True
 
         Raises
@@ -340,13 +340,13 @@ class MLOpsModel(BaseMLOps):
 
         Parameters
         -----------
-        start : str, optional
+        start: Optional[str], optional
             Date to start filter. At the format aaaa-mm-dd
-        end : str, optional
+        end: Optional[str], optional
             Date to end filter. At the format aaaa-mm-dd
-        routine : str, optional
+        routine: Optional[str], optional
             Type of routine beeing executed, can assume values Host or Run
-        type : str, optional
+        type: Optional[str], optional
             Defines the type of the logs that are going to be filtered, can assume the values Ok, Error, Debug or Warning
 
         Raises
@@ -508,7 +508,7 @@ class MLOpsModel(BaseMLOps):
 
         Parameters
         ----------
-        group_token : str
+        group_token: str
             Token for executing the model (show when creating a group). You can set this using the MLOPS_GROUP_TOKEN env variable
 
         Example
@@ -533,13 +533,13 @@ class MLOpsModel(BaseMLOps):
 
         Parameters
         ----------
-        data : Union[dict, str]
+        data: Union[dict, str]
             The same data that is used in the source file.
             If Sync is a dict, the keys that are needed inside this dict are the ones in the `schema` attribute.
             If Async is a string with the file path with the same filename used in the source file.
-        group_token : str, optional
+        group_token: Optional[str], optional
             Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable MLOPS_GROUP_TOKEN
-        wait_complete: bool, optional
+        wait_complete: Optional[bool], optional
             Boolean that informs if a model training is completed (True) or not (False). Default value is False
 
         Raises
@@ -689,7 +689,7 @@ class MLOpsModel(BaseMLOps):
 
         Parameters
         ----------
-        language : str
+        language: str
             The generated code language. Supported languages are 'curl', 'python' or 'javascript'
 
         Raises
@@ -803,7 +803,7 @@ class MLOpsModel(BaseMLOps):
 
         Parameters
         ----------
-        exec_id : str
+        exec_id: str
             Execution id
 
         Raises
@@ -837,11 +837,11 @@ class MLOpsModel(BaseMLOps):
 
         Parameters
         ----------
-        group : str
+        group: str
             Group the model is inserted.
-        model_id : str
+        model_id: str
             The uploaded model id (hash)
-        period : str
+        period: str
             The monitoring period (Day, Week, Month)
 
         Raises
@@ -895,11 +895,11 @@ class MLOpsModel(BaseMLOps):
 
         Parameters
         ----------
-        group : str
+        group: str
             Group the model is inserted.
-        model_id : str
+        model_id: str
             The uploaded model id (hash)
-        period : str
+        period: str
             The monitoring period (Day, Week, Month)
 
         Raises
@@ -950,15 +950,15 @@ class MLOpsModel(BaseMLOps):
 
         Parameters
         ----------
-        preprocess_reference : str
+        preprocess_reference: str
             Name of the preprocess reference
-        shap_reference : str
+        shap_reference: str
             Name of the preprocess function
-        configuration_file : str or dict
+        configuration_file: str or dict
             Path of the configuration file, but it could be a dict
-        preprocess_file : str, optional
+        preprocess_file: Optional[str], optional
             Path of the preprocess script
-        requirements_file : str
+        requirements_file: str
             Path of the requirements file
 
         Raises
@@ -1063,11 +1063,11 @@ class MLOpsModelClient(BaseMLOpsClient):
 
     Parameters
     ----------
-    login : str
+    login: str
         Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
-    password : str
+    password: str
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
-    url : str
+    url: str
         URL to MLOps Server. Default value is https://neomaril.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
@@ -1179,9 +1179,9 @@ class MLOpsModelClient(BaseMLOpsClient):
 
         Parameters
         ----------
-        group : str
+        group: str
             Group the model is inserted
-        model_id : str
+        model_id: str
             Model id (hash) from the model being searched
 
         Raises
@@ -1360,7 +1360,7 @@ class MLOpsModelClient(BaseMLOpsClient):
             results = response.json()["Results"]
             parsed_results = []
             for r in results:
-                if schema := r.get("Schema"):
+                if schema:= r.get("Schema"):
                     r["Schema"] = json.loads(schema)
                 parsed_results.append(r)
 
@@ -1404,15 +1404,15 @@ class MLOpsModelClient(BaseMLOpsClient):
 
         Parameters
         ----------
-        model_id : str
+        model_id: str
             Model id (hash)
-        start : str, optional
+        start: str, optional
             Date to start filter. At the format aaaa-mm-dd
-        end : str, optional
+        end: str, optional
             Date to end filter. At the format aaaa-mm-dd
-        routine : str, optional
+        routine: str, optional
             Type of routine being executed, can assume values 'Host' (for deployment logs) or 'Run' (for execution logs)
-        type : str, optional
+        type: str, optional
             Defines the type of the logs that are going to be filtered, can assume the values 'Ok', 'Error', 'Debug' or 'Warning'
 
         Raises
@@ -1467,29 +1467,29 @@ class MLOpsModelClient(BaseMLOpsClient):
 
         Parameters
         ----------
-        model_name : str
+        model_name: str
             The name of the model, in less than 32 characters
-        model_reference : str
+        model_reference: str
             The name of the scoring function inside the source file
-        source_file : str
+        source_file: str
             Path of the source file. The file must have a scoring function that accepts two parameters: data (data for the request body of the model) and model_path (absolute path of where the file is located)
-        model_file : str
+        model_file: str
             Path of the model pkl file
-        requirements_file : str
+        requirements_file: str
             Path of the requirements file. The packages versions must be fixed eg: pandas==1.0
-        schema : Union[str, dict], optional
+        schema: Union[str, dict], optional
             Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be sending as well
-        group : Optional[str], optional
+        group: Optional[str], optional
             Group the model is inserted.
-        extra_files : Optional[list], optional
+        extra_files: Optional[list], optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
-        env : str, optional
+        env: str, optional
             Flag that choose which environment (dev, staging, production) of MLOps you are using. Default is True
-        python_version : Optional[str], optional
+        python_version: Optional[str], optional
             Python version for the model environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.10'
-        operation : Optional[str], optional
+        operation: Optional[str], optional
             Defines which kind operation is being executed (Sync or Async). Default value is Sync
-        input_type : str
+        input_type: str
             The type of the input file that should be 'json', 'csv', 'parquet', 'txt', 'xls', 'xlsx'
 
         Raises
@@ -1584,11 +1584,11 @@ class MLOpsModelClient(BaseMLOpsClient):
 
         Parameters
         ----------
-        operation : str
+        operation: str
             The model operation type (Sync or Async)
-        model_id : str
+        model_id: str
             The uploaded model id (hash)
-        group : str
+        group: str
             Group the model is inserted. Default is 'datarisk' (public group)
 
         Raises
@@ -1649,31 +1649,31 @@ class MLOpsModelClient(BaseMLOpsClient):
 
         Parameters
         ----------
-        model_name : str
+        model_name: str
             The name of the model, in less than 32 characters
-        model_reference : str
+        model_reference: str
             The name of the scoring function inside the source file
-        source_file : str
+        source_file: str
             Path of the source file. The file must have a scoring function that accepts two parameters: data (data for the request body of the model) and model_path (absolute path of where the file is located)
-        model_file : str
+        model_file: str
             Path of the model pkl file
-        requirements_file : str
+        requirements_file: str
             Path of the requirements file. The packages versions must be fixed eg: pandas==1.0
-        schema : Union[str, dict]
+        schema: Union[str, dict]
             Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be sending as well. Mandatory for Sync models
-        group : str
+        group: str
             Group the model is inserted.
-        extra_files : list, optional
+        extra_files: list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
-        env : str, optional
+        env: str, optional
             .env file to be used in your model environment. This will be encrypted in the server.
-        python_version : str, optional
+        python_version: str, optional
             Python version for the model environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.10'
-        operation : str
+        operation: str
             Defines which kind operation is being executed (Sync or Async). Default value is Sync
-        input_type : str
+        input_type: str
             The type of the input file that should be 'json', 'csv' or 'parquet'
-        wait_for_ready : bool, optional
+        wait_for_ready: bool, optional
             Wait for model to be ready and returns a MLOpsModel instance with the new model. Defaults to True
 
         Raises
@@ -1723,11 +1723,11 @@ class MLOpsModelClient(BaseMLOpsClient):
 
         Parameters
         ----------
-        model_id : str
+        model_id: str
             Model id (hash)
-        exec_id : str
+        exec_id: str
             Execution id
-        group : str, optional
+        group: str, optional
             Group name, default value is None
 
         Returns

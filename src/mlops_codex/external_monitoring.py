@@ -145,17 +145,17 @@ class MLOpsExternalMonitoring(BaseMLOps):
 
         Parameters
         ----------
-        model_file : Optional[str], optional
+        model_file: Optional[str], optional
             Path to your `model.pkl` file. Defaults to None.
-        requirements_file : Optional[str], optional
+        requirements_file: Optional[str], optional
             Path to your `requirements.txt` file. Defaults to None.
-        preprocess_file : Optional[str], optional
+        preprocess_file: Optional[str], optional
             Path to your preprocessing file. Defaults to None.
-        preprocess_reference : Optional[str], optional
+        preprocess_reference: Optional[str], optional
             Preprocessing function entrypoint. Defaults to None.
-        shap_reference : Optional[str], optional
+        shap_reference: Optional[str], optional
             Shap function entrypoint. Defaults to None.
-        python_version : Optional[str], optional
+        python_version: Optional[str], optional
             Python version. Can be "3.8", "3.9", or "3.10". Defaults to "3.10".
 
         Raises
@@ -230,7 +230,7 @@ class MLOpsExternalMonitoring(BaseMLOps):
 
         Parameters
         ----------
-        wait : Optional[bool], optional
+        wait: Optional[bool], optional
             If true, wait until the host is validated or invalidate.
 
         Raises
@@ -366,9 +366,9 @@ class MLOpsExternalMonitoring(BaseMLOps):
 
         Parameters
         ----------
-        start : str
+        start: str
             Start date to look for the records. The format must be `dd-MM-yyyy`.
-        end : str
+        end: str
             End date to look for the records. The format must be `dd-MM-yyyy`.
         """
         url = f"{self.base_url}/monitoring/search/records/{self.group}/{self.ex_monitoring_hash}"
@@ -385,13 +385,13 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
 
     Parameters
     ----------
-    login : str
+    login: str
         Login for authenticating with the client.
         You can also use the env variable MLOPS_USER to set this
-    password : str
+    password: str
         Password for authenticating with the client.
         You can also use the env variable MLOPS_PASSWORD to set this
-    url : str
+    url: str
         URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
@@ -498,30 +498,30 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
 
         Parameters
         ----------
-        name : str
+        name: str
             External Monitoring name.
-        group : str
+        group: str
             External Monitoring group. The group is the same used for the external training and datasource.
-        training_execution_id : int
+        training_execution_id: int
             Valid MLOps training execution id.
-        period : str
+        period: str
             The frequency the monitoring will run. It can be one of the following: "Day", "Week", "Quarter",
             "Month", "Year".
-        input_cols : list
+        input_cols: list
             List with input column names.
-        output_cols : list
+        output_cols: list
             List with output column names.
-        datasource_name : str
+        datasource_name: str
             Valid MLOps datasource name.
-        extraction_type : str
+        extraction_type: str
             Type of extraction. It can be one of the following: "Incremental", "Full".
-        datasource_uri : str
+        datasource_uri: str
             Valid datasource URI.
-        column_name : Optional[str], optional
+        column_name: Optional[str], optional
             Column name of the data column.
-        reference_date : Optional[str], optional
+        reference_date: Optional[str], optional
             Reference extraction date.
-        python_version : Optional[str], optional
+        python_version: Optional[str], optional
             Python version used to run preprocessing scripts. It can be one of the following: "3.8", "3.9", "3.10". Defaults to "3.10".
 
         Raises
@@ -650,7 +650,7 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
 
         Parameters
         ----------
-        external_monitoring_hash : str
+        external_monitoring_hash: str
             External Monitoring Hash.
 
         Raises

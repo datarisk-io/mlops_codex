@@ -105,7 +105,7 @@ class MLOpsTrainingLogger:
 
         Parameters
         ----------
-        model : object
+        model: object
             The trained model.
         """
 
@@ -117,9 +117,9 @@ class MLOpsTrainingLogger:
 
         Parameters
         ----------
-        name : str
+        name: str
             The name of the metric.
-        value : float
+        value: float
             The value of the metric.
         """
 
@@ -131,7 +131,7 @@ class MLOpsTrainingLogger:
 
         Parameters
         ----------
-        model_output : object
+        model_output: object
             The output of the trained model.
         """
 
@@ -143,7 +143,7 @@ class MLOpsTrainingLogger:
 
         Parameters
         ----------
-        version : str
+        version: str
             The Python version.
         """
 
@@ -155,7 +155,7 @@ class MLOpsTrainingLogger:
 
         Parameters
         ----------
-        requirements : str
+        requirements: str
             The path of project requirements.
         """
 
@@ -167,9 +167,9 @@ class MLOpsTrainingLogger:
 
         Parameters
         ----------
-        plot : object
+        plot: object
             A Matplotlib/Plotly/Seaborn graphic object.
-        save_filename : str
+        save_filename: str
             A name to save the plot.
         """
 
@@ -214,7 +214,7 @@ class MLOpsTrainingLogger:
 
         Parameters
         ----------
-        extra : list
+        extra: list
             A list of paths of the extra files.
         """
 
@@ -226,9 +226,9 @@ class MLOpsTrainingLogger:
 
         Parameters
         ----------
-        extra : Union[pd.DataFrame, str]
+        extra: Union[pd.DataFrame, str]
             A path of an extra file or a list to include in extra file list.
-        filename : Optional[str], optional
+        filename: Optional[str], optional
             A filename if the extra is a DataFrame.
         """
 
@@ -251,7 +251,7 @@ class MLOpsTrainingLogger:
 
         Parameters
         ----------
-        filename : str
+        filename: str
             The name of output filename to save.
         """
 
@@ -399,19 +399,19 @@ class MLOpsTrainingExecution(MLOpsExecution):
 
     Parameters
     ----------
-    training_id : str
+    training_id: str
         Training id (hash) from the experiment you want to access
-    group : str
+    group: str
         Group the training is inserted.
-    exec_id : str
+    exec_id: str
         Execution id for that specific training run
-    login : str
+    login: str
         Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
-    password : str
+    password: str
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
-    environment : str
+    environment: str
         Environment of MLOps you are using.
-    run_data : dict
+    run_data: dict
         Metadata from the execution.
 
     Raises
@@ -493,23 +493,23 @@ class MLOpsTrainingExecution(MLOpsExecution):
 
         Parameters
         ---------
-        model_name : str
+        model_name: str
             The name of the model, in less than 32 characters
-        model_reference : str, optional
+        model_reference: Optional[str], optional
             The name of the scoring function inside the source file
-        source_file : str, optional
+        source_file: Optional[str], optional
             Path of the source file. The file must have a scoring function that accepts two parameters: data (data for the request body of the model) and model_path (absolute path of where the file is located)
-        schema : Union[str, dict], optional
+        schema: Union[str, dict], optional
             Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be sending as well
-        extra_files list, optional
+        extra_files: Optional[list], optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
-        requirements_file : str, optional
+        requirements_file: Optional[str], optional
             Path of the requirements file. This will override the requirements used in training. The packages versions must be fixed eg: pandas==1.0
-        env : str, optional
+        env: Optional[str], optional
             Flag that choose which environment (dev, staging, production) of MLOps you are using. Default is None
-        operation : str
+        operation: str
             Defines which kind operation is being executed (Sync or Async). Default value is Sync
-        input_type : str
+        input_type: str
             The type of the input file that should be 'json', 'csv' or 'parquet'
 
         Raises
@@ -645,9 +645,9 @@ class MLOpsTrainingExecution(MLOpsExecution):
 
         Parameters
         ----------
-        operation : str
+        operation: str
             The model operation type (Sync or Async)
-        model_id : str
+        model_id: str
             The uploaded model id (hash)
 
         Raises
@@ -699,23 +699,23 @@ class MLOpsTrainingExecution(MLOpsExecution):
 
         Parameters
         ---------
-        model_name : str
+        model_name: str
             The name of the model, in less than 32 characters
-        model_reference : str, optional
+        model_reference: Optional[str], optional
             The name of the scoring function inside the source file
-        source_file : str, optional
+        source_file: Optional[str], optional
             Path of the source file. The file must have a scoring function that accepts two parameters: data (data for the request body of the model) and model_path (absolute path of where the file is located)
-        schema : Union[str, dict], optional
+        schema: Union[str, dict], optional
             Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be sending as well
         extra_files: list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
-        requirements_file : str, optional
+        requirements_file: str, optional
             Path of the requirements file. This will override the requirements used in trainning. The packages versions must be fixed eg: pandas==1.0
-        env : str, optional
+        env: str, optional
             Flag that choose which environment (dev, staging, production) of MLOps you are using. Default is True
-        operation : str
+        operation: str
             Defines which kind operation is being executed (Sync or Async). Default value is Sync
-        input_type : str
+        input_type: str
             The type of the input file that should be 'json', 'csv' or 'parquet'
 
         Raises
@@ -793,17 +793,17 @@ class MLOpsTrainingExperiment(BaseMLOps):
 
     Parameters
     ----------
-    login : str
+    login: str
         Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
-    password : str
+    password: str
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
-    training_id : str
+    training_id: str
         Training id (hash) from the experiment you want to access
-    group : str
+    group: str
         Group the training is inserted.
-    environment : str
+    environment: str
         Flag that choose which environment of MLOps you are using. Test your deployment first before changing to production. Default is True
-    executions : List[int]
+    executions: List[int]
         Ids for the executions in that training
 
 
@@ -920,39 +920,39 @@ class MLOpsTrainingExperiment(BaseMLOps):
 
         Parameters
         ---------
-        run_name : str
+        run_name: str
             The name of the model, in less than 32 characters
-        train_data : str
+        train_data: str
             Path of the file with train data
-        training_type : str
+        training_type: str
             Can be Custom, AutoML or External
-        description : Optional[str], optional
+        description: Optional[str], optional
             Description of the experiment
-        training_reference : Optional[str], optional
+        training_reference: Optional[str], optional
             The name of the training function inside the source file. Just used when training_type is Custom
-        python_version : str
+        python_version: str
             Python version for the model environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.10'. Just used when training_type is Custom
-        conf_dict : Optional[Union[str, dict]], optional
+        conf_dict: Optional[Union[str, dict]], optional
             Path to a JSON file with the AutoML configuration. A dict can be sending as well. Just used when training_type is AutoML
-        source_file : Optional[str], optional
+        source_file: Optional[str], optional
             Path of the source file. The file must have a training function that accepts one parameter: model_path (absolute path of where the file is located). Just used when training_type is Custom
-        requirements_file : Optional[str], optional
+        requirements_file: Optional[str], optional
             Path of the requirements file. The packages versions must be fixed eg: pandas==1.0. Just used when training_type is Custom
-        env : Optional[str], optional
+        env: Optional[str], optional
             .env file to be used in your training environment. This will be encrypted in the server.
-        extra_files : Optional[list], optional
+        extra_files: Optional[list], optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file. Just used when training_type is Custom
         X_train: Optional[pd.DataFrame], optional
             The training data.
-        y_train : Optional[pd.Series], optional
+        y_train: Optional[pd.Series], optional
             The training labels.
-        model_outputs : Optional[pd.DataFrame], optional
+        model_outputs: Optional[pd.DataFrame], optional
             The model outputs.
-        model_file : Optional[str], optional
+        model_file: Optional[str], optional
             The path to the trained model file.
-        model_metrics : Optional[Union[str, dict]], optional
+        model_metrics: Optional[Union[str, dict]], optional
             The path to a JSON file with the model metrics or a dictionary with the metrics.
-        model_params : Optional[Union[str, dict]], optional
+        model_params: Optional[Union[str, dict]], optional
             The path to a JSON file with the model parameters or a dictionary with the parameters.
 
         Raises
@@ -1098,7 +1098,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
 
         Parameters
         ---------
-        exec_id : str
+        exec_id: str
             The uploaded training execution id (hash)
 
         Raises
@@ -1197,29 +1197,29 @@ class MLOpsTrainingExperiment(BaseMLOps):
 
         Parameters
         ---------
-        run_name : str
+        run_name: str
             The name of the model, in less than 32 characters
-        train_data : str
+        train_data: str
             Path of the file with train data.
-        training_reference : Optional[str], optional
+        training_reference: Optional[str], optional
             The name of the training function inside the source file. Just used when training_type is Custom
-        training_type : str
+        training_type: str
             Can be Custom, AutoML or External
-        description : Optional[str], optional
+        description: Optional[str], optional
             Description of the experiment
-        python_version : Optional[str], optional
+        python_version: Optional[str], optional
             Python version for the training environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.10'
-        conf_dict : Union[str, dict]
+        conf_dict: Union[str, dict]
             Path to a JSON file with the AutoML configuration. A dict can be sending as well. Just used when training_type is AutoML
-        source_file : Optional[str], optional
+        source_file: Optional[str], optional
             Path of the source file. The file must have a training function that accepts one parameter: model_path (absolute path of where the file is located). Just used when training_type is Custom
-        requirements_file : str
+        requirements_file: str
             Path of the requirements file. The packages versions must be fixed eg: pandas==1.0. Just used when training_type is Custom
-        env : Optional[str], optional
+        env: Optional[str], optional
             .env file to be used in your training enviroment. This will be encrypted in the server.
-        extra_files : Optional[list], optional
+        extra_files: Optional[list], optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file. Just used when training_type is Custom
-        wait_complete : Optional[bool], optional
+        wait_complete: Optional[bool], optional
             Boolean that informs if a model training is completed (True) or not (False). Default value is False
 
         Raises
@@ -1369,7 +1369,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
 
         Parameters
         ---------
-        exec_id : Optional[str], optional
+        exec_id: Optional[str], optional
             Execution id. If not informed we get the last execution.
 
         Returns
@@ -1456,11 +1456,11 @@ class MLOpsTrainingClient(BaseMLOpsClient):
 
     Parameters
     ----------
-    login : str
+    login: str
         Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
-    password : str
+    password: str
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
-    url : str
+    url: str
         URL to MLOps Server. Default value is https://neomaril.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
@@ -1497,9 +1497,9 @@ class MLOpsTrainingClient(BaseMLOpsClient):
 
         Parameters
         ---------
-        training_id : str
+        training_id: str
             Training id (hash) that needs to be acessed
-        group : str
+        group: str
             Group the model is inserted.
 
         Raises
@@ -1671,11 +1671,11 @@ class MLOpsTrainingClient(BaseMLOpsClient):
 
         Parameters
         ---------
-        experiment_name : str
+        experiment_name: str
             The name of the experiment, in less than 32 characters
-        model_type : str
+        model_type: str
             The name of the scoring function inside the source file.
-        group : str
+        group: str
             Group the model is inserted. Default to 'datarisk' (public group)
         force: Optional[bool], optional
             Forces to create a new training with the same model_type, experiment_name, group

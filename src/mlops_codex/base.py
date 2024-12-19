@@ -132,11 +132,11 @@ class BaseMLOpsClient(BaseMLOps):
 
     Parameters
     ----------
-    login : str
+    login: str
         Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
-    password : str
+    password: str
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
-    url : str
+    url: str
         URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
@@ -215,9 +215,9 @@ class BaseMLOpsClient(BaseMLOps):
 
         Parameters
         ----------
-        name : str
+        name: str
             Name of the group. Must be 32 characters long and with no special characters (some parsing will be made)
-        description : str
+        description: str
             Short description of the group
 
         Raises
@@ -283,9 +283,9 @@ class BaseMLOpsClient(BaseMLOps):
 
         Parameters
         ---------
-        name : str
+        name: str
             Name of the group to have the token refreshed
-        force : bool
+        force: bool
             Force token expiration even if it's still valid (this can make multiple models integrations stop working, so use with care)
 
         Raises
@@ -359,19 +359,19 @@ class MLOpsExecution(BaseMLOps):
 
     Parameters
     ----------
-    parent_id : str
+    parent_id: str
         Model id (hash) from the model you want to access
-    exec_type : str
+    exec_type: str
         Flag that contains which type of execution you use. It can be 'AsyncModel' or 'Training'
-    group : Optional[str], optional
+    group: Optional[str], optional
         Group the model is inserted
-    exec_id : Optional[str], optional
+    exec_id: Optional[str], optional
         Execution id
-    login : Optional[str], optional
+    login: Optional[str], optional
         Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
-    password : Optional[str], optional
+    password: Optional[str], optional
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
-    url : Optional[str], optional
+    url: Optional[str], optional
         URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
@@ -486,7 +486,7 @@ class MLOpsExecution(BaseMLOps):
         return f"""MLOps{self.exec_type}Execution(exec_id="{self.exec_id}", status="{self.status}")"""
 
     def __str__(self):
-        return f'MLOPS {self.exec_type }Execution :{self.exec_id} (Status: {self.status})"'
+        return f'MLOPS {self.exec_type }Execution:{self.exec_id} (Status: {self.status})"'
 
     def get_status(self) -> dict:
         """
@@ -551,9 +551,9 @@ class MLOpsExecution(BaseMLOps):
 
         Parameters
         ---------
-        path : Optional[str], optional
+        path: Optional[str], optional
             Path of the result file. Default value is './'
-        filename : Optional[str], optional
+        filename: Optional[str], optional
             Name of the result file. Default value is 'output.zip'
 
         Raises

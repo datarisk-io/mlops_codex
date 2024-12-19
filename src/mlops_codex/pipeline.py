@@ -21,15 +21,15 @@ class MLOpsPipeline(BaseMLOps):
 
     Parameters
     ----------
-    login : str
+    login: str
         Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
-    password : str
+    password: str
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
-    group : str
+    group: str
         Group the model is inserted
-    url : str
+    url: str
         URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
-    python_version : str
+    python_version: str
         Python version for the model environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.9'
 
     Example
@@ -80,7 +80,7 @@ class MLOpsPipeline(BaseMLOps):
 
         Parameters
         ----------
-        kwargs : list or dict
+        kwargs: list or dict
             List or dictionary with the necessary files for training
         """
         self.train_config = kwargs
@@ -91,7 +91,7 @@ class MLOpsPipeline(BaseMLOps):
 
         Parameters
         ----------
-        kwargs : list or dict
+        kwargs: list or dict
             List or dictionary with the necessary files for deploy
         """
         self.deploy_config = kwargs
@@ -102,7 +102,7 @@ class MLOpsPipeline(BaseMLOps):
 
         Parameters
         ----------
-        kwargs : list or dict
+        kwargs: list or dict
             List or dictionary with the necessary files for monitoring
 
         Example
@@ -118,7 +118,7 @@ class MLOpsPipeline(BaseMLOps):
 
         Parameters
         ----------
-        path : str
+        path: str
             Path of the configuration file, but it could be a dict
 
         Raises
@@ -279,7 +279,7 @@ class MLOpsPipeline(BaseMLOps):
 
         Parameters
         ----------
-        training_id : Optional[str], optional
+        training_id: Optional[str], optional
             The id for the training process that you want to deploy now
 
         Raises
@@ -376,9 +376,9 @@ class MLOpsPipeline(BaseMLOps):
 
         Parameters
         ----------
-        training_exec_id : Optional[str], optional
+        training_exec_id: Optional[str], optional
             The id for the training execution process that you want to monitore now
-        model_id : Optional[str], optional
+        model_id: Optional[str], optional
             Model hash
 
         Example

@@ -32,15 +32,15 @@ class MLOpsPreprocessing(BaseMLOps):
 
     Parameters
     ----------
-    login : str
+    login: str
         Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
-    password : str
+    password: str
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
-    preprocessing_id : str
+    preprocessing_id: str
         Preprocessing script id (hash) from the script you want to access
-    group : str
+    group: str
         Group the model is inserted.
-    base_url : str
+    base_url: str
         URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Example
@@ -129,13 +129,13 @@ class MLOpsPreprocessing(BaseMLOps):
 
         Parameters
         -----------
-        start : Optional[str], optional
+        start: Optional[str], optional
             Date to start filter. At the format aaaa-mm-dd
-        end : Optional[str], optional
+        end: Optional[str], optional
             Date to end filter. At the format aaaa-mm-dd
-        routine : Optional[str], optional
+        routine: Optional[str], optional
             Type of routine beeing executed, can assume values Host or Run
-        type : Optional[str], optional
+        type: Optional[str], optional
             Defines the type of the logs that are going to be filtered, can assume the values Ok, Error, Debug or Warning
 
         Raises
@@ -175,7 +175,7 @@ class MLOpsPreprocessing(BaseMLOps):
 
         Parameters
         ----------
-        group_token : str
+        group_token: str
             Token for executing the preprocessing (show when creating a group). You can set this using the MLOPS_GROUP_TOKEN env variable
 
         Example
@@ -198,13 +198,13 @@ class MLOpsPreprocessing(BaseMLOps):
 
         Parameters
         ----------
-        data : Union[dict, str]
+        data: Union[dict, str]
             The same data that is used in the source file.
             If Sync is a dict, the keys that are needed inside this dict are the ones in the `schema` attribute.
             If Async is a string with the file path with the same filename used in the source file.
-        group_token : str, optional
+        group_token: Optional[str], optional
             Token for executing the preprocessing (show when creating a group). It can be informed when getting the preprocessing or when running predictions, or using the env variable MLOPS_GROUP_TOKEN
-        wait_complete: bool, optional
+        wait_complete: Optional[bool], optional
             Boolean that informs if a preprocessing training is completed (True) or not (False). Default value is False
 
         Raises
@@ -368,11 +368,11 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
 
     Parameters
     ----------
-    login : str
+    login: str
         Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
-    password : str
+    password: str
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
-    url : str
+    url: str
         URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
@@ -408,7 +408,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
 
         sync_preprocessing.set_token('TOKEN')
 
-        result = sync_preprocessing.run({'variable' : 100})
+        result = sync_preprocessing.run({'variable': 100})
         result
 
     Example 2: creation and deployment of an Asynchronous Preprocess script
@@ -485,9 +485,9 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
 
         Parameters
         ----------
-        group : str
+        group: str
             Group the preprocessing is inserted
-        preprocessing_id : str
+        preprocessing_id: str
             Pre processing id (hash) from the preprocessing being searched
 
         Raises
@@ -531,13 +531,13 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
 
         Parameters
         ----------
-        preprocessing_id : str
+        preprocessing_id: str
             Pre processing id (hash) that needs to be accessed.
-        group : str
+        group: str
             Group the preprocessing is inserted.
-        group_token : Optional[str], optional
+        group_token: Optional[str], optional
             Token for executing the preprocessing (show when creating a group). It can be informed when getting the preprocessing or when running predictions, or using the env variable MLOPS_GROUP_TOKEN
-        wait_for_ready : Optional[bool], optional
+        wait_for_ready: Optional[bool], optional
             If the preprocessing is being deployed, wait for it to be ready instead of failing the request. Defaults to True.
 
         Raises
@@ -623,13 +623,13 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
 
         Parameters
         ----------
-        name : Optional[str], optional
+        name: Optional[str], optional
             Text that it's expected to be on the preprocessing name. It runs similar to a LIKE query on SQL
-        state : Optional[str], optional
+        state: Optional[str], optional
             Text that it's expected to be on the state. It runs similar to a LIKE query on SQL
-        group : Optional[str], optional
+        group: Optional[str], optional
             Text that it's expected to be on the group name. It runs similar to a LIKE query on SQL
-        only_deployed : Optional[bool], optional
+        only_deployed: Optional[bool], optional
             If it's True, filter only preprocessing ready to be used (status == "Deployed"). Defaults to False
 
         Raises
@@ -705,15 +705,15 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
 
         Parameters
         ----------
-        preprocessing_id : str
+        preprocessing_id: str
             Pre processing id (hash)
-        start : str, optional
+        start: Optional[str], optional
             Date to start filter. At the format aaaa-mm-dd
-        end : Optional[str], optional
+        end: Optional[str], optional
             Date to end filter. At the format aaaa-mm-dd
-        routine : Optional[str], optional
+        routine: Optional[str], optional
             Type of routine being executed, can assume values 'Host' (for deployment logs) or 'Run' (for execution logs)
-        type : Optional[str], optional
+        type: Optional[str], optional
             Defines the type of the logs that are going to be filtered, can assume the values 'Ok', 'Error', 'Debug' or 'Warning'
 
         Raises
@@ -767,27 +767,27 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
 
         Parameters
         ----------
-        preprocessing_name : str
+        preprocessing_name: str
             The name of the preprocessing, in less than 32 characters
-        preprocessing_reference : str
+        preprocessing_reference: str
             The name of the scoring function inside the source file
-        source_file : str
+        source_file: str
             Path of the source file. The file must have a scoring function that accepts two parameters: data (data for the request body of the preprocessing) and preprocessing_path (absolute path of where the file is located)
-        requirements_file : str
+        requirements_file: str
             Path of the requirements file. The packages versions must be fixed eg: pandas==1.0
-        schema : Union[str, dict], optional
+        schema: Union[str, dict], optional
             Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be sending as well
-        group : str, optional
+        group: str, optional
             Group the preprocessing is inserted. If None the server uses 'datarisk' (public group)
-        extra_files : list, optional
+        extra_files: list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
-        env : str, optional
+        env: str, optional
             Flag that choose which environment (dev, staging, production) of MLOps you are using. Default is True
-        python_version : str, optional
+        python_version: str, optional
             Python version for the preprocessing environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.10'
-        operation : str
+        operation: str
             Defines which kind operation is being executed (Sync or Async). Default value is Sync
-        input_type : str
+        input_type: str
             The type of the input file that should be 'json', 'csv' or 'parquet'
 
         Raises
@@ -883,11 +883,11 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
 
         Parameters
         ----------
-        operation : str
+        operation: str
             The preprocessing operation type (Sync or Async)
-        preprocessing_id : str
+        preprocessing_id: str
             The uploaded preprocessing id (hash)
-        group : str
+        group: str
             Group the preprocessing is inserted. Default is 'datarisk' (public group)
 
         Raises
@@ -950,29 +950,29 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
 
         Parameters
         ----------
-        preprocessing_name : str
+        preprocessing_name: str
             The name of the preprocessing, in less than 32 characters
-        preprocessing_reference : str
+        preprocessing_reference: str
             The name of the scoring function inside the source file
-        source_file : str
+        source_file: str
             Path of the source file. The file must have a scoring function that accepts two parameters: data (data for the request body of the preprocessing) and preprocessing_path (absolute path of where the file is located)
-        requirements_file : str
+        requirements_file: str
             Path of the requirements file. The packages versions must be fixed eg: pandas==1.0
-        group : str
+        group: str
             Group the preprocessing is inserted.
-        schema : Optional[Union[str, dict]]
+        schema: Optional[Union[str, dict]]
             Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be sending as well. Mandatory for Sync preprocessing
-        extra_files : Optional[list], optional
+        extra_files: Optional[list], optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
-        env : Optional[str], optional
+        env: Optional[str], optional
             Flag that choose which environment (dev, staging, production) of MLOps you are using. Default is True
-        python_version : Optional[str], optional
+        python_version: Optional[str], optional
             Python version for the preprocessing environment. Avaliable versions are 3.8, 3.9, 3.10. Defaults to '3.10'
-        operation : str
+        operation: str
             Defines wich kind operation is beeing executed (Sync or Async). Default value is Sync
-        input_type : str
+        input_type: str
             The type of the input file that should be 'json', 'csv' or 'parquet'
-        wait_for_ready : Optional[bool], optional
+        wait_for_ready: Optional[bool], optional
             Wait for preprocessing to be ready and returns a MLOpsPreprocessing instace with the new preprocessing. Defaults to True
 
         Raises
@@ -1025,11 +1025,11 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
 
         Parameters
         ----------
-        preprocessing_id : str
+        preprocessing_id: str
             Pre processing id (hash)
-        exec_id : str
+        exec_id: str
             Execution id
-        group : str, optional
+        group: str, optional
             Group name, default value is None
 
         Returns

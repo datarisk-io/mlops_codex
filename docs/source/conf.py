@@ -69,8 +69,8 @@ html_theme_options = {
             # Add additional attributes to the href link.
             # The defaults of target, rel, class, title and href may be overwritten.
             "attributes": {
-               "target" : "_blank",
-               "rel" : "noopener me",
+               "target": "_blank",
+               "rel": "noopener me",
                "class": "nav-link custom-fancy-css"
             }
         },
