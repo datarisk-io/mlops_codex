@@ -5,7 +5,7 @@ Preprocessing module
 Module with all classes and methods to manage the Preprocessing scripts deployed at MLOps.
 
 
-mlops\_codex.preprocessing.MLOpsPreprocessing
+MLOpsPreprocessing
 ---------------------------------------------------------
 
 .. autoclass:: mlops_codex.preprocessing.MLOpsPreprocessing
@@ -14,7 +14,7 @@ mlops\_codex.preprocessing.MLOpsPreprocessing
    :show-inheritance:
 
 
-mlops\_codex.preprocessing.MLOpsPreprocessingClient
+MLOpsPreprocessingClient
 ------------------------------------------------------------
 
 .. autoclass:: mlops_codex.preprocessing.MLOpsPreprocessingClient

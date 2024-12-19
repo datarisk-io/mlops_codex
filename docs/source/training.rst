@@ -5,7 +5,7 @@ Training module
 Module with the classes that allows to manage your training experiments.
 
 
-mlops\_codex.training.MLOpsTrainingExecution
+MLOpsTrainingExecution
 --------------------------------------------------
 
 .. autoclass:: mlops_codex.training.MLOpsTrainingExecution
@@ -14,7 +14,7 @@ mlops\_codex.training.MLOpsTrainingExecution
    :show-inheritance:
 
 
-mlops\_codex.training.MLOpsTrainingExperiment
+MLOpsTrainingExperiment
 ---------------------------------------------------
 
 .. autoclass:: mlops_codex.training.MLOpsTrainingExperiment
@@ -23,7 +23,7 @@ mlops\_codex.training.MLOpsTrainingExperiment
    :show-inheritance:
 
 
-mlops\_codex.training.MLOpsTrainingClient
+MLOpsTrainingClient
 --------------------------------------------------
 
 .. autoclass:: mlops_codex.training.MLOpsTrainingClient

@@ -130,14 +130,14 @@ class BaseMLOpsClient(BaseMLOps):
     A group is a way to organize models clustering for different users and also to increase security.
     Each group has a unique token that should be used to run the models that belongs to that.
 
-    Attributes
+    Parameters
     ----------
-    login : str
+    login: str
         Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
-    password : str
+    password: str
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
-    url : str
-        URL to MLOps Server. Default value is https://neomaril.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
+    url: str
+        URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
     ------
@@ -173,7 +173,7 @@ class BaseMLOpsClient(BaseMLOps):
         Returns
         -------
         list
-            List with the groups that exists in the database
+            Return groups that exists in the database
         """
 
         url = f"{self.base_url}/groups"
@@ -208,27 +208,31 @@ class BaseMLOpsClient(BaseMLOps):
         logger.error(f"Something went wrong...\n{formatted_msg}")
         raise InputError("Bad Input. Client error")
 
-    def create_group(self, *, name: str, description: str) -> bool:
+    def create_group(self, *, name: str, description: str) -> str:
         """
         Create a group for multiple models of the same final client at the end if it returns TRUE, a message with the token for that group will be returned as a INFO message.
         You should keep this token information to be able to run the model of that group afterward.
 
-        Arguments
-        ---------
-        name : str
+        Parameters
+        ----------
+        name: str
             Name of the group. Must be 32 characters long and with no special characters (some parsing will be made)
-        description : str
+        description: str
             Short description of the group
 
         Raises
         ------
+        AuthenticationError
+            Raised if there is an authentication issue.
+        GroupError
+            Raised if there is an error related to the group.
         ServerError
-            Unexpected server error
+            Raised if the server encounters an issue.
 
         Returns
         -------
-        bool
-            Returns True if the group was successfully created and False if not
+        str
+            Returns the group token
         """
         data = {"name": name, "description": description}
 
@@ -271,28 +275,34 @@ class BaseMLOpsClient(BaseMLOps):
         logger.error(f"Something went wrong:\n {formatted_msg}")
         raise InputError("Bad Input. Client error")
 
-    def refresh_group_token(self, *, name: str, force: bool = False) -> bool:
+    def refresh_group_token(self, *, name: str, force: bool = False) -> str:
         """
         Refresh the group token. If the token it's still valid it won't be changed, unless you use parameter force = True.
         At the end a message with the token for that group will be returned as a INFO message.
         You should keep this new token information to be able to run the model of that group afterward.
 
-        Arguments
+        Parameters
         ---------
-        name : str
+        name: str
             Name of the group to have the token refreshed
-        force : str
-            Force token expiration even if its still valid (this can make multiple models integrations stop working, so use with care)
+        force: bool
+            Force token expiration even if it's still valid (this can make multiple models integrations stop working, so use with care)
 
         Raises
         ------
+        AuthenticationError
+            Raised if there is an authentication issue.
+        GroupError
+            Raised if there is an error related to the group.
         ServerError
-            Unexpected server error
+            Raised if the server encounters an issue.
+        InputError
+            Something went wrong in the input
 
         Returns
         -------
-        bool
-            Returns True if the group was successfully created and False if not.
+        str
+            Returns group token.
 
         Example
         --------
@@ -347,22 +357,22 @@ class MLOpsExecution(BaseMLOps):
     """
     Base class for MLOps asynchronous model executions. With this class you can visualize the status of an execution and download the results after and execution has finished.
 
-    Attributes
+    Parameters
     ----------
-    parend_id : str
+    parent_id: str
         Model id (hash) from the model you want to access
-    exec_type : str
+    exec_type: str
         Flag that contains which type of execution you use. It can be 'AsyncModel' or 'Training'
-    group : str, optional
+    group: Optional[str], optional
         Group the model is inserted
-    exec_id : str, optional
+    exec_id: Optional[str], optional
         Execution id
-    login : str
+    login: Optional[str], optional
         Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
-    password : str
+    password: Optional[str], optional
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
-    url : str
-        URL to MLOps Server. Default value is https://neomaril.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
+    url: Optional[str], optional
+        URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
     ------
@@ -476,7 +486,7 @@ class MLOpsExecution(BaseMLOps):
         return f"""MLOps{self.exec_type}Execution(exec_id="{self.exec_id}", status="{self.status}")"""
 
     def __str__(self):
-        return f'MLOPS {self.exec_type }Execution :{self.exec_id} (Status: {self.status})"'
+        return f'MLOPS {self.exec_type }Execution:{self.exec_id} (Status: {self.status})"'
 
     def get_status(self) -> dict:
         """
@@ -539,22 +549,17 @@ class MLOpsExecution(BaseMLOps):
         """
         Gets the output of the execution.
 
-        Arguments
+        Parameters
         ---------
-        path : str
+        path: Optional[str], optional
             Path of the result file. Default value is './'
-        filename : str
+        filename: Optional[str], optional
             Name of the result file. Default value is 'output.zip'
 
         Raises
         ------
         ExecutionError
-            Execution unavailable
-
-        Returns
-        -------
-        dict
-            Returns the path for the result file.
+            Execution is unavailable or failed status.
         """
         if self.status in [ModelExecutionState.Running, ModelExecutionState.Requested]:
             self.status = ModelExecutionState[self.get_status()["Status"]]

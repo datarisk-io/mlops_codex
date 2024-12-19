@@ -10,7 +10,7 @@ class Logger:
 
     Attributes
     -----------
-    model_type : str
+    model_type: str
         Attribute that designates the type of the model being executed. Can be 'Sync' or 'Async'
 
     Raises
@@ -66,9 +66,9 @@ class Logger:
 
         Parameters
         -----------
-        level : str
+        level: str
             Log level (must be one used when initiating the logger)
-        message : str
+        message: str
             Message that will be logged
         """
 
@@ -99,7 +99,7 @@ class Logger:
 
         Parameters
         ----------
-        message : str
+        message: str
             Message that will be logged
         """
         self.__log("DEBUG", message)
@@ -110,7 +110,7 @@ class Logger:
 
         Parameters
         ----------
-        message : str
+        message: str
             Message that will be logged
         """
         self.__log("WARNING", message)
@@ -121,7 +121,7 @@ class Logger:
 
         Parameters
         ----------
-        message : str
+        message: str
             Message that will be logged
         """
         self.__log("ERROR", message)
@@ -148,7 +148,7 @@ class Logger:
 
         Parameters
         ----------
-        output : str
+        output: str
             Output of the function being executed.
         """
 
