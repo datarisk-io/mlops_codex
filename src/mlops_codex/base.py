@@ -48,7 +48,7 @@ class BaseMLOps:
         if url is None:
             url = os.getenv("MLOPS_URL")
         if url is None:
-            url = "https://mlops.datarisk.net/"
+            url = "https://neomaril.datarisk.net/"
 
         self.credentials = (
             login if login else os.getenv("MLOPS_USER"),
@@ -137,7 +137,7 @@ class BaseMLOpsClient(BaseMLOps):
     password : str
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     url : str
-        URL to MLOps Server. Default value is https://mlops.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
+        URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
     ------
@@ -372,7 +372,7 @@ class MLOpsExecution(BaseMLOps):
     password : Optional[str], optional
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     url : Optional[str], optional
-        URL to MLOps Server. Default value is https://mlops.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
+        URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
     ------
