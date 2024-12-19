@@ -5,7 +5,7 @@ Pipeline module
 This module allows you to configure your model pipeline.
 
 
-mlops\_codex.pipeline.MLOpsPipeline
+MLOpsPipeline
 -----------------------------------------
 
 .. autoclass:: mlops_codex.pipeline.MLOpsPipeline

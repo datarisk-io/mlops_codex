@@ -5,7 +5,7 @@ Base module
 Module with the base classes used at MLOps.
 
 
-mlops\_codex.base.BaseMLOps
+BaseMLOps
 --------------------------------------------------
 
 .. autoclass:: mlops_codex.base.BaseMLOps
@@ -14,7 +14,7 @@ mlops\_codex.base.BaseMLOps
    :show-inheritance:
 
 
-mlops\_codex.base.BaseMLOpsClient
+BaseMLOpsClient
 ---------------------------------------------------
 
 .. autoclass:: mlops_codex.base.BaseMLOpsClient
@@ -23,7 +23,7 @@ mlops\_codex.base.BaseMLOpsClient
    :show-inheritance:
 
 
-mlops\_codex.base.MLOpsExecution
+MLOpsExecution
 --------------------------------------------------
 
 .. autoclass:: mlops_codex.base.MLOpsExecution

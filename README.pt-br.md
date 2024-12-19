@@ -16,9 +16,9 @@ Pacote para interagir com o MLOps, uma ferramenta para deploy de modelos de Mach
 
 ### Como usar
 
-Leia a [documentação](https://datarisk-io.github.io/mlops-mlops_codex) para mais informações.
+Leia a [documentação](https://datarisk-io.github.io/mlops_codex) para mais informações.
 
-Disponibilizamos também alguns notebooks de [exemplo](https://github.com/datarisk-io/mlops-mlops_codex/tree/master/notebooks).
+Disponibilizamos também alguns notebooks de [exemplo](https://github.com/datarisk-io/mlops_codex/tree/master/notebooks).
 
 ### Para desenvolvedores
 

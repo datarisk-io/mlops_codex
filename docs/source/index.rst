@@ -6,11 +6,9 @@
 MLOps Codex
 ==============
 
-Its a Package for interacting with MLOps.
-Datarisk MLOps is an platform for Machine Learning (ML) models management, allowing the users to train, deploy and monitor those models.
-The users will need to host its Python scripts and notebooks to MLOps Codex to use the MLOps API.
-
-
+MLOps Codex is a Python package designed to facilitate interaction with MLOps platforms.
+Datarisk MLOps is a comprehensive platform for managing Machine Learning (ML) models, enabling users to seamlessly train, deploy, and monitor their models.
+To utilize the MLOps API, users must host their Python scripts and notebooks within the MLOps Codex environment.
 
 Installation
 ---------------
@@ -45,7 +43,7 @@ All classes and functions exposed in mlops_codex.* namespace are public.
 
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 3
    :caption: Docs:
 
    mlops_codex

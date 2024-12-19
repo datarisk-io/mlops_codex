@@ -15,7 +15,7 @@ def train_model(df: pd.DataFrame, base_path:str): # O nome da função (train_mo
     como exemplificado no código nas linhas 59-62.
     Caso não queira deixar o nome da base de dados fixo, o MLOps carrega o nome desse arquivo
     na variável de ambiente (exemplo nas linhas 64-65):
-    inputFileName : str
+    inputFileName: str
         Que contém o nome do arquivo da base de dados que foi feito upload
 
 
@@ -24,7 +24,7 @@ def train_model(df: pd.DataFrame, base_path:str): # O nome da função (train_mo
     df: pd.Dataframe
         Pandas dataframe que será manipulado.
         Esse valor é obrigatório
-    base_path : str
+    base_path: str
         O caminho de pastas para os arquivos que serão usados. 
         O usuário pode usar um valor default para testes locais, mas no MLOps será usado o caminho 
         remoto dos arquivos.

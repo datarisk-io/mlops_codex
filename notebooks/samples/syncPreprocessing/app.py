@@ -9,9 +9,9 @@ def process(data:str, base_path:str): # O nome da função (process) é que deve
     
     Parâmetros
     ---------
-    data : str
+    data: str
         Os dados que serão usados pelo modelo que deverão chegar no formato string
-    base_path : str
+    base_path: str
         O caminho para o arquivo do modelo e outros arquivos complementares
 
     Retorno

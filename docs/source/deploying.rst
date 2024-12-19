@@ -1,26 +1,20 @@
 Deploying to production
 =======================
 
-When deploying a model to MLOps we create an API so you can connect your model with other services. You can also use MLOps Codex to execute your model remotely inside a python application.
+When deploying a model using MLOps Codex, an API is created to facilitate the integration of your model with other services. Additionally, MLOps Codex allows you to execute your model remotely within a Python application.
 
 
 Preparing to production
 ------------------------
 
-The first thing we need is the scoring script. Similar to the training we need a entrypoint function. The parameters and return of this function will depend on the model operation. 
+The first requirement is the scoring script. Similar to the training process, this script needs an entry point function. The parameters and return value of this function will depend on the specific operation of the model.
 
 
 **Sync model:** This is the "real time" model. The model will expect a JSON and return a JSON after a few seconds.
 The entrypoint function should look like this:
 
-.. code:: python
+.. code-block:: python
 
-    # Function that describes the steps for MLOps to execute the trained model.
-    # The input parameters are:
-    #   data:str
-    #       The data that will be used by the model must arrive in string format
-    #   base_path:str
-    #       The path to the template file and other supplementary files
     def score(data:str, base_path:str): # It is the name of the function (score) that must be passed in the 'model_reference' field
 
         # Environment variables loaded from a user-supplied file in the 'env' field
@@ -42,23 +36,20 @@ The entrypoint function should look like this:
         # It's important to note that in this case, as we're converting to JSON, we can't use numpy types, so we convert to pure int and float.
         return {"pred": int(model.predict(df)), "proba": float(model.predict_proba(df)[0,1])}
 
-The first parameter is the JSON data that will be sent to the model (this comes as a JSON string, so you should parse it the way you want).
-The other one is the path. Like the training you can use it to open the model files and other files you will upload (see next section).
-The return of the function should be a dictionary that can be parsed to a JSON, or a already valid JSON string. 
+The first parameter is the JSON data to be sent to the model, which is provided as a JSON string and should be parsed as needed.
 
-Keep in mind that some data types (like numpy `int64` and `float64` values) cannot normally be parsed to JSON, so your code should handle that before returning the response to MLOps. 
+The second parameter is the path, which can be used to access the model files and any other files you upload, similar to the training process.
+
+The function should return a dictionary that can be converted to JSON or a valid JSON string.
+
+Please note that certain data types, such as numpy `int64` and `float64`, cannot typically be parsed to JSON. Therefore, your code should address this before returning the response to MLOps.
 
 **Async model:** This is for batch scoring. We send files with usually a lot of records at once. Since this might take a while depending on the file size, we run this asynchronously.
+
 The entrypoint function should look like this:
 
-.. code:: python
+.. code-block:: python
 
-    # Function that describes the steps for MLOps to run the trained model.
-    # The input parameters are:
-        # data_path : str
-            # The path to the data that will be used by the model, which should arrive in string format
-        # model_path : str
-            # The path to the model file and other complementary files
     def score(data_path:str, model_path:str):## Environment variables loaded from a file supplied by the user in the 'env' field
 
         # my_var = os.getenv('MY_VAR')
@@ -92,10 +83,11 @@ The entrypoint function should look like this:
         # Returns the path to the file with the results of the model run
         return output
 
-The first parameter is now also a path for the data. We have different path parameter because each async model execution is saved in a different place. And the files uploaded when deploying the model are kept the same every time.
-If you want to keep your code more dynamic (and don't want to enforce a file name pattern) you can use the `inputFileName` env variable, that will be same as the filename uploaded for that execution.
-You must save the result in the same path you got the input file. And the return of that function should be this full path.
+The first parameter now serves as a data path. We have distinct path parameters because each asynchronous model execution is stored in a different location. The files uploaded during model deployment remain consistent each time.
 
+To maintain a more dynamic code structure without enforcing a specific file name pattern, you can utilize the `inputFileName` environment variable, which corresponds to the filename uploaded for that execution.
+
+You must save the result in the same path where the input file was located. The function should return this full path.
 
 Deploying your model
 --------------------
@@ -104,7 +96,7 @@ With all files ready we can deploy the model in two ways.
 
 - Using the :py:meth:`mlops_codex.training.MLOpsTrainingExecution.promote_model` to promote a succeeded training execution.
 
-.. code:: python
+.. code-block:: python
 
     # Promoting a custom training execution
     model = custom_run.promote_model(
@@ -127,7 +119,7 @@ With all files ready we can deploy the model in two ways.
 
 - Using the :py:meth:`mlops_codex.model.MLOpsModelClient.create_model` to deploy a model trained outside MLOps
 
-.. code:: python
+.. code-block:: python
     
     # Deploying a new model
     model = client.create_model(
@@ -145,69 +137,89 @@ With all files ready we can deploy the model in two ways.
     )
 
 
-As you can see deploying a model already trained in MLOps requires less information (the AutoML models require only 2 parameters).
-
-Those methods return a :py:class:`mlops_codex.model.MLOpsModel`. You can use the *wait_for_ready* parameter on the deployment method or call the :py:meth:`mlops_codex.model.MLOpsModel.wait_ready` to make sure the :py:class:`mlops_codex.model.MLOpsModel` instance is ready to use.
-We will install the model dependencies (if you are promoting a training we will use the same as the training execution), and run some tests. For the sync models we require a sample JSON of the expected schema for the API.
+Deploying a pre-trained model in MLOps requires minimal information, as AutoML models need only two parameters.
 
 If the deployment succeeds you can start using your model.
 
+These methods return an instance of :py:class:`mlops_codex.model.MLOpsModel`. You can utilize the wait_for_ready parameter during deployment or invoke the :py:meth:`mlops_codex.model.MLOpsModel.wait_ready` method to ensure the :py:class:`mlops_codex.model.MLOpsModel` instance is ready for use. We will install the necessary model dependencies (if you are promoting a training, we will use the same dependencies as the training execution) and conduct some tests. For synchronous models, a sample JSON of the expected API schema is required.
+
+If the deployment is successful, you can begin using your model.
+
 Using your model
----------------------
+----------------
 
 We can use the same :py:class:`mlops_codex.model.MLOpsModel` instance to call the model.
 
-.. code:: python
+.. code-block:: python
 
+    # For sync models
     sync_model.predict(data={'key': 'value'})
-    # >>> {'pred': 0, 'proba': 0.005841062869876623}
-    
+
+    # For async models
     execution = async_model.predict(data=PATH+'input.csv')
-    # >>> 2023-05-26 12:04:14.714 | INFO     | mlops_codex.model:predict:344 - Execution 5 started. Use the id to check its status.
+
+Synchronous models return a dictionary, while asynchronous models return an instance of the :py:class:`mlops_codex.base.MLOpsExecution`. This instance allows you to monitor the status and download the results, similar to how you would with training executions.
+
+To use the models, you will need a `group token`, which is generated when creating the group (see :ref:`connecting_to_mlops:creating a group`). You can set this token by adding it to the `MLOPS_GROUP_TOKEN` environment variable, using the :py:meth:`mlops_codex.model.MLOpsModel.set_token` method, or passing it directly in each :py:meth:`mlops_codex.model.MLOpsModel.predict` call.
+
+In many cases, you may need to use your model outside of a Python environment, often by sharing it through a REST API. To facilitate this, you can access the :py:attr:`mlops_codex.model.MLOpsModel.docs` attribute to share an OpenAPI Swagger page, or use the :py:meth:`mlops_codex.model.MLOpsModel.generate_predict_code` method to generate sample request code for your model.
+
+Disabling your model
+----------------
+
+Disabling a model means you will no longer be able to perform certain operations on it. Before proceeding, please ensure you have confirmation from your team regarding the permission to perform this operation.
+To disable a model, you can use the :py:meth:`mlops_codex.model.MLOpsModel.disable` method.
+
+.. code-block:: python
+
+    model.disable()
 
 
-Sync models return a dictionary and async models return a :py:class:`mlops_codex.base.MLOpsExecution` that you can use to check the status and download the result similar to the training execution.
+Deleting your model
+----------------
 
-To use the models you need a `group token`, that is generated when creating the group (check :ref:`connecting_to_mlops:creating a group`). You can add this token in the MLOPS_GROUP_TOKEN env variable, use the :py:meth:`mlops_codex.model.MLOpsModel.set_token` method or add in each :py:meth:`mlops_codex.model.MLOpsModel.predict` call.
+Deleting a model will make it unavailable. Before proceeding, please confirm with your team that you have permission to carry out this operation.
+To delete a model, you can use the :py:meth:`mlops_codex.model.MLOpsModel.delete` method.
 
+.. code-block:: python
 
-Most of the time you might need to used your model outside a python environment, sharing it through a REST API.
-You can call the :py:attr:`mlops_codex.model.MLOpsModel.docs` attribute to share a OpenAPI Swagger page, or use the :py:meth:`mlops_codex.model.MLOpsModel.generate_predict_code` method to create a sample request code to your model. 
+    model.delete()
 
 
 Monitoring your model
 ---------------------
 
-Model monitoring means keeping track of how the model is being used in production, so you can update it if it starts making bad predictions.
+Model monitoring involves tracking the model's performance in production to enable updates if it begins to make inaccurate predictions.
 
-For now, MLOps only does indirect monitoring. This means that MLOps follows the input of the model in production and checks if it is close to the data presented to the model in training.
-So, when configuring the monitoring system, we need to know which training generated that model and what features are relevant to monitoring the model.
+Currently, MLOps employs indirect monitoring. This means it observes the model's input in production and verifies its similarity to the training data.
+When setting up the monitoring system, it is essential to identify which training process produced the model and which features are pertinent for monitoring.
 
-We offer both "Population Stability Index" (PSI and PSI average) and "SHapley Additive exPlanations" (SHAP and SHAP average) metrics.
+We provide metrics such as the "Population Stability Index" (PSI and PSI average) and "SHapley Additive exPlanations" (SHAP and SHAP average).
 
-Besides that, we need to know how to correctly handle the features and the model. 
+Additionally, it is crucial to understand how to manage the features and the model effectively.
 
-The production data is saved raw, and the training data is not (check :ref:`training_guide:Running a training execution`). So we need to know the steps in processing the raw production data to get the model features like the ones we saved during training: :ref:`monitoring_parameters:Monitoring configuration`
+Production data is stored in its raw form, while training data is not (see training guide: :ref:`training_guide:Running a training execution`). Therefore, it is important to know the steps for processing raw production data to derive model features similar to those saved during training: :ref:`monitoring_parameters:Monitoring configuration`.
 
-The first method you need to call is :py:meth:`mlops_codex.pipeline.MLOpsPipeline.register_monitoring_config`, which is responsible for registering the monitoring configuration at the database.
+The first method to invoke is :py:meth:`mlops_codex.pipeline.MLOpsPipeline.register_monitoring_config`, which registers the monitoring configuration in the database.
 
-.. code:: python
-    # # We can also add a monitoring configuration for the model
+.. code-block:: python
+
+    # We can also add a monitoring configuration for the model
 
     PATH = './samples/monitoring/'
 
     model.register_monitoring(
         preprocess_reference='parse', # name of the preprocess function
-        shap_reference='get_shap', # name of the preprocess function
+        shap_reference='get_shap', # name of the shap function
         configuration_file=PATH+'configuration.json', # Path of the configuration file, but it could be a dict
         preprocess_file=PATH+'preprocess_sync.py', # Path of the preprocess script
         requirements_file=PATH+'requirements.txt' # Path of the requirements file                        
     )
-    # >>> 2023-10-26 09:18:46.940 | INFO     | mlops_codex.model:register_monitoring:604 - Monitoring created - Hash: "M3aa182ff161478a97f4d3b2dc0e9b064d5a9e7330174daeb302e01586b9654c"
 
 Next, you can manually run the monitoring process, calling the method :py:meth:`mlops_codex.pipeline.MLOpsPipeline.run_monitoring`.
 
-.. code:: python
+.. code-block:: python
+
     pipeline = MLOpsPipeline.from_config_file('./samples/pipeline-just-model.yml')
     pipeline.register_monitoring_config(
         directory = "./samples/monitoring", preprocess = "preprocess_async.py", preprocess_function = "score", 
@@ -215,69 +227,70 @@ Next, you can manually run the monitoring process, calling the method :py:meth:`
     )
     pipeline.start()
 
-    # >>> 2023-10-25 16:13:01.706 | INFO     | mlops_codex.pipeline:from_config_file:124 - Loading .env
-    # >>> 2023-10-25 16:13:01.708 | INFO     | mlops_codex.pipeline:__init__:43 - Loading .env
-    # >>> 2023-10-25 16:13:01.709 | INFO     | mlops_codex.pipeline:run_deploy:242 - Deploying scorer
-    # >>> 2023-10-25 16:13:01.711 | INFO     | mlops_codex.model:__init__:722 - Loading .env
-    # >>> 2023-10-25 16:13:01.712 | INFO     | mlops_codex.base:__init__:90 - Loading .env
-    # >>> 2023-10-25 16:13:03.455 | INFO     | mlops_codex.base:__init__:102 - Successfully connected to MLOps
-    # >>> 2023-10-25 16:13:04.849 | ERROR    | mlops_codex.base:create_group:162 - {"Error":{"Type":"BadInput","Message":"Detail redacted as it may contain sensitive data. Specify \u0027Include Error Detail\u0027 in the connection string to include this information."}}
-    # >>> 2023-10-25 16:13:04.850 | ERROR    | mlops_codex.base:create_group:163 - Group already exist, nothing was changed.
-    # >>> 2023-10-25 16:13:08.274 | INFO     | mlops_codex.model:__upload_model:1015 - Model 'Teste' inserted - Hash: "Mc4f6403c5ab466f911c1cc6d2f22390fc5ab572337b42a7944fcc5d478849be"
-    # >>> 2023-10-25 16:13:10.002 | INFO     | mlops_codex.model:__host_model:1046 - Model host in process - Hash: Mc4f6403c5ab466f911c1cc6d2f22390fc5ab572337b42a7944fcc5d478849be
-    # Wating for deploy to be ready.............
-    # >>> 2023-10-25 16:15:28.933 | INFO     | mlops_codex.model:get_model:820 - Model Mc4f6403c5ab466f911c1cc6d2f22390fc5ab572337b42a7944fcc5d478849be its deployed. Fetching model.
-    # >>> 2023-10-25 16:15:28.936 | INFO     | mlops_codex.model:__init__:69 - Loading .env
-    # >>> 2023-10-25 16:15:33.139 | INFO     | mlops_codex.pipeline:run_deploy:257 - Model deployement finished
-    # >>> 2023-10-25 16:15:33.140 | INFO     | mlops_codex.pipeline:run_monitoring:277 - Configuring monitoring
-    # >>> 2023-10-25 16:15:33.142 | INFO     | mlops_codex.model:__init__:69 - Loading .env
-    # >>> 2023-10-25 16:15:37.849 | INFO     | mlops_codex.model:register_monitoring:604 - Monitoring created - Hash: "Mc4f6403c5ab466f911c1cc6d2f22390fc5ab572337b42a7944fcc5d478849be"
-
-
 Using with preprocess script
 ----------------------------
 
-Sometimes you want to run a preprocess script to adjust the model input data before executing it. With MLOps you can do it.
+Sometimes, you might want to run a preprocessing script to adjust the model input data before executing it. With MLOps, you can easily do this.
 
-You must first instantiate the :py:class:`mlops_codex.base.MLOpsExecution`:
+You must first instantiate the :py:class:`mlops_codex.model.MLOpsModelClient`:
 
-.. code:: python
+.. code-block:: python
 
+    from mlops_codex.model import MLOpsModelClient
     model_client = MLOpsModelClient()
-    # >>> 2023-10-26 10:26:42.351 | INFO     | mlops_codex.model:__init__:722 - Loading .env
-    # >>> 2023-10-26 10:26:42.352 | INFO     | mlops_codex.base:__init__:90 - Loading .env
-    # >>> 2023-10-26 10:26:43.716 | INFO     | mlops_codex.base:__init__:102 - Successfully connected to MLOps
+
 
 And now you just need to run the model using the preprocess script (check :ref:`preprocessing:Preprocessing module`).
+
 For the **sync model**:
 
-.. code:: python
+.. code-block:: python
 
-    sync_model = model_client.get_model(group='datarisk', model_id='M3aa182ff161478a97f4d3b2dc0e9b064d5a9e7330174daeb302e01586b9654c')
+    sync_model = model_client.get_model(group='groupname', model_id='M7abe6af98484948ad63f3ad03f25b6496a93f06e23c4ffbaa43eba0f6a1bb91')
 
-    sync_model.predict(data=sync_model.schema, preprocessing=sync_preprocessing)
-    # >>> 2023-10-26 10:26:45.121 | INFO     | mlops_codex.model:get_model:820 - Model M3aa182ff161478a97f4d3b2dc0e9b064d5a9e7330174daeb302e01586b9654c its deployed. Fetching model.
-    # >>> 2023-10-26 10:26:45.123 | INFO     | mlops_codex.model:__init__:69 - Loading .env
-    # >>> {'pred': 0, 'proba': 0.005841062869876623}
+    sync_model.set_token('29d9d82e09bb4c11b9cd4ce4e36e6c58') # token example
+
+    data = {
+     "mean_radius": 17.99,
+     "mean_texture": 10.38,
+     "mean_perimeter": 122.8,
+     "mean_area": 1001.0,
+     "mean_smoothness": 0.1184,
+     "mean_compactness": 0.2776,
+     "mean_concavity": 0.3001,
+     "mean_concave_points": 0.1471,
+     "mean_symmetry": 0.2419,
+     "mean_fractal_dimension": 0.07871,
+     "radius_error": 1.095,
+     "texture_error": 0.9053,
+     "perimeter_error": 8.589,
+     "area_error": 153.4,
+     "smoothness_error": 0.006399,
+     "compactness_error": 0.04904,
+     "concavity_error": 0.05373,
+     "concave_points_error": 0.01587,
+     "symmetry_error": 0.03003,
+     "fractal_dimension_error": 0.006193,
+     "worst_radius": 25.38,
+     "worst_texture": 17.33,
+     "worst_perimeter": 184.6,
+     "worst_area": 2019.0,
+     "worst_smoothness": 0.1622,
+     "worst_compactness": 0.6656,
+     "worst_concavity": 0.7119,
+     "worst_concave_points": 0.2654,
+     "worst_symmetry": 0.4601,
+     "worst_fractal_dimension": 0.1189
+    }
+
+    sync_model.predict(data=data, preprocessing=sync_preprocessing)
 
 And for the **async model**:
 
-.. code:: python
+.. code-block:: python
 
     async_model = model_client.get_model(group='datarisk', model_id='Maa3449c7f474567b6556614a12039d8bfdad0117fec47b2a4e03fcca90b7e7c')
-
     PATH = './samples/asyncModel/'
-
     execution = async_model.predict(data=PATH+'input.csv', preprocessing=async_preprocessing)
     execution.wait_ready()
-    # >>> 2023-10-26 10:26:51.460 | INFO     | mlops_codex.model:get_model:820 - Model Maa3449c7f474567b6556614a12039d8bfdad0117fec47b2a4e03fcca90b7e7c its deployed. Fetching model.
-    # >>> 2023-10-26 10:26:51.461 | INFO     | mlops_codex.model:__init__:69 - Loading .env
-    # >>> 2023-10-26 10:26:54.532 | INFO     | mlops_codex.preprocessing:set_token:123 - Token for group datarisk added.
-    # >>> 2023-10-26 10:26:55.955 | INFO     | mlops_codex.preprocessing:run:177 - Execution '4' started to generate 'Db84e3baffc3457b9729f39f9f37aa1cd8aada89d3434ea0925e539cb23d7d65'. Use the id to check its status.
-    # >>> 2023-10-26 10:26:55.956 | INFO     | mlops_codex.base:__init__:279 - Loading .env
-    # >>> 2023-10-26 10:30:12.982 | INFO     | mlops_codex.base:download_result:413 - Output saved in ./result_preprocessing
-    # >>> 2023-10-26 10:30:14.619 | INFO     | mlops_codex.model:predict:365 - Execution '5' started. Use the id to check its status.
-    # >>> 2023-10-26 10:30:14.620 | INFO     | mlops_codex.base:__init__:279 - Loading .env
-
     execution.download_result()
-    # >>> 2023-10-26 10:32:28.296 | INFO     | mlops_codex.base:download_result:413 - Output saved in ./output.zip

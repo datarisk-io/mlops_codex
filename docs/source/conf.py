@@ -30,7 +30,13 @@ release = '1.0.4'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [ 'sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx.ext.napoleon', 'm2r2', 'sphinx.ext.autosectionlabel',]
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.napoleon',
+    'm2r2',
+    'sphinx.ext.autosectionlabel',
+]
 autosectionlabel_prefix_document = True
 autosectionlabel_maxdepth=3
 
@@ -41,6 +47,8 @@ templates_path = ['_templates']
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['sphinx.ext.autodoc']
+pygments_style = 'sphinx'
+highlight_language = "python"
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -61,8 +69,8 @@ html_theme_options = {
             # Add additional attributes to the href link.
             # The defaults of target, rel, class, title and href may be overwritten.
             "attributes": {
-               "target" : "_blank",
-               "rel" : "noopener me",
+               "target": "_blank",
+               "rel": "noopener me",
                "class": "nav-link custom-fancy-css"
             }
         },
