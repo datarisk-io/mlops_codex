@@ -46,11 +46,11 @@ class MLOpsModel(BaseMLOps):
     model_id : str
         Model id (hash) from the model you want to access
     group : str
-        Group the model is inserted. Default is 'datarisk' (public group)
+        Group the model is inserted.
     group_token : str
         Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable MLOPS_GROUP_TOKEN
     url : str
-        URL to MLOps Server. Default value is https://mlops.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set these
+        URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set these
 
     Raises
     ------
@@ -87,11 +87,11 @@ class MLOpsModel(BaseMLOps):
         self,
         *,
         model_id: str,
+        group: str,
         login: Optional[str] = None,
         password: Optional[str] = None,
-        group: str = "datarisk",
         group_token: Optional[str] = None,
-        url: str = "https://neomaril.datarisk.net/",
+        url: Optional[str] = None,
     ) -> None:
         super().__init__(login=login, password=password, url=url)
 
@@ -283,7 +283,7 @@ class MLOpsModel(BaseMLOps):
         ServerError
             Raised if the server encounters an issue.
         ModelError
-            Raised if could not restart the model.
+            Raised if model could not be restarted.
 
         Example
         -------
@@ -382,8 +382,7 @@ class MLOpsModel(BaseMLOps):
 
     def delete(self):
         """
-        Deletes the current model.
-        IMPORTANT! For now this is irreversible, if you want to use the model again later you will need to upload again (and it will have a new ID).
+        Deletes the current model. IMPORTANT! For now this is irreversible, if you want to use the model again later you will need to upload again (and it will have a new ID).
 
         Raises
         ------
@@ -839,7 +838,7 @@ class MLOpsModel(BaseMLOps):
         Parameters
         ----------
         group : str
-            Group the model is inserted. Default is 'datarisk' (public group)
+            Group the model is inserted.
         model_id : str
             The uploaded model id (hash)
         period : str
@@ -897,7 +896,7 @@ class MLOpsModel(BaseMLOps):
         Parameters
         ----------
         group : str
-            Group the model is inserted. Default is 'datarisk' (public group)
+            Group the model is inserted.
         model_id : str
             The uploaded model id (hash)
         period : str
@@ -1459,7 +1458,7 @@ class MLOpsModelClient(BaseMLOpsClient):
         group: Optional[str] = None,
         extra_files: Optional[list] = None,
         env: Optional[str] = None,
-        python_version: str = "3.8",
+        python_version: str = "3.10",
         operation: str = "Sync",
         input_type: str = None,
     ) -> str:
@@ -1480,15 +1479,15 @@ class MLOpsModelClient(BaseMLOpsClient):
             Path of the requirements file. The packages versions must be fixed eg: pandas==1.0
         schema : Union[str, dict], optional
             Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be sending as well
-        group : str, optional
-            Group the model is inserted. If None the server uses 'datarisk' (public group)
-        extra_files : list, optional
+        group : Optional[str], optional
+            Group the model is inserted.
+        extra_files : Optional[list], optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
         env : str, optional
             Flag that choose which environment (dev, staging, production) of MLOps you are using. Default is True
-        python_version : str, optional
-            Python version for the model environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.8'
-        operation : str
+        python_version : Optional[str], optional
+            Python version for the model environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.10'
+        operation : Optional[str], optional
             Defines which kind operation is being executed (Sync or Async). Default value is Sync
         input_type : str
             The type of the input file that should be 'json', 'csv', 'parquet', 'txt', 'xls', 'xlsx'
@@ -1640,7 +1639,7 @@ class MLOpsModelClient(BaseMLOpsClient):
         schema: Optional[Union[str, dict]] = None,
         extra_files: Optional[list] = None,
         env: Optional[str] = None,
-        python_version: str = "3.8",
+        python_version: str = "3.10",
         operation="Sync",
         input_type: str = "json|csv|parquet",
         wait_for_ready: bool = True,
@@ -1667,15 +1666,15 @@ class MLOpsModelClient(BaseMLOpsClient):
         extra_files : list, optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
         env : str, optional
-            .env file to be used in your model enviroment. This will be encrypted in the server.
+            .env file to be used in your model environment. This will be encrypted in the server.
         python_version : str, optional
-            Python version for the model environment. Avaliable versions are 3.8, 3.9, 3.10. Defaults to '3.8'
+            Python version for the model environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.10'
         operation : str
-            Defines wich kind operation is beeing executed (Sync or Async). Default value is Sync
+            Defines which kind operation is being executed (Sync or Async). Default value is Sync
         input_type : str
             The type of the input file that should be 'json', 'csv' or 'parquet'
         wait_for_ready : bool, optional
-            Wait for model to be ready and returns a MLOpsModel instace with the new model. Defaults to True
+            Wait for model to be ready and returns a MLOpsModel instance with the new model. Defaults to True
 
         Raises
         ------
