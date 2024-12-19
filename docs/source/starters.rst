@@ -13,4 +13,5 @@ this guide will provide step-by-step instructions and practical examples to stre
    
    connecting_to_mlops
    training_guide
+   connecting_datasource
    deploying
