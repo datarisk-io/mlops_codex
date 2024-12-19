@@ -800,7 +800,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
     training_id : str
         Training id (hash) from the experiment you want to access
     group : str
-        Group the training is inserted. Default is 'datarisk' (public group)
+        Group the training is inserted.
     environment : str
         Flag that choose which environment of MLOps you are using. Test your deployment first before changing to production. Default is True
     executions : List[int]
@@ -901,7 +901,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
         train_data: Optional[str] = None,
         dataset: Union[str, MLOpsDataset] = None,
         training_reference: Optional[str] = None,
-        python_version: str = "3.8",
+        python_version: str = "3.10",
         conf_dict: Optional[Union[str, dict]] = None,
         source_file: Optional[str] = None,
         requirements_file: Optional[str] = None,
@@ -931,7 +931,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
         training_reference : Optional[str], optional
             The name of the training function inside the source file. Just used when training_type is Custom
         python_version : str
-            Python version for the model environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.8'. Just used when training_type is Custom
+            Python version for the model environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.10'. Just used when training_type is Custom
         conf_dict : Optional[Union[str, dict]], optional
             Path to a JSON file with the AutoML configuration. A dict can be sending as well. Just used when training_type is AutoML
         source_file : Optional[str], optional
@@ -1177,7 +1177,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
         train_data: Optional[str] = None,
         dataset: Union[str, MLOpsDataset] = None,
         training_reference: Optional[str] = None,
-        python_version: str = "3.8",
+        python_version: str = "3.10",
         conf_dict: Optional[Union[str, dict]] = None,
         source_file: Optional[str] = None,
         requirements_file: Optional[str] = None,
@@ -1208,7 +1208,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
         description : Optional[str], optional
             Description of the experiment
         python_version : Optional[str], optional
-            Python version for the model environment. Avaliable versions are 3.8, 3.9, 3.10. Defaults to '3.8'. Just used when training_type is Custom
+            Python version for the training environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.10'
         conf_dict : Union[str, dict]
             Path to a JSON file with the AutoML configuration. A dict can be sending as well. Just used when training_type is AutoML
         source_file : Optional[str], optional
@@ -1282,7 +1282,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
 
         if python_version not in ["3.8", "3.9", "3.10"]:
             raise InputError(
-                "Invalid python version. Available versions are 3.8, 3.9, 3.10"
+                "Invalid python version. Available versions are 3.8, 3.9 and 3.10"
             )
 
         if training_type not in ["Custom", "AutoML", "External"]:
