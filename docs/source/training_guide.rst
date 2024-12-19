@@ -231,7 +231,7 @@ See an example of the a configuration file:
     }
 
 
-Running an AutoML training execution
+Saving a local training to MLOps
 ----------------------------
 
 See the example below, using a python script to perform and save an External training:
