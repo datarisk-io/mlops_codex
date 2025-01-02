@@ -639,3 +639,68 @@ class MLOpsDataset(BaseMLOps):
         r = response.json().get("Results")
 
         return r
+
+
+    def download(self, path: Optional[str] = './', filename: Optional[str] = 'dataset') -> None:
+        """
+        Download a dataset from mlops.
+
+        Parameters
+        ----------
+            path: str, optional
+                Path to the downloaded dataset. Defaults to './'.
+            filename: str, optional
+                Name of the downloaded dataset. Defaults to 'dataset.zip'.
+
+        Raises
+        ------
+        AuthenticationError
+            Raised if there is an authentication issue.
+        DatasetNotFoundError
+            Raised if there is no dataset with the given name.
+        ServerError
+            Raised if the server encounters an issue.
+        """
+
+        if not path.endswith("/"):
+            path = path + "/"
+
+        url = f"{self.base_url}/datasets/result/{self.group}/{self.dataset_hash}"
+        token = refresh_token(*self.credentials, self.base_url)
+
+        response = requests.get(
+            url=url,
+            headers={
+                "Authorization": "Bearer " + token,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.download.__qualname__,
+            },
+            timeout=60,
+        )
+
+        if response.status_code == 401:
+            logger.error(
+                "Login or password are invalid, please check your credentials."
+            )
+            raise AuthenticationError("Login not authorized.")
+
+        if response.status_code == 404:
+            logger.error(
+                f'Unable to download dataset "{self.dataset_hash}"\n{response.text}'
+            )
+            raise DatasetNotFoundError(f'Execution "{self.dataset_hash}" not found.')
+
+        if response.status_code >= 500:
+            logger.error("Server is not available. Please, try it later.")
+            raise ServerError("Server is not available!")
+
+        try:
+            response.content.decode("utf-8")
+            filename += ".csv"
+        except UnicodeDecodeError:
+            filename += ".parquet"
+
+        with open(path + filename, "wb") as dataset_file:
+            dataset_file.write(response.content)
+
+        logger.info(f"Dataset downloaded to {path + filename}")
