@@ -100,8 +100,6 @@ class MLOpsDatasetClient(BaseMLOpsClient):
             query["group"] = group
 
         if origin and origin != "Datasource":
-            if "group" not in query:
-                query["group"] = group
             query["origin"] = origin
             if origin_id:
                 query["origin_id"] = origin_id
