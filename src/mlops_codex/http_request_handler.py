@@ -28,7 +28,7 @@ def try_login(
         ServerError: Raises if the server is not running correctly
         BaseException: Raises if the server status is something different from 200
     """
-    response = requests.get(f"{base_url}/health")
+    response = requests.get(f"{base_url}/health", timeout=60)
 
     server_status = response.status_code
 
@@ -49,7 +49,8 @@ def try_login(
 @ttl_cache
 def refresh_token(login: str, password: str, base_url: str):
     respose = requests.post(
-        f"{base_url}/login", data={"user": login, "password": password}
+        f"{base_url}/login", data={"user": login, "password": password},
+        timeout=60,
     )
 
     if respose.status_code == 200:
