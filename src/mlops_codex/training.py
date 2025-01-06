@@ -16,18 +16,18 @@ import pandas as pd
 import requests
 from lazy_imports import try_import
 
-from mlops_codex.__utils import parse_dict_or_file, parse_json_to_yaml, refresh_token
+from mlops_codex.__utils import parse_dict_or_file, parse_json_to_yaml
 from mlops_codex.base import BaseMLOps, BaseMLOpsClient, MLOpsExecution
 from mlops_codex.datasources import MLOpsDataset
 from mlops_codex.exceptions import (
     AuthenticationError,
     ExecutionError,
-    GroupError,
     InputError,
     ModelError,
     ServerError,
     TrainingError,
 )
+from mlops_codex.http_request_handler import refresh_token
 from mlops_codex.logger_config import get_logger
 from mlops_codex.model import MLOpsModel
 from mlops_codex.validations import validate_group_existence
@@ -1260,10 +1260,10 @@ class MLOpsTrainingExperiment(BaseMLOps):
             )
         elif training_type == "External":
             input_validator = (
-                    run_name is not None and
-                    python_version is not None and
-                    X_train is not None and
-                    y_train is not None
+                run_name is not None
+                and python_version is not None
+                and X_train is not None
+                and y_train is not None
             )
             fields_required = "run_name, python_version, X_train, y_train"
         else:
@@ -1489,9 +1489,7 @@ class MLOpsTrainingClient(BaseMLOpsClient):
     def __str__(self):
         return f"MLOPS {self.base_url} Training client:{self.user_token}"
 
-    def get_training(
-        self, *, training_id: str, group: str
-    ) -> MLOpsTrainingExperiment:
+    def get_training(self, *, training_id: str, group: str) -> MLOpsTrainingExperiment:
         """
         Acess a model using its id
 

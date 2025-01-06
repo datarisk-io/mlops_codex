@@ -4,12 +4,12 @@ External Monitoring Module
 
 from datetime import datetime
 from time import sleep
-from typing import Optional, NamedTuple, Union
+from typing import NamedTuple, Optional
 
 import requests
 
 from mlops_codex.__model_states import MonitoringStatus
-from mlops_codex.__utils import parse_json_to_yaml, refresh_token, validate_kwargs
+from mlops_codex.__utils import parse_json_to_yaml, validate_kwargs
 from mlops_codex.base import BaseMLOps, BaseMLOpsClient
 from mlops_codex.exceptions import (
     AuthenticationError,
@@ -19,6 +19,7 @@ from mlops_codex.exceptions import (
     InputError,
     ServerError,
 )
+from mlops_codex.http_request_handler import refresh_token
 from mlops_codex.logger_config import get_logger
 from mlops_codex.validations import validate_python_version
 
@@ -408,6 +409,7 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
     #       btw, it is my mistake!!
     class ExternalMonitoringData(NamedTuple):
         """External monitoring data"""
+
         name: str
         group: str
         training_execution_id: int
@@ -424,7 +426,7 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
     @validate_kwargs(ExternalMonitoringData)
     def validate(self, **kwargs):
         """Method to validate data
-        NOTE: This method is necessary if I want to use the try/except in line 460. 
+        NOTE: This method is necessary if I want to use the try/except in line 460.
               Maybe in the future would be nice to migrate this to a generic interface
         """
         pass
@@ -492,7 +494,7 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
         logger.debug(f"Something went wrong...\n{formatted_msg}")
         raise ExternalMonitoringError("Could not register the monitoring.")
 
-    def register_monitoring(self,**kwargs) -> Optional[MLOpsExternalMonitoring]:
+    def register_monitoring(self, **kwargs) -> Optional[MLOpsExternalMonitoring]:
         """
         Register a MLOps External Monitoring.
 

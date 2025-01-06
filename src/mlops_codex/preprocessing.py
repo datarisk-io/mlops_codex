@@ -10,7 +10,7 @@ from typing import Optional, Union
 
 import requests
 
-from mlops_codex.__utils import parse_json_to_yaml, refresh_token
+from mlops_codex.__utils import parse_json_to_yaml
 from mlops_codex.base import BaseMLOps, BaseMLOpsClient, MLOpsExecution
 from mlops_codex.exceptions import (
     AuthenticationError,
@@ -20,6 +20,7 @@ from mlops_codex.exceptions import (
     PreprocessingError,
     ServerError,
 )
+from mlops_codex.http_request_handler import refresh_token
 from mlops_codex.logger_config import get_logger
 from mlops_codex.validations import validate_group_existence, validate_python_version
 
@@ -100,7 +101,9 @@ class MLOpsPreprocessing(BaseMLOps):
                                 )"""
 
     def __str__(self):
-        return f'MLOPS preprocessing (Group: {self.group}, Id: {self.preprocessing_id})"'
+        return (
+            f'MLOPS preprocessing (Group: {self.group}, Id: {self.preprocessing_id})"'
+        )
 
     def wait_ready(self):
         """

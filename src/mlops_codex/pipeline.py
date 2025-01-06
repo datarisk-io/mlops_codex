@@ -4,13 +4,13 @@ from datetime import datetime
 from typing import Optional
 
 import yaml
-from dotenv import load_dotenv, find_dotenv
+from dotenv import find_dotenv, load_dotenv
 
 from mlops_codex.base import BaseMLOps
 from mlops_codex.exceptions import ModelError, PipelineError, TrainingError
 from mlops_codex.logger_config import get_logger
 from mlops_codex.model import MLOpsModel, MLOpsModelClient
-from mlops_codex.training import MLOpsTrainingClient, MLOpsTrainingExecution
+from mlops_codex.training import MLOpsTrainingClient
 
 logger = get_logger()
 

@@ -1,11 +1,11 @@
 import json
-from http import HTTPStatus
-from typing import Optional, Union
+from typing import Dict, Union
 
 import requests
 
-from mlops_codex.__utils import parse_json_to_yaml, refresh_token
+from mlops_codex.__utils import parse_json_to_yaml
 from mlops_codex.base import BaseMLOps, BaseMLOpsClient
+from mlops_codex.dataset import MLOpsDataset, MLOpsDatasetClient
 from mlops_codex.exceptions import (
     AuthenticationError,
     CredentialError,
@@ -13,6 +13,7 @@ from mlops_codex.exceptions import (
     InputError,
     ServerError,
 )
+from mlops_codex.http_request_handler import make_request, refresh_token
 from mlops_codex.logger_config import get_logger
 
 logger = get_logger()
@@ -60,7 +61,8 @@ class MLOpsDataSourceClient(BaseMLOpsClient):
             Name of the group where we will search the datasources.
         datasource_name: str
             Name given previously to the datasource.
-        provider: str ("Azure" | "AWS" | "GCP")
+        provider: str
+            It can be "Azure", "AWS" or "GCP"
         cloud_credentials: str | Union[dict,str]
             Path or dict to a JSON with the credentials to access the provider.
 
@@ -131,6 +133,7 @@ class MLOpsDataSourceClient(BaseMLOpsClient):
                 raise AuthenticationError("User is not in the master group.")
         raise CredentialError("Cloud Credential Error")
 
+    # TODO: turn into staticmethod or external function
     def credentials_to_json(self, input_data: dict) -> str:
         """
         Transform dict to json.
@@ -220,7 +223,7 @@ class MLOpsDataSourceClient(BaseMLOpsClient):
         datasource_name: str
             Name given previously to the datasource.
         provider: str
-            It can be "Azure" | "AWS" | "GCP"
+            It can be "Azure", "AWS" or "GCP"
         group: str
             Name of the group where we will search the datasources
 
@@ -286,10 +289,11 @@ class MLOpsDataSource(BaseMLOps):
         self.datasource_name = datasource_name
         self.provider = provider
         self.group = group
+        self.__datasets = MLOpsDatasetClient(login=login, password=password, url=url)
 
     def import_dataset(
         self, *, dataset_uri: str, dataset_name: str, force: bool = False
-    ):
+    ) -> Union[MLOpsDataset, Dict]:
         """
         Import a dataset inside a datasource.
 
@@ -341,18 +345,33 @@ class MLOpsDataSource(BaseMLOps):
         )
 
         if response.status_code == 200:
-            dataset_hash = response.json().get("ExternalHash")
-
-            dataset = MLOpsDataset(
-                dataset_hash=dataset_hash,
-                dataset_name=dataset_name,
-                datasource_name=self.datasource_name,
-                group=self.group,
-                login=self.credentials[0],
-                password=self.credentials[1],
-                url=self.base_url,
-            )
-            return dataset
+            datasets = response.json().get("Datasets")
+            if len(datasets) == 1:
+                dataset_hash = datasets[0]
+                dataset = MLOpsDataset(
+                    login=self.credentials[0],
+                    password=self.credentials[1],
+                    url=self.base_url,
+                    dataset_hash=dataset_hash,
+                    dataset_name=dataset_name,
+                    group=self.group,
+                    origin="Datasource",
+                )
+                return dataset
+            else:
+                dts = {}
+                for i, ds in enumerate(datasets):
+                    dataset = MLOpsDataset(
+                        login=self.credentials[0],
+                        password=self.credentials[1],
+                        url=self.base_url,
+                        dataset_hash=ds,
+                        dataset_name=dataset_name + f"_{i}",
+                        group=self.group,
+                        origin="Datasource",
+                    )
+                    dts[f"dataset_{i}"] = dataset
+                return dts
 
         formatted_msg = parse_json_to_yaml(response.json())
 
@@ -391,7 +410,7 @@ class MLOpsDataSource(BaseMLOps):
         )
         logger.info(response.json().get("Message"))
 
-    def get_dataset(self, *, dataset_hash: str, origin: Optional[str] = None):
+    def get_dataset(self, *, dataset_hash: str):
         """
         Get a MLOpsDataset to make dataset operations.
 
@@ -399,8 +418,6 @@ class MLOpsDataSource(BaseMLOps):
         ----------
         dataset_hash: str
             Name given previously to the datasource.
-        origin: Optional[str]
-            Can be an EHash or a SHash
 
         Returns
         ----------
@@ -410,86 +427,55 @@ class MLOpsDataSource(BaseMLOps):
         Raises
         ----------
         DatasetNotFoundError
-            When the dataset_hash input was not found
+            When the dataset was not found
 
         Example
         ----------
         >>> dataset = datasource.get_dataset(dataset_hash='D589654eb26c4377b0df646e7a5675fa3c7d49575e03400b940dd5363006fc3a')
         """
-        datasources = self.list_datasets(origin=origin)
 
-        for datasource in datasources:
-            if dataset_hash == datasource.get("Id"):
+        dataset_list = self.__datasets.list_datasets(
+            origin="Datasource", datasource_name=self.datasource_name
+        )
+
+        for dataset in dataset_list:
+            if dataset_hash == dataset.get("Hash"):
                 return MLOpsDataset(
-                    dataset_hash=datasource.get("Id"),
-                    dataset_name=datasource.get("Name"),
-                    datasource_name=self.datasource_name,
-                    group=self.group,
                     login=self.credentials[0],
                     password=self.credentials[1],
                     url=self.base_url,
+                    dataset_hash=dataset.get("Hash"),
+                    dataset_name=dataset.get("Name"),
+                    group=self.group,
+                    origin=dataset.get("Origin"),
                 )
         raise DatasetNotFoundError("Dataset hash not found!")
 
+    def list_datasets(self) -> None:
+        """
+        Show datasets with Datasource origin
+        """
+        dataset_list = self.__datasets.list_datasets(
+            origin="Datasource", datasource_name=self.datasource_name
+        )
+        for dataset in dataset_list:
+            print(parse_json_to_yaml(dataset))
 
-class MLOpsDataset(BaseMLOps):
-    """
-    Class to operate actions in a dataset.
-
-    Parameters
-    ----------
-    login: str
-        Login for authenticating with the client.
-        You can also use the env variable MLOPS_USER to set this
-    password: str
-        Password for authenticating with the client.
-        You can also use the env variable MLOPS_PASSWORD to set this
-    url: str
-        URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
-    dataset_hash: str
-        The hash that identify the dataset
-    dataset_name: str
-        The dataset defined name
-    datasource_name: str
-        Name given previously to the datasource.
-    group: str
-        Name of the group where we will search the datasource
-    """
-
-    def __init__(
-            self,
-            *,
-            dataset_hash: str,
-            dataset_name: str,
-            datasource_name: str,
-            group: str,
-            login: str,
-            password: str,
-            url: Optional[str] = None,
-    ) -> None:
-        super().__init__(login=login, password=password, url=url)
-        self.group = group
-        self.dataset_hash = dataset_hash
-        self.dataset_name = dataset_name
-        self.datasource_name = datasource_name
-
-    def get_status(self):
+    def get_status(self, group: str, dataset_hash: str) -> dict:
         """
         Get dataset status.
+
+        Parameters
+        ----------
+        group: str
+            Name of the group where we will search the datasources
+        dataset_hash: str
+            Name given previously to the datasource.
 
         Returns
         ----------
         dict
-            when success
-            {
-                status: 'Succeeded',
-                log: ''
-            }
-            when failed
-            {
-                "status": "Failed",
-                "log": "UnexpectedError\n  \"Azure Request error! Message: Service request failed.\nStatus: 403 (Server failed to authenticate the request. Make sure the value of Authorization header is formed correctly including the signature.)\nErrorCode: AuthenticationFailed\n\nHeaders:\nTransfer-Encoding: chunked\nServer: Microsoft-HTTPAPI/2.0\nx-ms-request-id: xxxxx\nx-ms-error-code: AuthenticationFailed\nDate: Wed, 24 Jan 2024 12:00:36 GMT\n\""
-            }
+        Dictionary with the status and log of the dataset.
 
         Raises
         ----------
@@ -500,142 +486,23 @@ class MLOpsDataset(BaseMLOps):
         ----------
         >>> dataset.get_status()
         """
-        url = f"{self.base_url}/datasets/status/{self.group}/{self.dataset_hash}"
-
+        url = f"{self.base_url}/datasets/status/{group}/{dataset_hash}"
         token = refresh_token(*self.credentials, self.base_url)
-
-        response = requests.get(
+        response = make_request(
             url=url,
+            method="GET",
+            success_code=200,
+            custom_exception=DatasetNotFoundError,
+            custom_exception_message=f"Dataset not found for hash {dataset_hash}.",
+            specific_error_code=404,
             headers={
                 "Authorization": "Bearer " + token,
                 "Neomaril-Origin": "Codex",
                 "Neomaril-Method": self.get_status.__qualname__,
             },
-            timeout=60,
         )
 
-        if response.status_code == 200:
-            status = response.json().get("Status")
-            log = response.json().get("Log")
+        status = response.json().get("Status")
+        log = response.json().get("Log")
 
-            return {"status": status, "log": log}
-
-        formatted_msg = parse_json_to_yaml(response.json())
-
-        if response.status_code == 401:
-            logger.error(
-                "Login or password are invalid, please check your credentials."
-            )
-            raise AuthenticationError("Login not authorized.")
-
-        if response.status_code >= 500:
-            logger.error("Server is not available. Please, try it later.")
-            raise ServerError("Server is not available!")
-
-        logger.error(f"Something went wrong...\n{formatted_msg}")
-        raise DatasetNotFoundError("Dataset not found")
-
-    def delete(self):
-        """
-        Delete the dataset on mlops. Pay attention when doing this action, it is irreversible!
-
-        Example
-        ----------
-        >>> dataset.delete()
-        """
-        url = f"{self.base_url}/datasets/{self.group}/{self.dataset_hash}"
-
-        token = refresh_token(*self.credentials, self.base_url)
-        response = requests.delete(
-            url=url,
-            headers={
-                "Authorization": "Bearer " + token,
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.delete.__qualname__,
-            },
-            timeout=60,
-        )
-        if response.status_code == 200:
-            logger.info(response.json().get("Message"))
-            return HTTPStatus.OK
-
-        formatted_msg = parse_json_to_yaml(response.json())
-
-        if response.status_code == 401:
-            logger.error(
-                "Login or password are invalid, please check your credentials."
-            )
-            raise AuthenticationError("Login not authorized.")
-
-        if response.status_code >= 500:
-            logger.error("Server is not available. Please, try it later.")
-            raise ServerError("Server is not available!")
-
-        logger.error(f"Something went wrong...\n{formatted_msg}")
-        raise DatasetNotFoundError("Dataset not found")
-
-    def list_datasets(
-        self,
-        *,
-        origin: Optional[str] = None,
-        origin_id: Optional[int] = None,
-        datasource_name: Optional[str] = None,
-        group: Optional[str] = None,
-    ):
-        """
-        List datasets from datasources.
-
-        Parameters
-        ----------
-            origin: Optional[str], optional
-                Origin of a dataset. It can be "Training", "Preprocessing", "Datasource" or "Model"
-            origin_id: Optional[str], optinal
-                Integer that represents the id of a dataset, given an origin
-            datasource_name: Optional[str], optinal
-                Name of the datasource
-            group: Optional[str], optinal
-                Name of the group where we will search the datasource
-
-        Returns
-        ----------
-        list
-            A list of datasets information.
-
-        Example
-        -------
-        >>> dataset.list_datasets()
-        """
-        url = f"{self.base_url}/datasets/list"
-        token = refresh_token(*self.credentials, self.base_url)
-
-        query = {}
-
-        if group:
-            query["group"] = group
-
-        if origin and origin != "Datasource":
-            if "group" not in query:
-                query["group"] = group
-            query["origin"] = origin
-            if origin_id:
-                query["origin_id"] = origin_id
-
-        if origin == "Datasource":
-            query["origin"] = origin
-            if datasource_name:
-                query["datasource"] = datasource_name
-
-        response = requests.get(
-            url=url,
-            params=query,
-            headers={
-                "Authorization": "Bearer " + token,
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.list_datasets.__qualname__,
-            },
-            timeout=60,
-        )
-
-        r = response.json().get("Results")
-
-        return r
+        return {"status": status, "log": log}

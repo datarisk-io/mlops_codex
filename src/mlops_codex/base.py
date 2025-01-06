@@ -1,18 +1,15 @@
 import os
 from datetime import datetime, timedelta
-from http import HTTPStatus
 from time import sleep
 from typing import Optional
 
 import requests
-from dotenv import load_dotenv, find_dotenv
+from dotenv import find_dotenv, load_dotenv
 
 from mlops_codex.__model_states import ModelExecutionState
 from mlops_codex.__utils import (
     parse_json_to_yaml,
     parse_url,
-    refresh_token,
-    try_login,
 )
 from mlops_codex.exceptions import (
     AuthenticationError,
@@ -22,6 +19,7 @@ from mlops_codex.exceptions import (
     ModelError,
     ServerError,
 )
+from mlops_codex.http_request_handler import refresh_token, try_login
 from mlops_codex.logger_config import get_logger
 
 logger = get_logger()
@@ -486,7 +484,9 @@ class MLOpsExecution(BaseMLOps):
         return f"""MLOps{self.exec_type}Execution(exec_id="{self.exec_id}", status="{self.status}")"""
 
     def __str__(self):
-        return f'MLOPS {self.exec_type }Execution:{self.exec_id} (Status: {self.status})"'
+        return (
+            f'MLOPS {self.exec_type }Execution:{self.exec_id} (Status: {self.status})"'
+        )
 
     def get_status(self) -> dict:
         """

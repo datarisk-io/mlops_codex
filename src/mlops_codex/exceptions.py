@@ -71,5 +71,12 @@ class CredentialError(Exception):
 
 
 class ExternalMonitoringError(Exception):
-    """Raised when a external monitoring is not available"""
+    """Raised when an external monitoring is not available"""
+
+    pass
+
+
+class UnexpectedError(Exception):
+    """Raised when an unexpected error occurs"""
+
     pass

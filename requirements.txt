@@ -7,3 +7,4 @@ cloudpickle>=2.0.0
 pyarrow>=1.0.0
 pandas>=1.0.0
 lazy-imports==0.3.1
+pydantic==2.10.4

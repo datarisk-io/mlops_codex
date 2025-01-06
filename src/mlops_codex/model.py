@@ -13,8 +13,6 @@ from mlops_codex.__model_states import ModelState
 from mlops_codex.__utils import (
     parse_dict_or_file,
     parse_json_to_yaml,
-    refresh_token,
-    try_login,
 )
 from mlops_codex.base import BaseMLOps, BaseMLOpsClient, MLOpsExecution
 from mlops_codex.datasources import MLOpsDataset
@@ -26,6 +24,7 @@ from mlops_codex.exceptions import (
     PreprocessingError,
     ServerError,
 )
+from mlops_codex.http_request_handler import refresh_token, try_login
 from mlops_codex.logger_config import get_logger
 from mlops_codex.preprocessing import MLOpsPreprocessing
 from mlops_codex.validations import validate_group_existence, validate_python_version
@@ -142,9 +141,7 @@ class MLOpsModel(BaseMLOps):
                                 )"""
 
     def __str__(self):
-        return (
-            f'MLOPS model "{self.name} (Group: {self.group}, Id: {self.model_id})"'
-        )
+        return f'MLOPS model "{self.name} (Group: {self.group}, Id: {self.model_id})"'
 
     def __get_status(self):
         """
@@ -1360,7 +1357,7 @@ class MLOpsModelClient(BaseMLOpsClient):
             results = response.json()["Results"]
             parsed_results = []
             for r in results:
-                if schema:= r.get("Schema"):
+                if schema := r.get("Schema"):
                     r["Schema"] = json.loads(schema)
                 parsed_results.append(r)
 

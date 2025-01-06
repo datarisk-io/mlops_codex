@@ -46,6 +46,11 @@ Modules
 .. toctree::
    :maxdepth: 2
 
+   mlops_datasets
+
+.. toctree::
+   :maxdepth: 2
+
    logging
 
 .. toctree::
