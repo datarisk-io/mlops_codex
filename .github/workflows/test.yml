@@ -24,11 +24,10 @@ jobs:
         working-directory: ./
         run: |
           python -m pip install --upgrade pip
-          pip install pipenv 
-          pipenv install --dev
-      - name: Run Pipenv Check
-        working-directory: ./
-        run: pipenv check
+          pip install -e .
+      # - name: Run Pipenv Check
+      #   working-directory: ./
+      #   run: pipenv check
       - name: Run Import Check
         working-directory: ./
-        run: pipenv run python3 tests/import.py
+        run: python3 tests/import.py
