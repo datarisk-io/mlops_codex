@@ -1,7 +1,7 @@
 import json
 import os
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Tuple
 
 import yaml
 from dotenv import find_dotenv, load_dotenv
@@ -182,7 +182,7 @@ class MLOpsPipeline(BaseMLOps):
 
         return pipeline
 
-    def run_training(self) -> tuple[str, str]:
+    def run_training(self) -> Tuple[str, str]:
         """
         Run the training process
 

@@ -10,22 +10,25 @@ jobs:
   python:
     name: Packages check
     runs-on: ubuntu-22.04
-    env:
-      PyVer: "3.10"
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ env.PyVer }}
-          cache: 'pip'
+          python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         working-directory: ./
         run: |
           python -m pip install --upgrade pip
-          pip install pipenv
-          pipenv install
-      - name: Run Pipenv Check
+          pip install -e .
+      - name: Run Pip audit Check
+        uses: pypa/gh-action-pip-audit@v1.0.8
+        with:
+          inputs: requirements.txt
+      - name: Run Import Check
         working-directory: ./
-        run: pipenv check
+        run: python3 tests/import.py
