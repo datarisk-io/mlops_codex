@@ -49,7 +49,8 @@ def try_login(
 @ttl_cache
 def refresh_token(login: str, password: str, base_url: str):
     respose = requests.post(
-        f"{base_url}/login", data={"user": login, "password": password},
+        f"{base_url}/login",
+        data={"user": login, "password": password},
         timeout=60,
     )
 
@@ -106,6 +107,7 @@ def make_request(
     params=None,
     data=None,
     json=None,
+    files=None,
     timeout=60,
 ) -> requests.Response:
     """
@@ -138,6 +140,7 @@ def make_request(
         params=params,
         data=data,
         json=json,
+        files=files,
         timeout=timeout,
     )
 
