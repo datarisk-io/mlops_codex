@@ -991,10 +991,6 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         -------
         Union[MLOpsPreprocessing, str]
             Returns the new preprocessing, if wait_for_ready=True runs the deployment process synchronously. If it's False, returns nothing after sending all the data to server and runs the deployment asynchronously
-
-        Example
-        -------
-        >>> preprocessing = client.create('Pre processing Example Sync', 'score',  './samples/syncPreprocessing/app.py', './samples/syncPreprocessing/'preprocessing.pkl', './samples/syncPreprocessing/requirements.txt','./samples/syncPreprocessing/schema.json', group=group, operation="Sync")
         """
 
         validate_group_existence(group, self)
@@ -1118,19 +1114,25 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         return preprocessing_script_hash
 
     def __upload_schema(
-        self, schema: Tuple[str, str], preprocessing_script_hash: str, token: str
+        self,
+        preprocessing_script_hash: str,
+        token: str,
+        schema_file: Optional[Tuple[str, str]] = None,
+        schema_dataset: Optional[str] = None,
     ) -> Tuple[str, str]:
         """
         Upload schema to MLOps.
 
         Parameters
         ----------
-        schema: Tuple[str, str]
-            Schema to upload
         preprocessing_script_hash: str
             Preprocessing script hash
         token: str
             Token to authenticate with the MLOps server
+        schema_file: Tuple[str, str]
+            Schema to upload
+        schema_dataset: str
+            Dataset to upload schema to
 
         Returns
         -------
@@ -1146,26 +1148,44 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         ServerError
             Raised if the server encounters an issue.
         """
-        name, file_path = schema
-        upload_data = {"schema_file": open(file_path, "rb")}
-        input_data = {"dataset_name": name}
 
         url = f"{self.url}/{preprocessing_script_hash}/schema"
 
-        response = make_request(
-            url=url,
-            method="PATCH",
-            data=input_data,
-            files=upload_data,
-            success_code=201,
-            custom_exception=PreprocessingError,
-            custom_exception_message=f"Failed to create preprocessing for preprocessing hash {preprocessing_script_hash}.",
-            specific_error_code=404,
-            logger_msg=f"Failed to upload schema. Could not find preprocessing schema for {preprocessing_script_hash} hash.",
-            headers={
-                "Authorization": f"Bearer {token}",
-            },
-        )
+        if schema_file is not None:
+            name, file_path = schema_file
+            upload_data = {"schema_file": open(file_path, "rb")}
+            input_data = {"dataset_name": name}
+
+            response = make_request(
+                url=url,
+                method="PATCH",
+                data=input_data,
+                files=upload_data,
+                success_code=201,
+                custom_exception=PreprocessingError,
+                custom_exception_message=f"Failed to create preprocessing for preprocessing hash {preprocessing_script_hash}.",
+                specific_error_code=404,
+                logger_msg=f"Failed to upload schema. Could not find preprocessing schema for {preprocessing_script_hash} hash.",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                },
+            )
+        else:
+            input_data = {"dataset_hash": schema_dataset}
+
+            response = make_request(
+                url=url,
+                method="PATCH",
+                data=input_data,
+                success_code=201,
+                custom_exception=PreprocessingError,
+                custom_exception_message=f"Failed to create preprocessing for preprocessing hash {preprocessing_script_hash}.",
+                specific_error_code=404,
+                logger_msg=f"Failed to upload schema. Could not find preprocessing schema for {preprocessing_script_hash} hash.",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                },
+            )
 
         output_dataset_hash = response.json()["DatasetHash"]
         output_dataset_name = response.json()["DatasetName"]
@@ -1390,11 +1410,12 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         *,
         name: str,
         group: str,
-        schema_files_path: Union[Tuple[str, str], List[Tuple[str, str]]],
         script_path: str,
         entrypoint_function_name: str,
         requirements_path: str,
         python_version: Optional[str] = "3.9",
+        schema_files_path: Optional[Union[Tuple[str, str], List[Tuple[str, str]]]] = None,
+        schema_datasets: Optional[Union[str, List[str]]] = None,
         host: bool = True,
         wait_read: bool = False,
     ):
@@ -1407,8 +1428,10 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
             Name of the new preprocessing script
         group: str
             Group of the new preprocessing script
-        schema_files_path: Union[Tuple[str, str], List[Tuple[str, str]]]
+        schema_files_path: Optional[Union[Tuple[str, str], List[Tuple[str, str]]]
             Schema files path. It must be a tuple in the format (dataset_name, dataset_file_path). If you want to upload more than a file, send a list of tuples in the format (dataset_name, dataset_file_path).
+        schema_datasets: Optional[Union[str, List[str]]]
+            Dataset to upload schema to
         script_path: str
             Path to the python script
         entrypoint_function_name: str
@@ -1427,6 +1450,16 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         MLOpsPreprocessingAsyncV2
             Preprocessing async version of the new preprocessing script.
         """
+
+        schema_file_and_input_are_none = schema_datasets is None and schema_files_path is None
+        schema_datasets_are_not_none = schema_datasets is not None and schema_files_path is not None
+
+        if schema_file_and_input_are_none:
+            raise InputError("You must give a dataset hash or a input file! Both are None.")
+
+        if schema_datasets_are_not_none:
+            raise InputError("You must give a dataset hash or a input file! You tried to upload both. Choose one of them.")
+
         validate_group_existence(group, self)
         validate_python_version(python_version)
 
@@ -1446,20 +1479,31 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         )
 
         if isinstance(schema_files_path, list):
-            for schema in schema_files_path:  # (dataset1, model.pkl) ou [(dataset1, model1.pkl), (dataset2, model2.pkl)]
+            for schema in schema_files_path:
                 output_dataset_hash, output_dataset_name = self.__upload_schema(
-                    schema, preprocessing_script_hash, token
-                )
+                    schema_file=schema, preprocessing_script_hash=preprocessing_script_hash, token=token)
                 logger.info(
                     f"Created dataset hash {output_dataset_hash} with name {output_dataset_name}"
                 )
-        else:
+        elif schema_files_path is not None:
             output_dataset_hash, output_dataset_name = self.__upload_schema(
-                schema_files_path, preprocessing_script_hash, token
-            )
+                schema_file=schema_files_path, preprocessing_script_hash=preprocessing_script_hash, token=token)
             logger.info(
                 f"Created dataset hash {output_dataset_hash} with name {output_dataset_name}"
             )
+        elif isinstance(schema_datasets, list):
+            for schema_dataset in schema_datasets:
+                output_dataset_hash, output_dataset_name = self.__upload_schema(
+                    schema_dataset=schema_dataset, preprocessing_script_hash=preprocessing_script_hash, token=token
+                )
+                logger.info(f"Created dataset hash {output_dataset_hash} with name {output_dataset_name}")
+        else:
+            output_dataset_hash, output_dataset_name = self.__upload_schema(
+                schema_dataset=schema_datasets, preprocessing_script_hash=preprocessing_script_hash, token=token
+            )
+            logger.info(f"Created dataset hash {output_dataset_hash} with name {output_dataset_name}")
+
+
         logger.info("Schema files uploaded")
 
         self.__upload_script(
@@ -1596,21 +1640,24 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
 
     def upload_input(
         self,
-        input_file: Tuple[str, str],
         preprocessing_script_hash: str,
         execution_id: int,
+        input_file: Optional[Tuple[str, str]] = None,
+        dataset_hash: Optional[str] = None,
     ) -> str:
         """
         Upload an input file for a preprocessing script execution
 
         Parameters
         ----------
-        input_file: Tuple[str, str]
-            Input file path and file name. It must be a tuple of the form (input_file_name, input_file_path).
         preprocessing_script_hash: str
             Preprocessing script hash
         execution_id: int
             Execution id of the preprocessing script.
+        input_file: Optional[Tuple[str, str]]
+            Input file path and file name. It must be a tuple of the form (input_file_name, input_file_path).
+        dataset_hash: str
+            Dataset hash uploaded or generated.
 
         Returns
         -------
@@ -1626,29 +1673,59 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         ServerError
             Raised if the server encounters an issue.
         """
-        name, file_path = input_file
-        upload_data = {"input": open(file_path, "rb")}
-        input_data = {"dataset_name": name}
+
+        input_and_dataset_hash_are_none = input_file is None and dataset_hash is None
+        input_and_dataset_hash_are_not_none = input_file is not None and dataset_hash is not None
+
+        if input_and_dataset_hash_are_none:
+            raise InputError("You must give a dataset hash or a input file! Both are None.")
+
+        if input_and_dataset_hash_are_not_none:
+            raise InputError("You must give a dataset hash or a input file! You tried to upload both. Choose one of them.")
 
         url = f"{self.url}/{preprocessing_script_hash}/{execution_id}/input"
         token = refresh_token(*self.credentials, self.base_url)
 
-        response = make_request(
-            url=url,
-            method="PATCH",
-            data=input_data,
-            files=upload_data,
-            success_code=201,
-            custom_exception=PreprocessingError,
-            custom_exception_message=f"Failed to create preprocessing for preprocessing hash {preprocessing_script_hash}.",
-            specific_error_code=404,
-            logger_msg=f"Failed to upload schema. Could not find preprocessing schema for {preprocessing_script_hash} hash.",
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.upload_input.__qualname__,
-            },
-        )
+        if input_file is not None:
+            name, file_path = input_file
+            upload_data = {"input": open(file_path, "rb")}
+            input_data = {"dataset_name": name}
+
+            response = make_request(
+                url=url,
+                method="PATCH",
+                data=input_data,
+                files=upload_data,
+                success_code=201,
+                custom_exception=PreprocessingError,
+                custom_exception_message=f"Failed to create preprocessing for preprocessing hash {preprocessing_script_hash}.",
+                specific_error_code=404,
+                logger_msg=f"Failed to upload schema. Could not find preprocessing schema for {preprocessing_script_hash} hash.",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Neomaril-Origin": "Codex",
+                    "Neomaril-Method": self.upload_input.__qualname__,
+                },
+            )
+
+        else:
+            input_data = {"dataset_hash": dataset_hash}
+
+            response = make_request(
+                url=url,
+                method="PATCH",
+                data=input_data,
+                success_code=201,
+                custom_exception=PreprocessingError,
+                custom_exception_message=f"Failed to create preprocessing for preprocessing hash {preprocessing_script_hash}.",
+                specific_error_code=404,
+                logger_msg=f"Failed to upload schema. Could not find preprocessing schema for {preprocessing_script_hash} hash.",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Neomaril-Origin": "Codex",
+                    "Neomaril-Method": self.upload_input.__qualname__,
+                },
+            )
 
         dataset_hash = response.json()["DatasetHash"]
         return dataset_hash
@@ -1899,8 +1976,9 @@ class MLOpsPreprocessingAsyncV2(BaseModel):
     def run(
         self,
         *,
-        input_files: [Union[Tuple[str, str], List[Tuple[str, str]]]],
-        wait_read: bool = False,
+        input_files: Optional[Union[Tuple[str, str], List[Tuple[str, str]]]] = None,
+        dataset_hashes: Optional[Union[str, List[str]]] = None,
+        wait_read: Optional[bool] = False,
     ):
         """
         Create a new preprocessing script execution and host it.
@@ -1909,9 +1987,21 @@ class MLOpsPreprocessingAsyncV2(BaseModel):
         ----------
         input_files: Union[Tuple[str, str], List[Tuple[str, str]]]
             Input file path and file name. It must be a tuple of the form (input_file_name, input_file_path). If you wish to send more than an input file, consider send a list of tuples of the form (input_file_name, input_file_path).
-        wait_read: bool
+        dataset_hashes: Optional[Union[str, List[str]]]
+            List of dataset hashes. If you have just one dataset hash, consider send a single string.
+        wait_read: Optional[bool]
             If true, it will wait for the preprocessing script execution to finish before returning. Defaults to False.
         """
+
+        input_and_dataset_hash_are_none = input_files is None and dataset_hashes is None
+        input_and_dataset_hash_are_not_none = input_files is not None and dataset_hashes is not None
+
+        if input_and_dataset_hash_are_none:
+            raise InputError("You must give a dataset hash or a input file! Both are None.")
+
+        if input_and_dataset_hash_are_not_none:
+            raise InputError("You must give a dataset hash or a input file! You tried both.")
+
         execution_id = self._preprocessing_client.register_execution(
             self.preprocessing_hash
         )
@@ -1922,21 +2012,41 @@ class MLOpsPreprocessingAsyncV2(BaseModel):
         if isinstance(input_files, list):
             for input_file in input_files:
                 output_dataset_hash = self._preprocessing_client.upload_input(
-                    input_file,
+                    input_file=input_file,
                     preprocessing_script_hash=self.preprocessing_hash,
                     execution_id=execution_id,
                 )
                 logger.info(
-                    f"Uploaded input file {input_file} - Hash {output_dataset_hash}"
+                    f"Uploaded input file {input_file} - Output Hash {output_dataset_hash}"
                 )
-        else:
+        elif input_files is not None:
             output_dataset_hash = self._preprocessing_client.upload_input(
-                input_files,
+                input_file=input_files,
                 preprocessing_script_hash=self.preprocessing_hash,
                 execution_id=execution_id,
             )
             logger.info(
-                f"Uploaded input file {input_files} - Hash {output_dataset_hash}"
+                f"Uploaded input file {input_files} - Output Hash {output_dataset_hash}"
+            )
+
+        elif isinstance(dataset_hashes, list):
+            for dataset_hash in dataset_hashes:
+                output_dataset_hash = self._preprocessing_client.upload_input(
+                    dataset_hash=dataset_hash,
+                    preprocessing_script_hash=self.preprocessing_hash,
+                    execution_id=execution_id,
+                )
+                logger.info(
+                    f"Uploaded dataset {dataset_hash} - Output Hash {output_dataset_hash}"
+                )
+        else:
+            output_dataset_hash = self._preprocessing_client.upload_input(
+                dataset_hash=dataset_hashes,
+                preprocessing_script_hash=self.preprocessing_hash,
+                execution_id=execution_id,
+            )
+            logger.info(
+                f"Uploaded dataset {dataset_hashes} - Output Hash {output_dataset_hash}"
             )
 
         self._preprocessing_client.run(
@@ -1974,6 +2084,8 @@ class MLOpsPreprocessingAsyncV2(BaseModel):
         ----------
         execution_id: int
             Execution id of the preprocessing script.
+        path: str, optional
+            Path where to save the downloaded file.
         """
         self._preprocessing_client.download(
             preprocessing_script_hash=self.preprocessing_hash, execution_id=execution_id, path=path
