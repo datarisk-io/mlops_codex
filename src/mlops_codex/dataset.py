@@ -49,7 +49,7 @@ class MLOpsDatasetClient(BaseMLOpsClient):
             method="DELETE",
             success_code=200,
             custom_exception=DatasetNotFoundError,
-            custom_exception_message=f"Dataset not found.",
+            custom_exception_message="Dataset not found.",
             specific_error_code=404,
             headers={
                 "Authorization": "Bearer " + token,
@@ -134,9 +134,9 @@ class MLOpsDatasetClient(BaseMLOpsClient):
 
         Parameters
         ----------
-        group: Optional[str], optional
+        group: str
             Name of the group
-        dataset_hash: Optional[str], optional
+        dataset_hash: str
             Dataset hash
         path: str, optional
             Path to the downloaded dataset. Defaults to './'.
@@ -163,7 +163,7 @@ class MLOpsDatasetClient(BaseMLOpsClient):
             method="GET",
             success_code=200,
             custom_exception=DatasetNotFoundError,
-            custom_exception_message=f"Dataset not found.",
+            custom_exception_message="Dataset not found.",
             specific_error_code=404,
             logger_msg=f"Unable to download dataset {dataset_hash}",
             headers={
