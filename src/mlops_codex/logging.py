@@ -1,4 +1,5 @@
-import os, json
+import os
+import json
 from typing import Union
 
 from mlops_codex.exceptions import InputError
