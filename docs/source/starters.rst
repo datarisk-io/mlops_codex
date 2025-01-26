@@ -12,6 +12,7 @@ this guide will provide step-by-step instructions and practical examples to stre
    :maxdepth: 1
    
    connecting_to_mlops
+   preprocessing_guide
    training_guide
    connecting_datasource
    deploying
