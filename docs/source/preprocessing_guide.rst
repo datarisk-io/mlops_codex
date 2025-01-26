@@ -33,7 +33,7 @@ Prepare your data. In this case, you must do the following:
         # ....
     ]
 
-Ps.: Note the data structure must be as above
+Note the data structure must be as above
 
 Next, send the data to our server, by using the `.create()` method. Check the parameters doc.
 
@@ -43,7 +43,8 @@ To do it, you must do as following:
     preprocess = client.create(
         name="test_preprocessing",
         group="groupname",
-        schema_files_path=data,
+        schema_files_path=schemas,
+        script_path=PATH+'app.py',
         entrypoint_function_name="build_df",
         python_version='3.9',
         requirements_path=PATH+'requirements.txt',
@@ -112,3 +113,33 @@ Again, you can use the client interface:
 
 Both methods contains a `path` parameter. If you change it, the local where it will be saved. Default is the parent directory.
 
+Preprocessing MLOps datasets
+----------------------------
+
+The Dataset MLOps codex give you an interface to host and run preprocessing.
+
+Given a dataset, you can perform the following code:
+
+.. code:: python
+    preproc = dataset.host_preprocessing(
+        name="preprocessing_from_dataset",
+        group="groupname",
+        script_path=PATH+'app.py',
+        entrypoint_function_name="build_df",
+        python_version='3.9',
+        requirements_path=PATH+'requirements.txt',
+    )
+
+Note, you don't have flow control in this case. That's why, the preprocessing script execution will be hosted and you'll wait until it is Succeeded or Failed.
+
+Because it returns a :py:class:`mlops_codex.preprocessing.MLOpsPreprocessingAsyncV2`, you do the others operations.
+
+To run a preprocessing script execution, you can do as following:
+
+.. code:: python
+    dataset.run_preprocess(
+        preprocessing_script_hash=preprocessing_script_hash,
+        execution_id=execution_id
+    )
+
+Note, if you want to perform it, you may have the preprocessing script execution and the execution id. Without that, it won't be possible to run the script.
