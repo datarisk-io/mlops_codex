@@ -1,11 +1,14 @@
+from time import sleep
 from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field, PrivateAttr
 
+from mlops_codex.__model_states import ModelExecutionState
 from mlops_codex.base import BaseMLOpsClient
 from mlops_codex.exceptions import DatasetNotFoundError
 from mlops_codex.http_request_handler import make_request, refresh_token
 from mlops_codex.logger_config import get_logger
+from mlops_codex.preprocessing import MLOpsPreprocessingAsyncV2Client
 
 logger = get_logger()
 
@@ -216,7 +219,10 @@ class MLOpsDataset(BaseModel):
     origin: str
     _client: MLOpsDatasetClient = PrivateAttr(
         None, init=False
-    )  # Create new clients, for each operation
+    )
+    _preprocessing_client: MLOpsPreprocessingAsyncV2Client = PrivateAttr(
+        None, init=False
+    )# Create new clients, for each operation
 
     class Config:
         arbitrary_types_allowed = True
@@ -224,6 +230,13 @@ class MLOpsDataset(BaseModel):
     def model_post_init(self, __context: Any) -> None:
         if self._client is None:
             self._client = MLOpsDatasetClient(
+                login=self.login,
+                password=self.password,
+                url=self.url,
+            )
+
+        if self._preprocessing_client is None:
+            self._preprocessing_client = MLOpsPreprocessingAsyncV2Client(
                 login=self.login,
                 password=self.password,
                 url=self.url,
@@ -247,10 +260,103 @@ class MLOpsDataset(BaseModel):
             filename=filename,
         )
 
-    def train(self):
-        raise NotImplementedError("Feature not implemented.")
+    def host_preprocessing(
+        self,
+        *,
+        name: str,
+        group: str,
+        script_path: str,
+        entrypoint_function_name: str,
+        requirements_path: str,
+        python_version: Optional[str] = "3.9",
+    ):
+        """
+        Host a preprocessing script via dataset module. By default, the user will host and wait the hosting. It returns a MLOpsPreprocessingAsyncV2, then you can perform run it.
 
-    def preprocess(self):
+        Parameters
+        ----------
+        name: str
+            Name of the new preprocessing script
+        group: str
+            Group of the new preprocessing script
+            Dataset to upload schema to
+        script_path: str
+            Path to the python script
+        entrypoint_function_name: str
+            Name of the entrypoint function in the python script
+        python_version: str
+            Python version for the model environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.9'
+        requirements_path: str
+            Path to the requirements file
+
+        Returns
+        -------
+        MLOpsPreprocessingAsyncV2
+            Preprocessing async version of the new preprocessing script.
+        """
+        logger.info(f"MLOpsDataset host preprocessing {name}")
+        return self._preprocessing_client.create(
+            name=name,
+            group=group,
+            script_path=script_path,
+            entrypoint_function_name=entrypoint_function_name,
+            requirements_path=requirements_path,
+            python_version=python_version,
+            host=True,
+            wait_read=True,
+            schema_datasets=self.dataset_hash
+        )
+
+    def run_preprocess(
+        self,
+        *,
+        preprocessing_script_hash: str,
+        execution_id: int,
+    ):
+        """
+        Run a preprocessing script execution from a dataset. By default, the user will run the preprocessing script and wait until it completes.
+
+        Parameters
+        ----------
+        preprocessing_script_hash: str
+            Hash of the preprocessing script
+        execution_id: int
+            Preprocessing Execution ID
+        """
+        logger.info(f"MLOpsDataset run preprocessing {self.dataset_hash}")
+        self._preprocessing_client.register_execution(preprocessing_script_hash=preprocessing_script_hash)
+        self._preprocessing_client.upload_input(
+            dataset_hash=self.dataset_hash,
+            preprocessing_script_hash=preprocessing_script_hash,
+            execution_id=execution_id,
+        )
+        self._preprocessing_client.run(
+            preprocessing_script_hash=preprocessing_script_hash,
+            execution_id=execution_id,
+        )
+
+        status, _ = self._preprocessing_client.execution_status(
+            preprocessing_script_hash=preprocessing_script_hash, execution_id=execution_id
+        )
+
+        print("Waiting for preprocessing script to finish", end="")
+        while status in [ModelExecutionState.Requested, ModelExecutionState.Running]:
+            sleep(30)
+            status, _ = self._preprocessing_client.execution_status(
+                preprocessing_script_hash=preprocessing_script_hash, execution_id=execution_id
+            )
+            print(".", end="")
+
+        if status == ModelExecutionState.Succeeded:
+            logger.info(
+                f"Preprocessing script finished successfully. To download it, execute `download_preprocessing_output` method passing the {preprocessing_script_hash} hash and execution id {execution_id}."
+            )
+        else:
+            logger.info(
+                f"Preprocessing script execution {preprocessing_script_hash}/{execution_id} is other status different than Succeeded. Current status = {status}"
+            )
+
+    def train(self):
         raise NotImplementedError("Feature not implemented.")
 
     def run_model(self):
