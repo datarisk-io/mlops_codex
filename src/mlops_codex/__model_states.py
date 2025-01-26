@@ -50,3 +50,6 @@ class MonitoringStatus(str, Enum):
     Validating = "Validating"
     Validated = "Validated"
     Invalidated = "Invalidated"
+
+    def __str__(self):
+        return self.name
