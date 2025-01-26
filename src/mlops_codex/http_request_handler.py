@@ -1,4 +1,4 @@
-from typing import Tuple, Type, Union
+from typing import Tuple, Union
 
 import requests
 from cachetools.func import ttl_cache
@@ -62,10 +62,10 @@ def refresh_token(login: str, password: str, base_url: str):
 
 def handle_common_errors(
     response: requests.Response,
-    specific_error_code: int,
-    custom_exception: Type[Exception],
-    custom_exception_message: str,
-    logger_msg: str,
+    specific_error_code,
+    custom_exception,
+    custom_exception_message,
+    logger_msg,
 ):
     """
     Handle possible errors
@@ -73,7 +73,7 @@ def handle_common_errors(
     Args:
         response (requests.Response): Response from MLOps server
         specific_error_code (int): Error code
-        custom_exception (Type[Exception]): Custom exception
+        custom_exception (_SpecialForm[Exception]): Custom exception
         custom_exception_message (str): Custom exception message
         logger_msg (str): Log message
     """
@@ -117,7 +117,7 @@ def make_request(
         url (str): URL of the endpoint.
         method (str): HTTP method (get, post, delete, patch, etc).
         success_code (int): Status codes indicating success.
-        custom_exception (Type[Exception]): Custom exception class.
+        custom_exception (_SpecialForm[Exception]): Custom exception class.
         custom_exception_message (str): Custom exception message.
         specific_error_code (int): Specific error code.
         logger_msg (str): Logger message.
