@@ -1600,7 +1600,7 @@ class MLOpsPreprocessingAsyncV2(BaseModel):
         )
         logger.info(f"Status of {execution_id}: {status}")
 
-    def download(self, execution_id):
+    def download(self, execution_id: int, path: Optional[str] = "./"):
         self._preprocessing_client.download(
-            preprocessing_script_hash=self.preprocessing_hash, execution_id=execution_id
+            preprocessing_script_hash=self.preprocessing_hash, execution_id=execution_id, path=path
         )
