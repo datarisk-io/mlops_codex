@@ -1571,7 +1571,7 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
             status=ModelState.Building,
         )
 
-    # TODO: should the user has access to this endpoint?
+    # TODO: should the user has access to this endpoint? If so, I'll create a new function
     def list_preprocessing(self):
         """
         List preprocessing scripts
