@@ -271,7 +271,7 @@ class MLOpsDataset(BaseModel):
         python_version: Optional[str] = "3.9",
     ):
         """
-        Host a preprocessing script via dataset module. By default, the user will host and wait the hosting. It returns a MLOpsPreprocessingAsyncV2, then you can perform run it.
+        Host a preprocessing script via dataset module. By default, the user will host and wait the hosting. It returns a MLOpsPreprocessingAsyncV2, then you can run it.
 
         Parameters
         ----------
