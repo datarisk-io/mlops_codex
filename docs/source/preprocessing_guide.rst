@@ -1,7 +1,7 @@
-Preprocessing database with MLOps Codex
+Preprocessing data with MLOps Codex
 =======================================
 
-Now you can preprocess multiples database with MLOps Codex using the the new
+Now you can preprocess multiples data with MLOps Codex using the the new preprocessing.
 
 With the :py:class:`mlops_codex.preprocessing.MLOpsPreprocessingAsyncV2Client` class give you the interaction between your code and our environment.
 
@@ -72,7 +72,7 @@ To create a new execution, do as the following code:
 
 .. code:: python
     preprocess.run(
-        input_data=inputs,
+        input_files=inputs,
         wait_read=True
     )
 
@@ -83,7 +83,7 @@ Also, notice you can run using the client:
 .. code:: python
     client.run(
         preprocessing_script_hash=preprocessing_hash
-        input_data=inputs,
+        input_files=inputs,
     )
 
 In this case, you run, but you can't wait it for ready, so you must check the status:
