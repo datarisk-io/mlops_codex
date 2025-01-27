@@ -1063,7 +1063,7 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         URL to MLOps Server. Default value is https://neomaril.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
     """
 
-    def __init__(self, login: str, password: str, url: str) -> None:
+    def __init__(self, login:str = None, password:str = None, url:str = None) -> None:
         super().__init__(login=login, password=password, url=url)
         self.url = f"{self.base_url}/v2/preprocessing"
 
