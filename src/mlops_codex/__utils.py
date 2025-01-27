@@ -49,8 +49,10 @@ def extract_execution_number_from_string(text: str) -> int:
     Returns:
         int: the execution number
     """
-    match = re.match(r"^(\d+)$", text)
-    return int(match.group(1))
+    match = re.search(r"'(\d+)'", text)
+    if match:
+        return int(match.group(1))
+    raise ValueError("Could not extract execution number")
 
 
 def validate_kwargs(model: Type) -> Callable:
