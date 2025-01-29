@@ -1,3 +1,6 @@
+from datetime import datetime, timedelta
+from typing import Tuple
+
 from mlops_codex.exceptions import GroupError, InputError
 from mlops_codex.base import BaseMLOpsClient
 
@@ -37,3 +40,21 @@ def validate_python_version(python_version: str) -> bool:
             "Invalid python version. Available versions are 3.8, 3.9, 3.10"
         )
     return True
+
+
+def date_validation(start: str, end: str) -> Tuple[str, str]:
+    if not start and not end:
+        end = datetime.today().strftime("%d-%m-%Y")
+        start = (datetime.today() - timedelta(days=6)).strftime("%d-%m-%Y")
+
+    if not start and end:
+        start = (datetime.strptime(end, "%d-%m-%Y") - timedelta(days=6)).strftime(
+            "%d-%m-%Y"
+        )
+
+    if start and not end:
+        end = (datetime.strptime(start, "%d-%m-%Y") + timedelta(days=6)).strftime(
+            "%d-%m-%Y"
+        )
+
+    return start, end
