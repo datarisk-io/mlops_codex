@@ -83,13 +83,13 @@ def handle_common_errors(
         raise ServerError("Server is down or unavailable.")
     elif specific_error_code == response.status_code:
         if logger_msg:
-            logger.error(logger_msg)
+            logger.debug(logger_msg)
         else:
-            logger.error(response.json())
+            logger.debug(response.json())
         raise custom_exception(custom_exception_message)
 
     formatted_msg = parse_json_to_yaml(response.json())
-    logger.error(f"Something went wrong. \n{formatted_msg}")
+    logger.debug(f"Something went wrong. \n{formatted_msg}")
     raise UnexpectedError(
         "Unexpected error during HTTP request. Please contact the administrator."
     )
