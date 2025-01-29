@@ -294,18 +294,8 @@ class MLOpsDataset(BaseModel):
         MLOpsPreprocessingAsyncV2
             Preprocessing async version of the new preprocessing script.
         """
-        logger.info(f"MLOpsDataset host preprocessing {name}")
-        return self._preprocessing_client.create(
-            name=name,
-            group=group,
-            script_path=script_path,
-            entrypoint_function_name=entrypoint_function_name,
-            requirements_path=requirements_path,
-            python_version=python_version,
-            host=True,
-            wait_read=True,
-            schema_datasets=self.dataset_hash
-        )
+        raise NotImplementedError("Host preprocessing not implemented.")
+
 
     def run_preprocess(
         self,
@@ -323,38 +313,7 @@ class MLOpsDataset(BaseModel):
         execution_id: int
             Preprocessing Execution ID
         """
-        logger.info(f"MLOpsDataset run preprocessing {self.dataset_hash}")
-        self._preprocessing_client.register_execution(preprocessing_script_hash=preprocessing_script_hash)
-        self._preprocessing_client.upload_input(
-            dataset_hash=self.dataset_hash,
-            preprocessing_script_hash=preprocessing_script_hash,
-            execution_id=execution_id,
-        )
-        self._preprocessing_client.run(
-            preprocessing_script_hash=preprocessing_script_hash,
-            execution_id=execution_id,
-        )
-
-        status, _ = self._preprocessing_client.execution_status(
-            preprocessing_script_hash=preprocessing_script_hash, execution_id=execution_id
-        )
-
-        print("Waiting for preprocessing script to finish", end="")
-        while status in [ModelExecutionState.Requested, ModelExecutionState.Running]:
-            sleep(30)
-            status, _ = self._preprocessing_client.execution_status(
-                preprocessing_script_hash=preprocessing_script_hash, execution_id=execution_id
-            )
-            print(".", end="")
-
-        if status == ModelExecutionState.Succeeded:
-            logger.info(
-                f"Preprocessing script finished successfully. To download it, execute `download_preprocessing_output` method passing the {preprocessing_script_hash} hash and execution id {execution_id}."
-            )
-        else:
-            logger.info(
-                f"Preprocessing script execution {preprocessing_script_hash}/{execution_id} is other status different than Succeeded. Current status = {status}"
-            )
+        raise NotImplementedError("Run preprocessing not implemented.")
 
     def train(self):
         raise NotImplementedError("Feature not implemented.")
