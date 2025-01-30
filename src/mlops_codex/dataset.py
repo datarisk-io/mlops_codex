@@ -1,9 +1,7 @@
-from time import sleep
 from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field, PrivateAttr
 
-from mlops_codex.__model_states import ModelExecutionState
 from mlops_codex.base import BaseMLOpsClient
 from mlops_codex.exceptions import DatasetNotFoundError
 from mlops_codex.http_request_handler import make_request, refresh_token
@@ -217,12 +215,7 @@ class MLOpsDataset(BaseModel):
     dataset_name: str
     group: str
     origin: str
-    _client: MLOpsDatasetClient = PrivateAttr(
-        None, init=False
-    )
-    _preprocessing_client: MLOpsPreprocessingAsyncV2Client = PrivateAttr(
-        None, init=False
-    )# Create new clients, for each operation
+    _client: MLOpsDatasetClient = PrivateAttr(None, init=False)
 
     class Config:
         arbitrary_types_allowed = True
@@ -230,13 +223,6 @@ class MLOpsDataset(BaseModel):
     def model_post_init(self, __context: Any) -> None:
         if self._client is None:
             self._client = MLOpsDatasetClient(
-                login=self.login,
-                password=self.password,
-                url=self.url,
-            )
-
-        if self._preprocessing_client is None:
-            self._preprocessing_client = MLOpsPreprocessingAsyncV2Client(
                 login=self.login,
                 password=self.password,
                 url=self.url,
@@ -295,7 +281,6 @@ class MLOpsDataset(BaseModel):
             Preprocessing async version of the new preprocessing script.
         """
         raise NotImplementedError("Host preprocessing not implemented.")
-
 
     def run_preprocess(
         self,

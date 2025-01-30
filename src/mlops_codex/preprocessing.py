@@ -43,7 +43,9 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         URL to MLOps Server. Default value is https://neomaril.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
     """
 
-    def __init__(self, login:str = None, password:str = None, url:str = None) -> None:
+    def __init__(
+        self, login: str = None, password: str = None, url: str = None
+    ) -> None:
         super().__init__(login=login, password=password, url=url)
         self.url = f"{self.base_url}/v2/preprocessing"
 
@@ -393,7 +395,9 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         entrypoint_function_name: str,
         requirements_path: str,
         python_version: Optional[str] = "3.9",
-        schema_files_path: Optional[Union[Tuple[str, str], List[Tuple[str, str]]]] = None,
+        schema_files_path: Optional[
+            Union[Tuple[str, str], List[Tuple[str, str]]]
+        ] = None,
         schema_datasets: Optional[Union[str, List[str]]] = None,
         wait_read: bool = False,
     ):
@@ -427,14 +431,22 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
             Preprocessing async version of the new preprocessing script.
         """
 
-        schema_file_and_input_are_none = schema_datasets is None and schema_files_path is None
-        schema_datasets_are_not_none = schema_datasets is not None and schema_files_path is not None
+        schema_file_and_input_are_none = (
+            schema_datasets is None and schema_files_path is None
+        )
+        schema_datasets_are_not_none = (
+            schema_datasets is not None and schema_files_path is not None
+        )
 
         if schema_file_and_input_are_none:
-            raise InputError("You must give a dataset hash or a input file! Both are None.")
+            raise InputError(
+                "You must give a dataset hash or a input file! Both are None."
+            )
 
         if schema_datasets_are_not_none:
-            raise InputError("You must give a dataset hash or a input file! You tried to upload both. Choose one of them.")
+            raise InputError(
+                "You must give a dataset hash or a input file! You tried to upload both. Choose one of them."
+            )
 
         validate_group_existence(group, self)
         validate_python_version(python_version)
@@ -457,28 +469,41 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         if isinstance(schema_files_path, list):
             for schema in schema_files_path:
                 output_dataset_hash, output_dataset_name = self.__upload_schema(
-                    schema_file=schema, preprocessing_script_hash=preprocessing_script_hash, token=token)
+                    schema_file=schema,
+                    preprocessing_script_hash=preprocessing_script_hash,
+                    token=token,
+                )
                 logger.debug(
                     f"Created dataset hash {output_dataset_hash} with name {output_dataset_name}"
                 )
         elif schema_files_path is not None:
             output_dataset_hash, output_dataset_name = self.__upload_schema(
-                schema_file=schema_files_path, preprocessing_script_hash=preprocessing_script_hash, token=token)
+                schema_file=schema_files_path,
+                preprocessing_script_hash=preprocessing_script_hash,
+                token=token,
+            )
             logger.debug(
                 f"Created dataset hash {output_dataset_hash} with name {output_dataset_name}"
             )
         elif isinstance(schema_datasets, list):
             for schema_dataset in schema_datasets:
                 output_dataset_hash, output_dataset_name = self.__upload_schema(
-                    schema_dataset=schema_dataset, preprocessing_script_hash=preprocessing_script_hash, token=token
+                    schema_dataset=schema_dataset,
+                    preprocessing_script_hash=preprocessing_script_hash,
+                    token=token,
                 )
-                logger.info(f"Created dataset hash {output_dataset_hash} with name {output_dataset_name}")
+                logger.info(
+                    f"Created dataset hash {output_dataset_hash} with name {output_dataset_name}"
+                )
         else:
             output_dataset_hash, output_dataset_name = self.__upload_schema(
-                schema_dataset=schema_datasets, preprocessing_script_hash=preprocessing_script_hash, token=token
+                schema_dataset=schema_datasets,
+                preprocessing_script_hash=preprocessing_script_hash,
+                token=token,
             )
-            logger.debug(f"Created dataset hash {output_dataset_hash} with name {output_dataset_name}")
-
+            logger.debug(
+                f"Created dataset hash {output_dataset_hash} with name {output_dataset_name}"
+            )
 
         logger.debug("Schema files uploaded")
 
@@ -621,13 +646,19 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         """
 
         input_and_dataset_hash_are_none = input_file is None and dataset_hash is None
-        input_and_dataset_hash_are_not_none = input_file is not None and dataset_hash is not None
+        input_and_dataset_hash_are_not_none = (
+            input_file is not None and dataset_hash is not None
+        )
 
         if input_and_dataset_hash_are_none:
-            raise InputError("You must give a dataset hash or a input file! Both are None.")
+            raise InputError(
+                "You must give a dataset hash or a input file! Both are None."
+            )
 
         if input_and_dataset_hash_are_not_none:
-            raise InputError("You must give a dataset hash or a input file! You tried to upload both. Choose one of them.")
+            raise InputError(
+                "You must give a dataset hash or a input file! You tried to upload both. Choose one of them."
+            )
 
         url = f"{self.url}/{preprocessing_script_hash}/{execution_id}/input"
         token = refresh_token(*self.credentials, self.base_url)
@@ -866,7 +897,7 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
                 "Authorization": f"Bearer {token}",
                 "Neomaril-Origin": "Codex",
                 "Neomaril-Method": self.describe.__qualname__,
-            }
+            },
         )
         return response.json()
 
@@ -886,13 +917,12 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
                 "Authorization": f"Bearer {token}",
                 "Neomaril-Origin": "Codex",
                 "Neomaril-Method": self.describe.__qualname__,
-            }
+            },
         )
         return response.json()
 
 
 class MLOpsPreprocessingAsyncV2(BaseModel):
-
     """
     Preprocessing class to represent the new preprocessing
 
@@ -1015,13 +1045,19 @@ class MLOpsPreprocessingAsyncV2(BaseModel):
         """
 
         input_and_dataset_hash_are_none = input_files is None and dataset_hashes is None
-        input_and_dataset_hash_are_not_none = input_files is not None and dataset_hashes is not None
+        input_and_dataset_hash_are_not_none = (
+            input_files is not None and dataset_hashes is not None
+        )
 
         if input_and_dataset_hash_are_none:
-            raise InputError("You must give a dataset hash or a input file! Both are None.")
+            raise InputError(
+                "You must give a dataset hash or a input file! Both are None."
+            )
 
         if input_and_dataset_hash_are_not_none:
-            raise InputError("You must give a dataset hash or a input file! You tried both.")
+            raise InputError(
+                "You must give a dataset hash or a input file! You tried both."
+            )
 
         execution_id = self._preprocessing_client.register_execution(
             self.preprocessing_hash
@@ -1109,7 +1145,9 @@ class MLOpsPreprocessingAsyncV2(BaseModel):
             Path where to save the downloaded file.
         """
         self._preprocessing_client.download(
-            preprocessing_script_hash=self.preprocessing_hash, execution_id=execution_id, path=path
+            preprocessing_script_hash=self.preprocessing_hash,
+            execution_id=execution_id,
+            path=path,
         )
 
 
@@ -1139,6 +1177,7 @@ class PreprocessExecution:
         Invalid credentials
 
     """
+
     def __init__(
         self,
         *,
@@ -1149,7 +1188,6 @@ class PreprocessExecution:
         password: Optional[str] = None,
         url: str = None,
     ) -> None:
-
         self.preprocessing_hash = preprocess_hash
         self.group = group
         self.exec_id = exec_id
@@ -1183,9 +1221,12 @@ class PreprocessExecution:
         while status in [ModelExecutionState.Running, ModelExecutionState.Requested]:
             sleep(30)
             status, _ = self.__client.execution_status(
-                preprocessing_script_hash=self.preprocessing_hash, execution_id=self.exec_id
+                preprocessing_script_hash=self.preprocessing_hash,
+                execution_id=self.exec_id,
             )
-        logger.info(f"Preprocessing script execution {self.preprocessing_hash} is {status.name}.")
+        logger.info(
+            f"Preprocessing script execution {self.preprocessing_hash} is {status.name}."
+        )
 
     def download(self, path: Optional[str] = "./"):
         """
@@ -1197,7 +1238,9 @@ class PreprocessExecution:
             Path where to save the downloaded file.
         """
         self.__client.download(
-            preprocessing_script_hash=self.preprocessing_hash, execution_id=self.exec_id, path=path
+            preprocessing_script_hash=self.preprocessing_hash,
+            execution_id=self.exec_id,
+            path=path,
         )
 
     def execution_info(self):
@@ -1208,7 +1251,6 @@ class PreprocessExecution:
             preprocessing_script_hash=self.preprocessing_hash, execution_id=self.exec_id
         )
         logger.info(f"Result:\n{parse_json_to_yaml(response)}")
-
 
 
 class MLOpsPreprocessing(BaseMLOps):
@@ -1259,14 +1301,18 @@ class MLOpsPreprocessing(BaseMLOps):
         self.preprocessing_id = preprocessing_id
         self.group = group
         self.__token = group_token if group_token else os.getenv("MLOPS_GROUP_TOKEN")
-        self.__new_preprocess_client = MLOpsPreprocessingAsyncV2Client(login=login, password=password, url=url)
+        self.__new_preprocess_client = MLOpsPreprocessingAsyncV2Client(
+            login=login, password=password, url=url
+        )
 
         try:
-            response = self.__new_preprocess_client.describe(preprocessing_script_hash=preprocessing_id)
+            response = self.__new_preprocess_client.describe(
+                preprocessing_script_hash=preprocessing_id
+            )
             self.operation = "async"
             self.status = response["State"]
             self.__preprocessing_ready = self.status == "Deployed"
-        except Exception as e:
+        except Exception:
             url = f"{self.base_url}/preprocessing/describe/{group}/{preprocessing_id}"
             response = requests.get(
                 url,
@@ -1412,7 +1458,9 @@ class MLOpsPreprocessing(BaseMLOps):
             The return of the scoring function in the source file for Sync preprocessing or the execution class for Async preprocessing.
         """
         try:
-            execution_id = self.__new_preprocess_client.register_execution(preprocessing_script_hash=self.preprocessing_id)
+            execution_id = self.__new_preprocess_client.register_execution(
+                preprocessing_script_hash=self.preprocessing_id
+            )
             if isinstance(data, list):
                 for input_file in data:
                     output_dataset_hash = self.__new_preprocess_client.upload_input(
@@ -1433,14 +1481,21 @@ class MLOpsPreprocessing(BaseMLOps):
                     f"Uploaded input file {data} - Output Hash {output_dataset_hash}"
                 )
 
-            self.__new_preprocess_client.run(preprocessing_script_hash=self.preprocessing_id, execution_id=execution_id)
+            self.__new_preprocess_client.run(
+                preprocessing_script_hash=self.preprocessing_id,
+                execution_id=execution_id,
+            )
             if wait_complete:
-                status, _ = self.__new_preprocess_client.execution_status(self.preprocessing_id, execution_id)
+                status, _ = self.__new_preprocess_client.execution_status(
+                    self.preprocessing_id, execution_id
+                )
                 print("Waiting for preprocessing script to finish", end="")
                 while status == ModelExecutionState.Running:
                     sleep(30)
-                    status, dataset_hash = self.__new_preprocess_client.execution_status(
-                        self.preprocessing_id, execution_id
+                    status, dataset_hash = (
+                        self.__new_preprocess_client.execution_status(
+                            self.preprocessing_id, execution_id
+                        )
                     )
                     print(".", end="")
 
@@ -1453,9 +1508,9 @@ class MLOpsPreprocessing(BaseMLOps):
                 exec_id=execution_id,
                 login=self.credentials[0],
                 password=self.credentials[1],
-                url=self.base_url
+                url=self.base_url,
             )
-        except :
+        except:
             if self.__preprocessing_ready:
                 if (group_token is not None) | (self.__token is not None):
                     url = f"{self.base_url}/preprocessing/{self.operation}/run/{self.group}/{self.preprocessing_id}"
@@ -1519,7 +1574,9 @@ class MLOpsPreprocessing(BaseMLOps):
                                     status = response["Status"]
                             if status == "Failed":
                                 formatted_msg = parse_json_to_yaml(response.json())
-                                logger.error(f"Something went wrong...\n{formatted_msg}")
+                                logger.error(
+                                    f"Something went wrong...\n{formatted_msg}"
+                                )
                                 raise ExecutionError("Training execution failed")
                         else:
                             raise ServerError(req.text)
@@ -1530,7 +1587,7 @@ class MLOpsPreprocessing(BaseMLOps):
                     )
                     raise GroupError("Group token not informed.")
 
-            return run # This is a potential error
+            return run  # This is a potential error
 
     def get_preprocessing_execution(self, exec_id: str) -> MLOpsExecution:
         """
@@ -1584,12 +1641,12 @@ class MLOpsPreprocessing(BaseMLOps):
 
         """
         try:
-            status, _ = self.__new_preprocess_client.host_status(preprocessing_script_hash=self.preprocessing_id)
+            status, _ = self.__new_preprocess_client.host_status(
+                preprocessing_script_hash=self.preprocessing_id
+            )
             return {"Status": status.name}
         except:
-            url = (
-                f"{self.base_url}/preprocessing/status/{self.group}/{self.preprocessing_id}"
-            )
+            url = f"{self.base_url}/preprocessing/status/{self.group}/{self.preprocessing_id}"
             response = requests.get(
                 url,
                 headers={
@@ -1722,9 +1779,16 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         execution.download_result()
     """
 
-    def __init__(self, login: Optional[str] = None, password: Optional[str] = None, url: Optional[str] = None):
+    def __init__(
+        self,
+        login: Optional[str] = None,
+        password: Optional[str] = None,
+        url: Optional[str] = None,
+    ):
         super().__init__(login=login, password=password, url=url)
-        self.__new_preprocessing_client = MLOpsPreprocessingAsyncV2Client(login=login, password=password, url=url)
+        self.__new_preprocessing_client = MLOpsPreprocessingAsyncV2Client(
+            login=login, password=password, url=url
+        )
 
     def __get_preprocessing_status(self, *, preprocessing_id: str, group: str) -> dict:
         """
@@ -1748,8 +1812,10 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
             The preprocessing status and a message if the status is 'Failed'
         """
         try:
-            status, _ = self.__new_preprocessing_client.host_status(preprocessing_script_hash=preprocessing_id)
-            return {'Status': status.name}
+            status, _ = self.__new_preprocessing_client.host_status(
+                preprocessing_script_hash=preprocessing_id
+            )
+            return {"Status": status.name}
         except:
             url = f"{self.base_url}/preprocessing/status/{group}/{preprocessing_id}"
             response = requests.get(
@@ -1764,7 +1830,9 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
             if response.status_code not in [200, 410]:
                 formatted_msg = parse_json_to_yaml(response.json())
                 logger.error(f"Something went wrong...\n{formatted_msg}")
-                raise PreprocessingError(f'Preprocessing "{preprocessing_id}" not found')
+                raise PreprocessingError(
+                    f'Preprocessing "{preprocessing_id}" not found'
+                )
 
             return response.json()
 
