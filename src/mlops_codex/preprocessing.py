@@ -870,6 +870,26 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         )
         return response.json()
 
+    def describe_execution(self, preprocessing_script_hash: str, execution_id: int):
+        token = refresh_token(*self.credentials, self.base_url)
+        url = f"{self.url}/{preprocessing_script_hash}/execution/{execution_id}"
+
+        response = make_request(
+            url=url,
+            method="GET",
+            success_code=200,
+            custom_exception=PreprocessingError,
+            custom_exception_message=f"Preprocessing hash {preprocessing_script_hash} or execution Id {execution_id} not found.",
+            logger_msg=f"Preprocessing hash {preprocessing_script_hash} or execution Id {execution_id} not found.",
+            specific_error_code=404,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.describe.__qualname__,
+            }
+        )
+        return response.json()
+
 
 class MLOpsPreprocessingAsyncV2(BaseModel):
 
@@ -1091,6 +1111,104 @@ class MLOpsPreprocessingAsyncV2(BaseModel):
         self._preprocessing_client.download(
             preprocessing_script_hash=self.preprocessing_hash, execution_id=execution_id, path=path
         )
+
+
+class PreprocessExecution:
+    """
+    Class to manage new processing script executions. For while, it is a temporary solution
+
+    Parameters
+    ----------
+    preprocess_hash: str
+        Training id (hash) from the experiment you want to access
+    group: str
+        Group the training is inserted.
+    exec_id: int
+        Execution id for that specific training run
+    login: str
+        Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
+    password: str
+        Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
+    url: str
+
+    Raises
+    ------
+    TrainingError
+        When the training can't be accessed in the server
+    AuthenticationError
+        Invalid credentials
+
+    """
+    def __init__(
+        self,
+        *,
+        preprocess_hash: str,
+        group: str,
+        exec_id: int,
+        login: Optional[str] = None,
+        password: Optional[str] = None,
+        url: str = None,
+    ) -> None:
+
+        self.preprocessing_hash = preprocess_hash
+        self.group = group
+        self.exec_id = exec_id
+        self.__client = MLOpsPreprocessingAsyncV2Client(
+            login=login,
+            password=password,
+            url=url,
+        )
+
+    def get_status(self):
+        """
+        Get the status of the preprocessing script execution.
+
+        Returns
+        -------
+        str
+            Status of the preprocessing script execution.
+        """
+        status, _ = self.__client.execution_status(
+            preprocessing_script_hash=self.preprocessing_hash, execution_id=self.exec_id
+        )
+        return status.name
+
+    def wait_ready(self):
+        """
+        Wait for the preprocessing script execution to finish.
+        """
+        status, _ = self.__client.execution_status(
+            preprocessing_script_hash=self.preprocessing_hash, execution_id=self.exec_id
+        )
+        while status in [ModelExecutionState.Running, ModelExecutionState.Requested]:
+            sleep(30)
+            status, _ = self.__client.execution_status(
+                preprocessing_script_hash=self.preprocessing_hash, execution_id=self.exec_id
+            )
+        logger.info(f"Preprocessing script execution {self.preprocessing_hash} is {status.name}.")
+
+    def download(self, path: Optional[str] = "./"):
+        """
+        Download the preprocessing script execution.
+
+        Parameters
+        ----------
+        path: Optional[str]
+            Path where to save the downloaded file.
+        """
+        self.__client.download(
+            preprocessing_script_hash=self.preprocessing_hash, execution_id=self.exec_id, path=path
+        )
+
+    def execution_info(self):
+        """
+        Log the information about a preprocessing script execution.
+        """
+        response = self.__client.describe_execution(
+            preprocessing_script_hash=self.preprocessing_hash, execution_id=self.exec_id
+        )
+        logger.info(f"Result:\n{parse_json_to_yaml(response)}")
+
 
 
 class MLOpsPreprocessing(BaseMLOps):
@@ -1329,9 +1447,14 @@ class MLOpsPreprocessing(BaseMLOps):
                 logger.info(
                     f"Preprocessing script execution {self.preprocessing_id} statu = {status}"
                 )
-
-
-
+            run = PreprocessExecution(
+                preprocess_hash=self.preprocessing_id,
+                group=self.group,
+                exec_id=execution_id,
+                login=self.credentials[0],
+                password=self.credentials[1],
+                url=self.base_url
+            )
         except :
             if self.__preprocessing_ready:
                 if (group_token is not None) | (self.__token is not None):
