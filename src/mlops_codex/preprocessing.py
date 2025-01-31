@@ -2316,7 +2316,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         requirements_file: str,
         group: str,
         schema: Optional[Union[str, Dict, List[Tuple[str, str]]]] = None,
-        extra_files: Optional[list] = None,
+        extra_files: Optional[Union[List, Tuple[str, str], List[Tuple[str, str]]]] = None,
         env: Optional[str] = None,
         python_version: str = "3.10",
         operation="Sync",
@@ -2343,18 +2343,19 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
             For async models, send a parquet or csv file
             For sync models, send a json or xml file
             If you want to upload more than a file, send a list of tuples in the format (dataset_name, dataset_file_path).
-        extra_files: Optional[list], optional
+        extra_files: Optional[Union[List, Tuple[str, str], List[Tuple[str, str]]]]
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
-        env: Optional[str], optional
+            If you will use the extras files in the multiple preprocessing, you must upload a tuple in the format (extra_file_name, extra_file_path) or a list of tuples in that format.
+        env: Optional[str]
             Flag that choose which environment (dev, staging, production) of MLOps you are using. Default is True
         python_version: Optional[str], optional
-            Python version for the preprocessing environment. Avaliable versions are 3.8, 3.9, 3.10. Defaults to '3.10'
+            Python version for the preprocessing environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.10'
         operation: str
-            Defines wich kind operation is beeing executed (Sync or Async). Default value is Sync
+            Defines which kind operation is being executed (Sync or Async). Default value is Sync
         input_type: str
             The type of the input file that should be 'json', 'csv' or 'parquet'
-        wait_for_ready: Optional[bool], optional
-            Wait for preprocessing to be ready and returns a MLOpsPreprocessing instace with the new preprocessing. Defaults to True
+        wait_for_ready: Optional[bool]
+            Wait for preprocessing to be ready and returns a MLOpsPreprocessing instance with the new preprocessing. Defaults to True
 
         Raises
         ------
@@ -2379,6 +2380,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
                 requirements_path=requirements_file,
                 python_version=python_version,
                 schema_files_path=schema,
+                extra_files=extra_files,
                 wait_read=wait_for_ready,
             )
 
