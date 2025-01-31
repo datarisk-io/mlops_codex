@@ -268,6 +268,35 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
             },
         )
 
+    def __upload_extras(self, preprocessing_script_hash: str, extra_files: Tuple[str, str]) -> None:
+        url = f"{self.url}/{preprocessing_script_hash}/extra-file"
+        token = refresh_token(*self.credentials, self.base_url)
+
+        file_path = extra_files[1]
+        file_name = extra_files[0]
+
+        upload_data = {"extra_file": open(file_path, "rb")}
+        input_data = {"extra_file_name": file_name}
+
+        response = make_request(
+            url=url,
+            method="PATCH",
+            data=input_data,
+            files=upload_data,
+            success_code=201,
+            custom_exception=PreprocessingError,
+            custom_exception_message=f"Failed to create preprocessing for preprocessing hash {preprocessing_script_hash}.",
+            logger_msg=f"Failed to upload preprocessing for preprocessing hash {preprocessing_script_hash} hash.",
+            specific_error_code=404,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.create.__qualname__,
+            }
+        )
+        msg = response.json()["Message"]
+        logger.debug(msg)
+
     def host(self, preprocessing_script_hash: str, token: str) -> None:
         """
         Host a preprocessing script to MLOps.
@@ -399,6 +428,7 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
             Union[Tuple[str, str], List[Tuple[str, str]]]
         ] = None,
         schema_datasets: Optional[Union[str, List[str]]] = None,
+        extra_files: Union[Tuple[str, str], List[Tuple[str, str]]] = None,
         wait_read: bool = False,
     ):
         """
@@ -422,6 +452,8 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
             Python version for the model environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.9'
         requirements_path: str
             Path to the requirements file
+        extra_files: Union[Tuple[str, str], List[Tuple[str, str]]]
+            Extra files to upload to the preprocessing script. The format must be a tuple in the format (extra_file_name, extra_file_path). If you want to upload more than a file, send a list of tuples in the format (extra_file_name, extra_file_path).
         wait_read: bool
             If true, it will wait for the preprocessing script to finish before returning. Defaults to False.
 
@@ -524,6 +556,14 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         logger.debug("Requirements file uploaded")
 
         logger.debug("Hosting preprocessing script")
+
+        if isinstance(extra_files, list):
+            for extra_file in extra_files:
+                self.__upload_extras(preprocessing_script_hash=preprocessing_script_hash, extra_files=extra_file)
+                logger.info("Successfully uploaded extra files")
+        if extra_files is not None:
+            self.__upload_extras(preprocessing_script_hash=preprocessing_script_hash, extra_files=extra_files)
+            logger.info("Successfully uploaded extra files")
 
         self.host(preprocessing_script_hash=preprocessing_script_hash, token=token)
 
