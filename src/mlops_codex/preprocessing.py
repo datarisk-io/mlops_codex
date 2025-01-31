@@ -1510,6 +1510,7 @@ class MLOpsPreprocessing(BaseMLOps):
                 password=self.credentials[1],
                 url=self.base_url,
             )
+            return run
         except:
             if self.__preprocessing_ready:
                 if (group_token is not None) | (self.__token is not None):
