@@ -125,7 +125,8 @@ def make_request(
         params (dict, optional): URL parameters for GET requests.
         data (dict, optional): Data for POST/PUT requests (form-encoded).
         json (dict, optional): Data for POST/PUT requests (JSON).
-        timeout (int, optional): Timeout in seconds for the request. Default is 10.
+        files (dict, optional): Data for POST/PUT requests (files).
+        timeout (int, optional): Timeout in seconds for the request. Default is 60.
 
     Returns:
         requests.Response
