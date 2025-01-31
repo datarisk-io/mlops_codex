@@ -2371,7 +2371,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         validate_group_existence(group, self)
         validate_python_version(python_version)
 
-        if isinstance(schema, list) and operation == "Async":
+        if operation == "Async":
             preprocessing_id = self.__new_preprocessing_client.create(
                 name=preprocessing_name,
                 group=group,
