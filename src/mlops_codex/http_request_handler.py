@@ -1,4 +1,4 @@
-from typing import Tuple, Type, Union
+from typing import Tuple, Union
 
 import requests
 from cachetools.func import ttl_cache
@@ -49,7 +49,8 @@ def try_login(
 @ttl_cache
 def refresh_token(login: str, password: str, base_url: str):
     respose = requests.post(
-        f"{base_url}/login", data={"user": login, "password": password},
+        f"{base_url}/login",
+        data={"user": login, "password": password},
         timeout=60,
     )
 
@@ -61,10 +62,10 @@ def refresh_token(login: str, password: str, base_url: str):
 
 def handle_common_errors(
     response: requests.Response,
-    specific_error_code: int,
-    custom_exception: Type[Exception],
-    custom_exception_message: str,
-    logger_msg: str,
+    specific_error_code,
+    custom_exception,
+    custom_exception_message,
+    logger_msg,
 ):
     """
     Handle possible errors
@@ -72,7 +73,7 @@ def handle_common_errors(
     Args:
         response (requests.Response): Response from MLOps server
         specific_error_code (int): Error code
-        custom_exception (Type[Exception]): Custom exception
+        custom_exception (_SpecialForm[Exception]): Custom exception
         custom_exception_message (str): Custom exception message
         logger_msg (str): Log message
     """
@@ -82,13 +83,13 @@ def handle_common_errors(
         raise ServerError("Server is down or unavailable.")
     elif specific_error_code == response.status_code:
         if logger_msg:
-            logger.error(logger_msg)
+            logger.debug(logger_msg)
         else:
-            logger.error(response.json())
+            logger.debug(response.json())
         raise custom_exception(custom_exception_message)
 
     formatted_msg = parse_json_to_yaml(response.json())
-    logger.error(f"Something went wrong. \n{formatted_msg}")
+    logger.debug(f"Something went wrong. \n{formatted_msg}")
     raise UnexpectedError(
         "Unexpected error during HTTP request. Please contact the administrator."
     )
@@ -106,6 +107,7 @@ def make_request(
     params=None,
     data=None,
     json=None,
+    files=None,
     timeout=60,
 ) -> requests.Response:
     """
@@ -115,7 +117,7 @@ def make_request(
         url (str): URL of the endpoint.
         method (str): HTTP method (get, post, delete, patch, etc).
         success_code (int): Status codes indicating success.
-        custom_exception (Type[Exception]): Custom exception class.
+        custom_exception (_SpecialForm[Exception]): Custom exception class.
         custom_exception_message (str): Custom exception message.
         specific_error_code (int): Specific error code.
         logger_msg (str): Logger message.
@@ -123,7 +125,8 @@ def make_request(
         params (dict, optional): URL parameters for GET requests.
         data (dict, optional): Data for POST/PUT requests (form-encoded).
         json (dict, optional): Data for POST/PUT requests (JSON).
-        timeout (int, optional): Timeout in seconds for the request. Default is 10.
+        files (dict, optional): Data for POST/PUT requests (files).
+        timeout (int, optional): Timeout in seconds for the request. Default is 60.
 
     Returns:
         requests.Response
@@ -138,6 +141,7 @@ def make_request(
         params=params,
         data=data,
         json=json,
+        files=files,
         timeout=timeout,
     )
 

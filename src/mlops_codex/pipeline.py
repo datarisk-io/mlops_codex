@@ -147,7 +147,7 @@ class MLOpsPipeline(BaseMLOps):
         # Somethings when running as a script the default version might not work
         if not loaded:
             load_dotenv(find_dotenv(usecwd=True))
-        logger.info(f"Loading .env")
+        logger.info("Loading .env")
 
         login = os.getenv("MLOPS_USER")
         if not login:

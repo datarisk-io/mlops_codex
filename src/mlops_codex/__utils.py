@@ -1,5 +1,6 @@
 import io
 import json
+import re
 import typing
 from functools import wraps
 from typing import Callable, Type
@@ -36,6 +37,22 @@ def parse_json_to_yaml(data) -> str:
         str: data in the yaml format
     """
     return yaml.dump(data, allow_unicode=True, default_flow_style=False)
+
+
+def extract_execution_number_from_string(text: str) -> int:
+    """
+    Extract the execution number from a string
+
+    Args:
+        text (str): the string to extract the execution number from
+
+    Returns:
+        int: the execution number
+    """
+    match = re.search(r"'(\d+)'", text)
+    if match:
+        return int(match.group(1))
+    raise ValueError("Could not extract execution number")
 
 
 def validate_kwargs(model: Type) -> Callable:

@@ -21,3 +21,21 @@ MLOpsPreprocessingClient
    :members:
    :undoc-members:
    :show-inheritance:
+
+
+MLOpsPreprocessingAsyncV2Client
+------------------------------------------------------------
+
+.. autoclass:: mlops_codex.preprocessing.MLOpsPreprocessingAsyncV2Client
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+MLOpsPreprocessingAsyncV2
+------------------------------------------------------------
+
+.. autoclass:: mlops_codex.preprocessing.MLOpsPreprocessingAsyncV2
+   :members:
+   :undoc-members:
+   :show-inheritance:
