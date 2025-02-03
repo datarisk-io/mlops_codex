@@ -6,7 +6,6 @@ from mlops_codex.base import BaseMLOpsClient
 from mlops_codex.exceptions import DatasetNotFoundError
 from mlops_codex.http_request_handler import make_request, refresh_token
 from mlops_codex.logger_config import get_logger
-from mlops_codex.preprocessing import MLOpsPreprocessingAsyncV2Client
 
 logger = get_logger()
 
