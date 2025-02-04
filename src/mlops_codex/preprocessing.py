@@ -1553,7 +1553,7 @@ class MLOpsPreprocessing(BaseMLOps):
                 url=self.base_url,
             )
             return run
-        except:
+        except: # noqa: E722
             if self.__preprocessing_ready:
                 if (group_token is not None) | (self.__token is not None):
                     url = f"{self.base_url}/preprocessing/{self.operation}/run/{self.group}/{self.preprocessing_id}"
@@ -1688,7 +1688,7 @@ class MLOpsPreprocessing(BaseMLOps):
                 preprocessing_script_hash=self.preprocessing_id
             )
             return {"Status": status.name}
-        except:
+        except: # noqa: E722
             url = f"{self.base_url}/preprocessing/status/{self.group}/{self.preprocessing_id}"
             response = requests.get(
                 url,
@@ -1859,7 +1859,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
                 preprocessing_script_hash=preprocessing_id
             )
             return {"Status": status.name}
-        except:
+        except: # noqa: E722
             url = f"{self.base_url}/preprocessing/status/{group}/{preprocessing_id}"
             response = requests.get(
                 url=url,
@@ -2019,7 +2019,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
                 start=start,
                 end=end,
             )
-        except:
+        except: # noqa: E722
             url = f"{self.base_url}/preprocessing/search"
 
             query = {}
@@ -2192,8 +2192,6 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
             ("requirements", ("requirements.txt", open(requirements_file, "rb"))),
         ]
 
-        if operation == "Sync":
-            input_type = "json"
         if schema:
             if isinstance(schema, str):
                 schema_file = open(schema, "rb")
