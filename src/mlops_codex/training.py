@@ -175,21 +175,21 @@ class MLOpsTrainingLogger:
 
         filepath = f"./{save_filename}.png"
 
-        with try_import() as plotly_import:
+        with try_import() as _:
             import plotly
 
             if isinstance(plot, plotly.graph_objs.Figure):
                 self.save_plotly_plot(plot=plot, filepath=filepath)
                 return
 
-        with try_import() as seaborn_import:
+        with try_import() as _:
             import seaborn as sns
 
             if isinstance(plot, sns.axisgrid.FacetGrid):
                 self.save_seaborn_or_matplotlib_plot(plot=plot, filepath=filepath)
                 return
 
-        with try_import() as matplotlib_import:
+        with try_import() as _:
             import matplotlib.pyplot as plt
 
             if isinstance(plot, plt.Figure):
