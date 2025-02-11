@@ -374,8 +374,8 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         status = ModelState[response.json()["Status"]]
         if status == ModelState.Deployed:
             dataset_hash = response.json()["DatasetHash"]
-            return status, dataset_hash
-        return status, None
+            return status, dataset_hash, None
+        return status, None, response.json()["Message"]
 
     def wait(self, preprocessing_script_hash: str, token: str):
         """
@@ -402,12 +402,12 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         ServerError
             Raised if the server encounters an issue.
         """
-        status, dataset_hash = self.host_status(preprocessing_script_hash)
+        status, dataset_hash, _ = self.host_status(preprocessing_script_hash)
 
         print("Waiting for preprocessing script to finish", end="", flush=True)
         while status == ModelState.Building or status == ModelState.Ready:
             sleep(30)
-            status, dataset_hash = self.host_status(preprocessing_script_hash)
+            status, dataset_hash, _ = self.host_status(preprocessing_script_hash)
             print(".", end="", flush=True)
 
         if status == ModelState.Deployed:
@@ -557,18 +557,21 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
 
         logger.info("Hosting preprocessing script")
 
-        if isinstance(extra_files, list):
-            for extra_file in extra_files:
-                self.__upload_extras(preprocessing_script_hash=preprocessing_script_hash, extra_files=extra_file)
-                logger.info("Successfully uploaded extra files")
         if extra_files is not None:
-            self.__upload_extras(preprocessing_script_hash=preprocessing_script_hash, extra_files=extra_files)
-            logger.info("Successfully uploaded extra files")
+            if isinstance(extra_files, list):
+                for extra_file in extra_files:
+                    self.__upload_extras(preprocessing_script_hash=preprocessing_script_hash, extra_files=extra_file)
+                    logger.info("Successfully uploaded extra files")
+            elif isinstance(extra_files, tuple):
+                self.__upload_extras(preprocessing_script_hash=preprocessing_script_hash, extra_files=extra_files)
+                logger.info("Successfully uploaded extra files")
+            else:
+                logger.error("Unsported extra file.")
 
         self.host(preprocessing_script_hash=preprocessing_script_hash, token=token)
 
         if wait_read:
-            status, _ = self.wait(
+            status, _, _ = self.wait(
                 preprocessing_script_hash=preprocessing_script_hash, token=token
             )
             msg = (
@@ -1684,10 +1687,10 @@ class MLOpsPreprocessing(BaseMLOps):
 
         """
         try:
-            status, _ = self.__new_preprocess_client.host_status(
+            status, _, message = self.__new_preprocess_client.host_status(
                 preprocessing_script_hash=self.preprocessing_id
             )
-            return {"Status": status.name}
+            return {"Status": status.name, "Message": message}
         except: # noqa: E722
             url = f"{self.base_url}/preprocessing/status/{self.group}/{self.preprocessing_id}"
             response = requests.get(
@@ -1855,10 +1858,10 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
             The preprocessing status and a message if the status is 'Failed'
         """
         try:
-            status, _ = self.__new_preprocessing_client.host_status(
+            status, _, message = self.__new_preprocessing_client.host_status(
                 preprocessing_script_hash=preprocessing_id
             )
-            return {"Status": status.name}
+            return {"Status": status.name, "Message": message}
         except: # noqa: E722
             url = f"{self.base_url}/preprocessing/status/{group}/{preprocessing_id}"
             response = requests.get(
@@ -2408,7 +2411,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         self.__host_preprocessing(
             operation=operation.lower(), preprocessing_id=preprocessing_id, group=group
         )
-        time.sleep(1)
+        time.sleep(10)
 
         return self.get_preprocessing(
             preprocessing_id=preprocessing_id,

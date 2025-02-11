@@ -4,7 +4,7 @@ import requests
 from cachetools.func import ttl_cache
 
 from mlops_codex.__utils import parse_json_to_yaml
-from mlops_codex.exceptions import AuthenticationError, ServerError, UnexpectedError
+from mlops_codex.exceptions import AuthenticationError, ServerError, UnexpectedError, InputError
 from mlops_codex.logger_config import get_logger
 
 logger = get_logger()
@@ -79,6 +79,9 @@ def handle_common_errors(
     """
     if response.status_code == 401:
         raise AuthenticationError("Unauthorized: Check your credentials or token.")
+    elif response.status_code == 400:
+        logger.error(parse_json_to_yaml(response.json()))
+        raise InputError("The request had a error in the input.")
     elif response.status_code >= 500:
         raise ServerError("Server is down or unavailable.")
     elif specific_error_code == response.status_code:
