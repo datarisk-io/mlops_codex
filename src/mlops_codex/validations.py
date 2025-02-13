@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
-from typing import Tuple
+from typing import Set, Tuple
 
-from mlops_codex.exceptions import GroupError, InputError
 from mlops_codex.base import BaseMLOpsClient
+from mlops_codex.exceptions import GroupError, InputError
 
 
 def validate_group_existence(group: str, client_object: BaseMLOpsClient) -> bool:
@@ -58,3 +58,9 @@ def date_validation(start: str, end: str) -> Tuple[str, str]:
         )
 
     return start, end
+
+
+def file_extension_validation(file_name: str, permitted_extensions: Set[str]):
+    if file_name.split(".")[-1] not in permitted_extensions:
+        raise InputError(f"File {file_name} must have extension {permitted_extensions}")
+    return True
