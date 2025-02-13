@@ -13,7 +13,9 @@ def parse_dict_or_file(obj):
         schema_file = open(obj, "rb")
     elif isinstance(obj, dict):
         schema_file = io.StringIO()
-        json.dump(obj, schema_file).seek(0)
+        json.dump(obj, schema_file)
+    else:
+        raise TypeError("Object must be str or dict")
 
     return schema_file
 
