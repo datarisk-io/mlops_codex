@@ -639,7 +639,6 @@ class MLOpsTrainingExecution(MLOpsExecution):
                 pass
         return result
 
-    # TODO: alterar isso aqui!!!
     def promote_model(
             self,
             *,
