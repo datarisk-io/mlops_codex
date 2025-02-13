@@ -4,7 +4,12 @@ import requests
 from cachetools.func import ttl_cache
 
 from mlops_codex.__utils import parse_json_to_yaml
-from mlops_codex.exceptions import AuthenticationError, ServerError, UnexpectedError, InputError
+from mlops_codex.exceptions import (
+    AuthenticationError,
+    InputError,
+    ServerError,
+    UnexpectedError,
+)
 from mlops_codex.logger_config import get_logger
 
 logger = get_logger()
@@ -48,16 +53,16 @@ def try_login(
 
 @ttl_cache
 def refresh_token(login: str, password: str, base_url: str):
-    respose = requests.post(
+    response = requests.post(
         f"{base_url}/login",
         data={"user": login, "password": password},
         timeout=60,
     )
 
-    if respose.status_code == 200:
-        return respose.json()["Token"]
+    if response.status_code == 200:
+        return response.json()["Token"]
     else:
-        raise AuthenticationError(respose.text)
+        raise AuthenticationError(response.text)
 
 
 def handle_common_errors(
@@ -86,13 +91,13 @@ def handle_common_errors(
         raise ServerError("Server is down or unavailable.")
     elif specific_error_code == response.status_code:
         if logger_msg:
-            logger.debug(logger_msg)
+            logger.info(logger_msg)
         else:
-            logger.debug(response.json())
+            logger.info(response.json())
         raise custom_exception(custom_exception_message)
 
     formatted_msg = parse_json_to_yaml(response.json())
-    logger.debug(f"Something went wrong. \n{formatted_msg}")
+    logger.info(f"Something went wrong. \n{formatted_msg}")
     raise UnexpectedError(
         "Unexpected error during HTTP request. Please contact the administrator."
     )
@@ -112,7 +117,7 @@ def make_request(
     json=None,
     files=None,
     timeout=60,
-) -> requests.Response:
+):
     """
     Makes a generic HTTP request.
 
