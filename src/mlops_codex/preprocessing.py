@@ -6,13 +6,13 @@ import os
 import time
 from http import HTTPStatus
 from time import sleep
-from typing import Optional, Union, Tuple, List, Any, Dict
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import requests
 from pydantic import BaseModel, Field, PrivateAttr
 
-from mlops_codex.__utils import parse_json_to_yaml, extract_execution_number_from_string
-from mlops_codex.__model_states import ModelState, ModelExecutionState
+from mlops_codex.__model_states import ModelExecutionState, ModelState
+from mlops_codex.__utils import extract_execution_number_from_string, parse_json_to_yaml
 from mlops_codex.base import BaseMLOps, BaseMLOpsClient, MLOpsExecution
 from mlops_codex.exceptions import (
     AuthenticationError,
@@ -22,7 +22,7 @@ from mlops_codex.exceptions import (
     PreprocessingError,
     ServerError,
 )
-from mlops_codex.http_request_handler import refresh_token, make_request
+from mlops_codex.http_request_handler import make_request, refresh_token
 from mlops_codex.logger_config import get_logger
 from mlops_codex.validations import validate_group_existence, validate_python_version
 
@@ -268,7 +268,9 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
             },
         )
 
-    def __upload_extras(self, preprocessing_script_hash: str, extra_files: Tuple[str, str]) -> None:
+    def __upload_extras(
+        self, preprocessing_script_hash: str, extra_files: Tuple[str, str]
+    ) -> None:
         url = f"{self.url}/{preprocessing_script_hash}/extra-file"
         token = refresh_token(*self.credentials, self.base_url)
 
@@ -292,7 +294,7 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
                 "Authorization": f"Bearer {token}",
                 "Neomaril-Origin": "Codex",
                 "Neomaril-Method": self.create.__qualname__,
-            }
+            },
         )
         msg = response.json()["Message"]
         logger.debug(msg)
@@ -560,10 +562,16 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         if extra_files is not None:
             if isinstance(extra_files, list):
                 for extra_file in extra_files:
-                    self.__upload_extras(preprocessing_script_hash=preprocessing_script_hash, extra_files=extra_file)
+                    self.__upload_extras(
+                        preprocessing_script_hash=preprocessing_script_hash,
+                        extra_files=extra_file,
+                    )
                     logger.info("Successfully uploaded extra files")
             elif isinstance(extra_files, tuple):
-                self.__upload_extras(preprocessing_script_hash=preprocessing_script_hash, extra_files=extra_files)
+                self.__upload_extras(
+                    preprocessing_script_hash=preprocessing_script_hash,
+                    extra_files=extra_files,
+                )
                 logger.info("Successfully uploaded extra files")
             else:
                 logger.error("Unsported extra file.")
@@ -571,7 +579,7 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         self.host(preprocessing_script_hash=preprocessing_script_hash, token=token)
 
         if wait_read:
-            status, _, _ = self.wait(
+            status, _ = self.wait(
                 preprocessing_script_hash=preprocessing_script_hash, token=token
             )
             msg = (
@@ -1432,7 +1440,7 @@ class MLOpsPreprocessing(BaseMLOps):
 
         Example
         -------
-        >>> preprocessing.get_logs(start='2023-01-31', end='2023-02-24', routine='Run', type='Error')
+        >>> preprocessing.get_logs(model_hash=,start='2023-01-31',end='2023-02-24',routine='Run')
          {'Results':
             [{'Hash': 'M9c3af308c754ee7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4',
                 'RegisteredAt': '2023-01-31T16:06:45.5955220Z',
@@ -1497,7 +1505,7 @@ class MLOpsPreprocessing(BaseMLOps):
 
         Returns
         -------
-        Union[dict, MLOpsExecution]
+        Union[dict, MLOpsExecution, PreprocessExecution]
             The return of the scoring function in the source file for Sync preprocessing or the execution class for Async preprocessing.
         """
         try:
@@ -1556,7 +1564,7 @@ class MLOpsPreprocessing(BaseMLOps):
                 url=self.base_url,
             )
             return run
-        except: # noqa: E722
+        except:  # noqa: E722
             if self.__preprocessing_ready:
                 if (group_token is not None) | (self.__token is not None):
                     url = f"{self.base_url}/preprocessing/{self.operation}/run/{self.group}/{self.preprocessing_id}"
@@ -1635,7 +1643,7 @@ class MLOpsPreprocessing(BaseMLOps):
 
             return run  # This is a potential error
 
-    def get_preprocessing_execution(self, exec_id: str) -> MLOpsExecution:
+    def get_preprocessing_execution(self, exec_id: str):
         """
         Get an execution instance for that preprocessing.
 
@@ -1659,15 +1667,13 @@ class MLOpsPreprocessing(BaseMLOps):
         >>> preprocessing.get_preprocessing_execution('1')
         """
         if self.operation == "async":
-            return MLOpsExecution(
-                parent_id=self.preprocessing_id,
-                exec_type="AsyncPreprocessing",
-                exec_id=exec_id,
+            return PreprocessExecution(
+                preprocess_hash=self.preprocessing_id,
+                group=self.group,
+                exec_id=int(exec_id),
                 login=self.credentials[0],
                 password=self.credentials[1],
                 url=self.base_url,
-                group_token=self.__token,
-                group=self.group,
             )
         raise PreprocessingError("Sync pre processing don't have executions")
 
@@ -1691,7 +1697,7 @@ class MLOpsPreprocessing(BaseMLOps):
                 preprocessing_script_hash=self.preprocessing_id
             )
             return {"Status": status.name, "Message": message}
-        except: # noqa: E722
+        except:  # noqa: E722
             url = f"{self.base_url}/preprocessing/status/{self.group}/{self.preprocessing_id}"
             response = requests.get(
                 url,
@@ -1801,7 +1807,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
 
         model_client = MLOpsModelClient('123456')
 
-        sync_model = model_client.get_model(group='datarisk', model_id='M3aa182ff161478a97f4d3b2dc0e9b064d5a9e7330174daeb302e01586b9654c')
+        sync_model = model_client.get_model(group='datarisk', model_hash='M3aa182ff161478a97f4d3b2dc0e9b064d5a9e7330174daeb302e01586b9654c')
 
         sync_model.predict(data=sync_model.schema, preprocessing=sync_preprocessing)
 
@@ -1815,7 +1821,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         # the async preprocess script configuration presented before
         # ...
 
-        async_model = model_client.get_model(group='datarisk', model_id='Maa3449c7f474567b6556614a12039d8bfdad0117fec47b2a4e03fcca90b7e7c')
+        async_model = model_client.get_model(group='datarisk', model_hash='Maa3449c7f474567b6556614a12039d8bfdad0117fec47b2a4e03fcca90b7e7c')
 
         PATH = './samples/asyncModel/'
 
@@ -1862,7 +1868,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
                 preprocessing_script_hash=preprocessing_id
             )
             return {"Status": status.name, "Message": message}
-        except: # noqa: E722
+        except:  # noqa: E722
             url = f"{self.base_url}/preprocessing/status/{group}/{preprocessing_id}"
             response = requests.get(
                 url=url,
@@ -2022,7 +2028,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
                 start=start,
                 end=end,
             )
-        except: # noqa: E722
+        except:  # noqa: E722
             url = f"{self.base_url}/preprocessing/search"
 
             query = {}
@@ -2111,7 +2117,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
 
         Example
         -------
-        >>> preprocessing.get_logs(routine='Run')
+        >>> preprocessing.get_logs(model_hash=,routine='Run')
          {'Results':
             [{'Hash': 'B4c3af308c3e452e7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4',
                 'RegisteredAt': '2023-02-03T16:06:45.5955220Z',
@@ -2319,7 +2325,9 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         requirements_file: str,
         group: str,
         schema: Optional[Union[str, Dict, List[Tuple[str, str]]]] = None,
-        extra_files: Optional[Union[List, Tuple[str, str], List[Tuple[str, str]]]] = None,
+        extra_files: Optional[
+            Union[List, Tuple[str, str], List[Tuple[str, str]]]
+        ] = None,
         env: Optional[str] = None,
         python_version: str = "3.10",
         operation="Sync",
