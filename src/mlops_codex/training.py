@@ -29,7 +29,7 @@ from mlops_codex.exceptions import (
 )
 from mlops_codex.http_request_handler import refresh_token
 from mlops_codex.logger_config import get_logger
-from mlops_codex.model import MLOpsModel
+from mlops_codex.model import MLOpsModel, SyncModel, AsyncModel
 from mlops_codex.validations import validate_group_existence
 
 patt = re.compile(r"(\d+)")
@@ -639,60 +639,19 @@ class MLOpsTrainingExecution(MLOpsExecution):
                 pass
         return result
 
-    def __host_model(self, *, operation: str, model_id: str) -> None:
-        """
-        Builds the model execution environment
-
-        Parameters
-        ----------
-        operation: str
-            The model operation type (Sync or Async)
-        model_id: str
-            The uploaded model id (hash)
-
-        Raises
-        ------
-        InputError
-            Some input parameters its invalid
-        """
-
-        url = f"{self.base_url}/model/{operation}/host/{self.group}/{model_id}"
-        response = requests.get(
-            url,
-            headers={
-                "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url),
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.promote_model.__qualname__,
-            },
-        )
-        if response.status_code == 202:
-            logger.info(f"Model host in process - Hash: {model_id}")
-
-        if response.status_code == 401:
-            logger.error(
-                "Login or password are invalid, please check your credentials."
-            )
-            raise AuthenticationError("Login not authorized.")
-
-        if response.status_code >= 500:
-            logger.error(
-                f"Something went wrong...\n{parse_json_to_yaml(response.json())}"
-            )
-            raise InputError("Invalid parameters for model creation")
-
+    # TODO: alterar isso aqui!!!
     def promote_model(
-        self,
-        *,
-        model_name: str,
-        operation: str = "Sync",
-        schema: Optional[Union[str, dict]] = None,
-        model_reference: Optional[str] = None,
-        source_file: Optional[str] = None,
-        extra_files: Optional[list] = None,
-        requirements_file: Optional[str] = None,
-        env: Optional[str] = None,
-        input_type: str = None,
+            self,
+            *,
+            model_name: str,
+            model_reference: str,
+            source_file: str,
+            input_type: str,
+            operation: Optional[str] = "Sync",
+            schema: Optional[Union[str, dict]] = None,
+            extra_files: Optional[list] = None,
+            requirements_file: Optional[str] = None,
+            env: Optional[str] = None,
     ) -> MLOpsModel:
         """
         Upload models trained inside MLOps.
@@ -746,7 +705,7 @@ class MLOpsTrainingExecution(MLOpsExecution):
             input_validator = False
             raise InputError("Training type needs be: Custom, AutoML or External.")
 
-        if operation and operation == "Async":
+        if operation == "Async":
             fields_required += ", input_type (for async)"
 
         if not input_validator:
@@ -763,7 +722,7 @@ class MLOpsTrainingExecution(MLOpsExecution):
                 + self.status
             )
 
-        model_id = self.__upload_model(
+        model_hash = self.__upload_model(
             model_name=model_name,
             model_reference=model_reference,
             source_file=source_file,
@@ -775,16 +734,19 @@ class MLOpsTrainingExecution(MLOpsExecution):
             input_type=input_type,
         )
 
-        if model_id:
-            self.__host_model(operation=operation.lower(), model_id=model_id)
+        builder = SyncModel if operation.title() == "Sync" else AsyncModel
+        model = builder(
+            name=model_name,
+            model_hash=model_hash,
+            login=self.credentials[0],
+            password=self.credentials[1],
+            url=self.base_url,
+            group=self.group
+        )
 
-            return MLOpsModel(
-                model_id=model_id,
-                login=self.credentials[0],
-                password=self.credentials[1],
-                group=self.group,
-                url=self.base_url,
-            )
+        model.host(operation=operation.title())
+
+        return model
 
 
 class MLOpsTrainingExperiment(BaseMLOps):
