@@ -406,7 +406,7 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         """
         status, dataset_hash, _ = self.host_status(preprocessing_script_hash)
 
-        print("Waiting for preprocessing script to finish", end="", flush=True)
+        print("Waiting for preprocessing script to finish...", end="", flush=True)
         while status == ModelState.Building or status == ModelState.Ready:
             sleep(30)
             status, dataset_hash, _ = self.host_status(preprocessing_script_hash)
@@ -872,6 +872,8 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         """
         if not path.endswith("/"):
             path += "/"
+
+        self.execution_status(preprocessing_script_hash, execution_id)
 
         url = f"{self.url}/{preprocessing_script_hash}/execution/{execution_id}/result"
         token = refresh_token(*self.credentials, self.base_url)
