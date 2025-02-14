@@ -29,7 +29,7 @@ from mlops_codex.exceptions import (
 )
 from mlops_codex.http_request_handler import refresh_token
 from mlops_codex.logger_config import get_logger
-from mlops_codex.model import MLOpsModel, SyncModel, AsyncModel
+from mlops_codex.model import SyncModel, AsyncModel
 from mlops_codex.validations import validate_group_existence
 
 patt = re.compile(r"(\d+)")
@@ -651,7 +651,8 @@ class MLOpsTrainingExecution(MLOpsExecution):
             extra_files: Optional[list] = None,
             requirements_file: Optional[str] = None,
             env: Optional[str] = None,
-    ) -> MLOpsModel:
+            wait_read: Optional[bool] = False,
+    ) -> Union[SyncModel, AsyncModel]:
         """
         Upload models trained inside MLOps.
 
@@ -675,6 +676,8 @@ class MLOpsTrainingExecution(MLOpsExecution):
             Defines which kind operation is being executed (Sync or Async). Default value is Sync
         input_type: str
             The type of the input file that should be 'json', 'csv' or 'parquet'
+        wait_read: Optional[bool], default=False
+            Wait for model to be ready and returns a MLOpsModel instance with the new model
 
         Raises
         ------
@@ -683,7 +686,7 @@ class MLOpsTrainingExecution(MLOpsExecution):
 
         Returns
         -------
-        MLOpsModel
+        Union[SyncModel, AsyncModel]
             The new training model
 
         Example
@@ -744,6 +747,9 @@ class MLOpsTrainingExecution(MLOpsExecution):
         )
 
         model.host(operation=operation.title())
+
+        if wait_read:
+            model.wait_ready()
 
         return model
 
@@ -1445,7 +1451,7 @@ class MLOpsTrainingClient(BaseMLOpsClient):
     """
 
     def __repr__(self) -> str:
-        return f'API version {self.version} - MLOpsTrainingClient(url="{self.base_url}", Token="{self.user_token}")'
+        return f'API version {self.version} \n Token="{self.user_token}'
 
     def __str__(self):
         return f"MLOPS {self.base_url} Training client:{self.user_token}"
