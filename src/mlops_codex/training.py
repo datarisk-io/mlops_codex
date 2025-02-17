@@ -651,7 +651,7 @@ class MLOpsTrainingExecution(MLOpsExecution):
             extra_files: Optional[list] = None,
             requirements_file: Optional[str] = None,
             env: Optional[str] = None,
-            wait_read: Optional[bool] = False,
+            wait_complete: Optional[bool] = False,
     ) -> Union[SyncModel, AsyncModel]:
         """
         Upload models trained inside MLOps.
@@ -676,7 +676,7 @@ class MLOpsTrainingExecution(MLOpsExecution):
             Defines which kind operation is being executed (Sync or Async). Default value is Sync
         input_type: str
             The type of the input file that should be 'json', 'csv' or 'parquet'
-        wait_read: Optional[bool], default=False
+        wait_complete: Optional[bool], default=False
             Wait for model to be ready and returns a MLOpsModel instance with the new model
 
         Raises
@@ -688,10 +688,6 @@ class MLOpsTrainingExecution(MLOpsExecution):
         -------
         Union[SyncModel, AsyncModel]
             The new training model
-
-        Example
-        -------
-        >>> training = run.promote_model('Teste notebook promoted custom', 'score', './samples/train/app.py', './samples/train/schema.json',  'csv')
         """
         if self.training_type == "Custom" or self.training_type == "External":
             input_validator = (
@@ -748,7 +744,7 @@ class MLOpsTrainingExecution(MLOpsExecution):
 
         model.host(operation=operation.title())
 
-        if wait_read:
+        if wait_complete:
             model.wait_ready()
 
         return model
