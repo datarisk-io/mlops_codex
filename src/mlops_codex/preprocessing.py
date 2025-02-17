@@ -3,7 +3,6 @@
 
 import json
 import os
-import time
 from http import HTTPStatus
 from time import sleep
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -14,6 +13,7 @@ from pydantic import BaseModel, Field, PrivateAttr
 from mlops_codex.__model_states import ModelExecutionState, ModelState
 from mlops_codex.__utils import extract_execution_number_from_string, parse_json_to_yaml
 from mlops_codex.base import BaseMLOps, BaseMLOpsClient, MLOpsExecution
+from mlops_codex.dataset import MLOpsDataset
 from mlops_codex.exceptions import (
     AuthenticationError,
     ExecutionError,
@@ -665,8 +665,7 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         self,
         preprocessing_script_hash: str,
         execution_id: int,
-        input_file: Optional[Tuple[str, str]] = None,
-        dataset_hash: Optional[str] = None,
+        data: Union[Tuple[str, str], str] = None,
     ) -> str:
         """
         Upload an input file for a preprocessing script execution
@@ -677,10 +676,8 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
             Preprocessing script hash
         execution_id: int
             Execution id of the preprocessing script.
-        input_file: Optional[Tuple[str, str]]
+        data: tuple[str, str] | str | None
             Input file path and file name. It must be a tuple of the form (input_file_name, input_file_path).
-        dataset_hash: str
-            Dataset hash uploaded or generated.
 
         Returns
         -------
@@ -697,33 +694,18 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
             Raised if the server encounters an issue.
         """
 
-        input_and_dataset_hash_are_none = input_file is None and dataset_hash is None
-        input_and_dataset_hash_are_not_none = (
-            input_file is not None and dataset_hash is not None
-        )
-
-        if input_and_dataset_hash_are_none:
-            raise InputError(
-                "You must give a dataset hash or a input file! Both are None."
-            )
-
-        if input_and_dataset_hash_are_not_none:
-            raise InputError(
-                "You must give a dataset hash or a input file! You tried to upload both. Choose one of them."
-            )
-
         url = f"{self.url}/{preprocessing_script_hash}/execution/{execution_id}/input"
         token = refresh_token(*self.credentials, self.base_url)
 
-        if input_file is not None:
-            name, file_path = input_file
+        if isinstance(data, tuple):
+            name, file_path = data
             upload_data = {"input": open(file_path, "rb")}
-            input_data = {"dataset_name": name}
+            payload = {"dataset_name": name}
 
             response = make_request(
                 url=url,
                 method="PATCH",
-                data=input_data,
+                data=payload,
                 files=upload_data,
                 success_code=201,
                 custom_exception=PreprocessingError,
@@ -738,12 +720,12 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
             )
 
         else:
-            input_data = {"dataset_hash": dataset_hash}
+            payload = {"dataset_hash": data}
 
             response = make_request(
                 url=url,
                 method="PATCH",
-                data=input_data,
+                data=payload,
                 success_code=201,
                 custom_exception=PreprocessingError,
                 custom_exception_message=f"Failed to create preprocessing for preprocessing hash {preprocessing_script_hash}.",
@@ -1003,7 +985,7 @@ class MLOpsPreprocessingAsyncV2(BaseModel):
     preprocessing_hash: str
     group: str
     status: ModelState
-    _preprocessing_client = PrivateAttr(None, init=False)
+    _preprocessing_client: MLOpsPreprocessingAsyncV2Client = PrivateAttr(None, init=False)
 
     class Config:
         arbitrary_types_allowed = True
@@ -1123,19 +1105,13 @@ class MLOpsPreprocessingAsyncV2(BaseModel):
         if isinstance(input_files, list):
             for input_file in input_files:
                 output_dataset_hash = self._preprocessing_client.upload_input(
-                    input_file=input_file,
-                    preprocessing_script_hash=self.preprocessing_hash,
-                    execution_id=execution_id,
-                )
+                    preprocessing_script_hash=self.preprocessing_hash, execution_id=execution_id, data=input_file)
                 logger.debug(
                     f"Uploaded input file {input_file} - Output Hash {output_dataset_hash}"
                 )
         elif input_files is not None:
             output_dataset_hash = self._preprocessing_client.upload_input(
-                input_file=input_files,
-                preprocessing_script_hash=self.preprocessing_hash,
-                execution_id=execution_id,
-            )
+                preprocessing_script_hash=self.preprocessing_hash, execution_id=execution_id, data=input_files)
             logger.debug(
                 f"Uploaded input file {input_files} - Output Hash {output_dataset_hash}"
             )
@@ -1143,19 +1119,13 @@ class MLOpsPreprocessingAsyncV2(BaseModel):
         elif isinstance(dataset_hashes, list):
             for dataset_hash in dataset_hashes:
                 output_dataset_hash = self._preprocessing_client.upload_input(
-                    dataset_hash=dataset_hash,
-                    preprocessing_script_hash=self.preprocessing_hash,
-                    execution_id=execution_id,
-                )
+                    preprocessing_script_hash=self.preprocessing_hash, execution_id=execution_id)
                 logger.debug(
                     f"Uploaded dataset {dataset_hash} - Output Hash {output_dataset_hash}"
                 )
         else:
             output_dataset_hash = self._preprocessing_client.upload_input(
-                dataset_hash=dataset_hashes,
-                preprocessing_script_hash=self.preprocessing_hash,
-                execution_id=execution_id,
-            )
+                preprocessing_script_hash=self.preprocessing_hash, execution_id=execution_id)
             logger.debug(
                 f"Uploaded dataset {dataset_hashes} - Output Hash {output_dataset_hash}"
             )
@@ -1482,7 +1452,7 @@ class MLOpsPreprocessing(BaseMLOps):
     def run(
         self,
         *,
-        data: Union[str, dict, List[Tuple[str, str]], Tuple[str, str]],
+        data: Union[str, Tuple[str, str], MLOpsDataset, List[Tuple[str, str]], List[MLOpsDataset]],
         group_token: Optional[str] = None,
         wait_complete: Optional[bool] = False,
     ):
@@ -1491,7 +1461,7 @@ class MLOpsPreprocessing(BaseMLOps):
 
         Parameters
         ----------
-        data: Union[dict, str, List[Tuple[str, str]]]
+        data: str | tuple[str, str] | MLOpsDataset | list[tuple[str, str]] | list[MLOpsDataset]
             The same data that is used in the source file.
             If Sync is a dict, the keys that are needed inside this dict are the ones in the `schema` attribute.
             If Async is a string with the file path with the same filename used in the source file.
@@ -1516,25 +1486,20 @@ class MLOpsPreprocessing(BaseMLOps):
                 preprocessing_script_hash=self.preprocessing_id
             )
             logger.info(f"Registered Preprocessing for Execution ID: {execution_id}")
-            if isinstance(data, list):
-                for input_file in data:
-                    output_dataset_hash = self.__new_preprocess_client.upload_input(
-                        input_file=input_file,
-                        preprocessing_script_hash=self.preprocessing_id,
-                        execution_id=execution_id,
-                    )
-                    logger.info(
-                        f"Uploaded input file {input_file} - Output Hash {output_dataset_hash}"
-                    )
+
+            if isinstance(data, str) or isinstance(data, tuple):
+                self.__new_preprocess_client.upload_input(self.preprocessing_id, execution_id, data)
+            elif isinstance(data, MLOpsDataset):
+                self.__new_preprocess_client.upload_input(self.preprocessing_id, execution_id, data.hash)
             else:
-                output_dataset_hash = self.__new_preprocess_client.upload_input(
-                    input_file=data,
-                    preprocessing_script_hash=self.preprocessing_id,
-                    execution_id=execution_id,
-                )
-                logger.info(
-                    f"Uploaded input file {data} - Output Hash {output_dataset_hash}"
-                )
+                if isinstance(data[0], MLOpsDataset):
+                    data = [d.hash for d in data]
+                for d in data:
+                    output_dataset_hash = self.__new_preprocess_client.upload_input(
+                        preprocessing_script_hash=self.preprocessing_id, execution_id=execution_id, data=d)
+                    logger.info(
+                        f"Uploaded input file {d} - Output Hash {output_dataset_hash}"
+                    )
 
             self.__new_preprocess_client.run(
                 preprocessing_script_hash=self.preprocessing_id,
@@ -1545,18 +1510,19 @@ class MLOpsPreprocessing(BaseMLOps):
                 status, _ = self.__new_preprocess_client.execution_status(
                     self.preprocessing_id, execution_id
                 )
-                print("Waiting for preprocessing script to finish", end="")
+                print("Waiting for preprocessing script to finish...", end="")
                 while status == ModelExecutionState.Running:
-                    sleep(30)
+                    sleep(10)
                     status, dataset_hash = (
                         self.__new_preprocess_client.execution_status(
                             self.preprocessing_id, execution_id
                         )
                     )
                     print(".", end="")
+                print()
 
                 logger.info(
-                    f"Preprocessing script execution {self.preprocessing_id} status = {status}"
+                    f"Preprocessing script execution finished successfully {self.preprocessing_id} status = {status}"
                 )
             run = PreprocessExecution(
                 preprocess_hash=self.preprocessing_id,
@@ -1715,6 +1681,35 @@ class MLOpsPreprocessing(BaseMLOps):
             formatted_msg = parse_json_to_yaml(response.json())
             logger.error(f"Something went wrong...\n{formatted_msg}")
             raise PreprocessingError("Preprocessing has failed")
+
+    def get_datasets(self):
+        token = refresh_token(*self.credentials, self.base_url)
+
+        response = make_request(
+            url=f"{self.base_url}/v2/preprocessing",
+            method="GET",
+            success_code=200,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.get_datasets.__qualname__,
+            },
+        )
+        results = response.json()["Result"]
+        datasets = [
+            MLOpsDataset(
+                login=self.credentials,
+                password=self.credentials[1],
+                base_url=self.base_url,
+                hash=dataset["DatasetHash"],
+                dataset_name=dataset["DatasetName"],
+                group=result["ScriptGroupName"],
+            )
+            for result in results
+            for dataset in result["UploadedDatasets"] + result["GeneratedDatasets"]
+            if result["ScriptHash"] == self.preprocessing_id
+        ]
+        return datasets
 
 
 class MLOpsPreprocessingClient(BaseMLOpsClient):
