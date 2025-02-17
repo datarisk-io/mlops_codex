@@ -29,7 +29,7 @@ from mlops_codex.exceptions import (
 )
 from mlops_codex.http_request_handler import refresh_token
 from mlops_codex.logger_config import get_logger
-from mlops_codex.model import SyncModel, AsyncModel
+from mlops_codex.model import AsyncModel, SyncModel
 from mlops_codex.validations import validate_group_existence
 
 patt = re.compile(r"(\d+)")
@@ -640,18 +640,18 @@ class MLOpsTrainingExecution(MLOpsExecution):
         return result
 
     def promote_model(
-            self,
-            *,
-            model_name: str,
-            model_reference: str,
-            source_file: str,
-            input_type: str,
-            operation: Optional[str] = "Sync",
-            schema: Optional[Union[str, dict]] = None,
-            extra_files: Optional[list] = None,
-            requirements_file: Optional[str] = None,
-            env: Optional[str] = None,
-            wait_complete: Optional[bool] = False,
+        self,
+        *,
+        model_name: str,
+        model_reference: str,
+        source_file: str,
+        input_type: str,
+        operation: Optional[str] = "Sync",
+        schema: Optional[Union[str, dict]] = None,
+        extra_files: Optional[list] = None,
+        requirements_file: Optional[str] = None,
+        env: Optional[str] = None,
+        wait_complete: Optional[bool] = False,
     ) -> Union[SyncModel, AsyncModel]:
         """
         Upload models trained inside MLOps.
@@ -739,7 +739,7 @@ class MLOpsTrainingExecution(MLOpsExecution):
             login=self.credentials[0],
             password=self.credentials[1],
             url=self.base_url,
-            group=self.group
+            group=self.group,
         )
 
         model.host(operation=operation.title())

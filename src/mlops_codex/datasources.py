@@ -354,7 +354,7 @@ class MLOpsDataSource(BaseMLOps):
                     base_url=self.base_url,
                     hash=dataset_hash,
                     dataset_name=dataset_name,
-                    group=self.group
+                    group=self.group,
                 )
                 return dataset
             else:
@@ -366,7 +366,7 @@ class MLOpsDataSource(BaseMLOps):
                         base_url=self.base_url,
                         hash=ds,
                         dataset_name=dataset_name + f"_{i}",
-                        group=self.group
+                        group=self.group,
                     )
                     dts[f"dataset_{i}"] = dataset
                 return dts
@@ -444,7 +444,7 @@ class MLOpsDataSource(BaseMLOps):
                     base_url=self.base_url,
                     hash=dataset.get("Hash"),
                     dataset_name=dataset.get("Name"),
-                    group=self.group
+                    group=self.group,
                 )
         raise DatasetNotFoundError("Dataset hash not found!")
 

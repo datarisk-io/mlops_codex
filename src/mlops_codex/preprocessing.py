@@ -985,7 +985,9 @@ class MLOpsPreprocessingAsyncV2(BaseModel):
     preprocessing_hash: str
     group: str
     status: ModelState
-    _preprocessing_client: MLOpsPreprocessingAsyncV2Client = PrivateAttr(None, init=False)
+    _preprocessing_client: MLOpsPreprocessingAsyncV2Client = PrivateAttr(
+        None, init=False
+    )
 
     class Config:
         arbitrary_types_allowed = True
@@ -1105,13 +1107,19 @@ class MLOpsPreprocessingAsyncV2(BaseModel):
         if isinstance(input_files, list):
             for input_file in input_files:
                 output_dataset_hash = self._preprocessing_client.upload_input(
-                    preprocessing_script_hash=self.preprocessing_hash, execution_id=execution_id, data=input_file)
+                    preprocessing_script_hash=self.preprocessing_hash,
+                    execution_id=execution_id,
+                    data=input_file,
+                )
                 logger.debug(
                     f"Uploaded input file {input_file} - Output Hash {output_dataset_hash}"
                 )
         elif input_files is not None:
             output_dataset_hash = self._preprocessing_client.upload_input(
-                preprocessing_script_hash=self.preprocessing_hash, execution_id=execution_id, data=input_files)
+                preprocessing_script_hash=self.preprocessing_hash,
+                execution_id=execution_id,
+                data=input_files,
+            )
             logger.debug(
                 f"Uploaded input file {input_files} - Output Hash {output_dataset_hash}"
             )
@@ -1119,13 +1127,17 @@ class MLOpsPreprocessingAsyncV2(BaseModel):
         elif isinstance(dataset_hashes, list):
             for dataset_hash in dataset_hashes:
                 output_dataset_hash = self._preprocessing_client.upload_input(
-                    preprocessing_script_hash=self.preprocessing_hash, execution_id=execution_id)
+                    preprocessing_script_hash=self.preprocessing_hash,
+                    execution_id=execution_id,
+                )
                 logger.debug(
                     f"Uploaded dataset {dataset_hash} - Output Hash {output_dataset_hash}"
                 )
         else:
             output_dataset_hash = self._preprocessing_client.upload_input(
-                preprocessing_script_hash=self.preprocessing_hash, execution_id=execution_id)
+                preprocessing_script_hash=self.preprocessing_hash,
+                execution_id=execution_id,
+            )
             logger.debug(
                 f"Uploaded dataset {dataset_hashes} - Output Hash {output_dataset_hash}"
             )
@@ -1452,7 +1464,13 @@ class MLOpsPreprocessing(BaseMLOps):
     def run(
         self,
         *,
-        data: Union[str, Tuple[str, str], MLOpsDataset, List[Tuple[str, str]], List[MLOpsDataset]],
+        data: Union[
+            str,
+            Tuple[str, str],
+            MLOpsDataset,
+            List[Tuple[str, str]],
+            List[MLOpsDataset],
+        ],
         group_token: Optional[str] = None,
         wait_complete: Optional[bool] = False,
     ):
@@ -1488,15 +1506,22 @@ class MLOpsPreprocessing(BaseMLOps):
             logger.info(f"Registered Preprocessing for Execution ID: {execution_id}")
 
             if isinstance(data, str) or isinstance(data, tuple):
-                self.__new_preprocess_client.upload_input(self.preprocessing_id, execution_id, data)
+                self.__new_preprocess_client.upload_input(
+                    self.preprocessing_id, execution_id, data
+                )
             elif isinstance(data, MLOpsDataset):
-                self.__new_preprocess_client.upload_input(self.preprocessing_id, execution_id, data.hash)
+                self.__new_preprocess_client.upload_input(
+                    self.preprocessing_id, execution_id, data.hash
+                )
             else:
                 if isinstance(data[0], MLOpsDataset):
                     data = [d.hash for d in data]
                 for d in data:
                     output_dataset_hash = self.__new_preprocess_client.upload_input(
-                        preprocessing_script_hash=self.preprocessing_id, execution_id=execution_id, data=d)
+                        preprocessing_script_hash=self.preprocessing_id,
+                        execution_id=execution_id,
+                        data=d,
+                    )
                     logger.info(
                         f"Uploaded input file {d} - Output Hash {output_dataset_hash}"
                     )
@@ -2391,7 +2416,11 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
             )
 
             # The MLOpsPreprocessingAsyncV2Client is hosted internally
-            return self.get_preprocessing(preprocessing_id=preprocessing_id, group=group, wait_complete=wait_complete)
+            return self.get_preprocessing(
+                preprocessing_id=preprocessing_id,
+                group=group,
+                wait_complete=wait_complete,
+            )
 
         preprocessing_id = self.__upload_preprocessing(
             preprocessing_name=preprocessing_name,
@@ -2411,7 +2440,9 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
             operation=operation.lower(), preprocessing_id=preprocessing_id, group=group
         )
 
-        return self.get_preprocessing(preprocessing_id=preprocessing_id, group=group, wait_complete=wait_complete)
+        return self.get_preprocessing(
+            preprocessing_id=preprocessing_id, group=group, wait_complete=wait_complete
+        )
 
     def get_execution(
         self, preprocessing_id: str, exec_id: str, group: Optional[str] = None
@@ -2433,5 +2464,6 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         MLOpsExecution
             The new execution
         """
-        return self.get_preprocessing(preprocessing_id=preprocessing_id,
-                                      group=group).get_preprocessing_execution(exec_id)
+        return self.get_preprocessing(
+            preprocessing_id=preprocessing_id, group=group
+        ).get_preprocessing_execution(exec_id)

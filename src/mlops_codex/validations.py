@@ -66,6 +66,7 @@ def file_extension_validation(file_name: str, permitted_extensions: Set[str]):
         raise InputError(f"File {file_name} must have extension {permitted_extensions}")
     return True
 
+
 def validate_data(data, permitted_extensions: Set[str]):
     if isinstance(data, list) and isinstance(data[0], tuple):
         for name, path in data:

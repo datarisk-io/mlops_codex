@@ -4,11 +4,12 @@
 import json
 import os
 from time import sleep
-from typing import Optional, Union, Tuple, List
+from typing import List, Optional, Tuple, Union
 
 from mlops_codex.__model_states import ModelExecutionState, ModelState, MonitoringStatus
 from mlops_codex.__utils import (
-    parse_json_to_yaml, parse_dict_or_file,
+    parse_dict_or_file,
+    parse_json_to_yaml,
 )
 from mlops_codex.base import BaseMLOps, BaseMLOpsClient, MLOpsExecution
 from mlops_codex.datasources import MLOpsDataset
@@ -22,8 +23,9 @@ from mlops_codex.logger_config import get_logger
 from mlops_codex.preprocessing import MLOpsPreprocessing
 from mlops_codex.validations import (
     file_extension_validation,
+    validate_data,
     validate_group_existence,
-    validate_python_version, validate_data,
+    validate_python_version,
 )
 
 logger = get_logger()
@@ -263,7 +265,9 @@ class MLOpsModel(BaseMLOps):
         if response == "OK":
             logger.info("Model is healthy")
         else:
-            logger.info("Model is not healthy. If you wish to use this model, consider using the 'restart_model' function.")
+            logger.info(
+                "Model is not healthy. If you wish to use this model, consider using the 'restart_model' function."
+            )
 
     def restart_model(self, wait_for_ready: bool = True):
         """
@@ -378,10 +382,14 @@ class MLOpsModel(BaseMLOps):
             Model deleting failed
         """
 
-        user_input = input("Are you sure you want to delete this model? [Type the name of the model to delete]")
+        user_input = input(
+            "Are you sure you want to delete this model? [Type the name of the model to delete]"
+        )
 
         if user_input != self.name:
-            logger.info(f"Model deletion failed. {user_input} is not the name of this model.")
+            logger.info(
+                f"Model deletion failed. {user_input} is not the name of this model."
+            )
             return None
 
         logger.warning(
@@ -439,7 +447,9 @@ class MLOpsModel(BaseMLOps):
             },
         )
 
-        logger.info(f"Model with hash {self.model_hash} disabled. If you wish to use this model, consider using the 'restart_model' function.")
+        logger.info(
+            f"Model with hash {self.model_hash} disabled. If you wish to use this model, consider using the 'restart_model' function."
+        )
 
         self._describe()
 
@@ -545,7 +555,10 @@ class MLOpsModel(BaseMLOps):
         """
         current_status = MonitoringStatus.Validating
         print("Waiting for monitoring host to finish...", end="", flush=True)
-        while current_status in [MonitoringStatus.Unvalidated, MonitoringStatus.Validating]:
+        while current_status in [
+            MonitoringStatus.Unvalidated,
+            MonitoringStatus.Validating,
+        ]:
             sleep(30)
             current_status = self.host_monitoring_status(period)
             print(".", end="", flush=True)
@@ -554,7 +567,9 @@ class MLOpsModel(BaseMLOps):
         if current_status == MonitoringStatus.Validated:
             logger.info("Model monitoring host finished successfully.")
         else:
-            logger.info(f"Model monitoring host finished unsuccessfully. Status {current_status}")
+            logger.info(
+                f"Model monitoring host finished unsuccessfully. Status {current_status}"
+            )
             raise ModelError("Model monitoring host failed.")
 
     def register_monitoring(
@@ -769,7 +784,9 @@ class AsyncModel(MLOpsModel):
             url=url,
         )
 
-    def execution_status(self, execution_id: Union[int, str], group_token: Optional[str] = None):
+    def execution_status(
+        self, execution_id: Union[int, str], group_token: Optional[str] = None
+    ):
         """
         Get the execution status of the model
 
@@ -804,7 +821,9 @@ class AsyncModel(MLOpsModel):
             logger.info(f"{msg} - Status: {status}")
         return status
 
-    def wait_run_ready(self, execution_id: Union[int, str], group_token: Optional[str] = None):
+    def wait_run_ready(
+        self, execution_id: Union[int, str], group_token: Optional[str] = None
+    ):
         """
         Loop until the model is ready to run
 
@@ -833,10 +852,16 @@ class AsyncModel(MLOpsModel):
 
     def predict(
         self,
-        data: Union[str, Tuple[str, str], List[Tuple[str, str]], MLOpsDataset, List[MLOpsDataset]],
+        data: Union[
+            str,
+            Tuple[str, str],
+            List[Tuple[str, str]],
+            MLOpsDataset,
+            List[MLOpsDataset],
+        ],
         preprocessing: MLOpsPreprocessing = None,
         group_token=None,
-        wait_complete: bool =True,
+        wait_complete: bool = True,
     ):
         """
         Run the hosted model for a specific input. It will show the result of the prediction
@@ -891,9 +916,7 @@ class AsyncModel(MLOpsModel):
                 ("input", ("preprocessed_data", open(preprocessed_data_path, "rb")))
             ]
         else:
-            files = [
-                ("input", ("dataset", open(data, "rb")))
-            ]
+            files = [("input", ("dataset", open(data, "rb")))]
 
         logger.info("Running data prediction...")
 
@@ -920,10 +943,7 @@ class AsyncModel(MLOpsModel):
 
         logger.info("Analysis complete. Predictions are now available!")
 
-        model_execution = ModelExecution(
-            exec_id=execution_id,
-            model=self
-        )
+        model_execution = ModelExecution(exec_id=execution_id, model=self)
         return model_execution
 
     def __call__(
@@ -1013,7 +1033,12 @@ class ModelExecution:
         """
         self.model.wait_run_ready(execution_id=self.exec_id)
 
-    def download(self, name: Optional[str] = "predictions.zip", path: Optional[str] = "./", group_token: Optional[str] = None):
+    def download(
+        self,
+        name: Optional[str] = "predictions.zip",
+        path: Optional[str] = "./",
+        group_token: Optional[str] = None,
+    ):
         """
         Download the asynchronous model execution.
 
@@ -1038,7 +1063,7 @@ class ModelExecution:
                 "Authorization": f"Bearer {self.model.group_token}",
                 "Neomaril-Origin": "Codex",
                 "Neomaril-Method": self.download.__qualname__,
-            }
+            },
         )
 
         if not name.endswith(".zip"):
@@ -1300,8 +1325,12 @@ class MLOpsModelClient(BaseMLOpsClient):
         -------
         >>> client.search_models(group='ex_group', only_deployed=True)
         """
-        search_parameters = " | ".join([p for p in [name, state, group, only_deployed] if p is not None])
-        logger.info(f"Trying to search for models given: {search_parameters} parameters")
+        search_parameters = " | ".join(
+            [p for p in [name, state, group, only_deployed] if p is not None]
+        )
+        logger.info(
+            f"Trying to search for models given: {search_parameters} parameters"
+        )
 
         url = f"{self.base_url}/model/search"
 
@@ -1533,21 +1562,21 @@ class MLOpsModelClient(BaseMLOpsClient):
         return model_hash
 
     def create_model(
-            self,
-            *,
-            model_name: str,
-            model_reference: str,
-            source_file: str,
-            model_file: str,
-            requirements_file: str,
-            group: str,
-            input_type: str,
-            schema: Optional[Union[str, dict]] = None,
-            extra_files: Optional[list] = None,
-            env: Optional[str] = None,
-            python_version: str = "3.10",
-            operation: Optional[str] = "Sync",
-            wait_for_ready: bool = True,
+        self,
+        *,
+        model_name: str,
+        model_reference: str,
+        source_file: str,
+        model_file: str,
+        requirements_file: str,
+        group: str,
+        input_type: str,
+        schema: Optional[Union[str, dict]] = None,
+        extra_files: Optional[list] = None,
+        env: Optional[str] = None,
+        python_version: str = "3.10",
+        operation: Optional[str] = "Sync",
+        wait_for_ready: bool = True,
     ) -> MLOpsModel:
         """
         Deploy a new model to MLOps.
