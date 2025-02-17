@@ -1,0 +1,9 @@
+{
+    "Period":"Week",
+    "TrainData":{
+        "TrainDateCol":"SAFRA_REF"
+    },
+    "InputCols":["VALOR_A_PAGAR", "TAXA", "RENDA_MES_ANTERIOR", "NO_FUNCIONARIOS", "RZ_RENDA_FUNC", "VL_TAXA", 
+                 "DDD", "SEGMENTO_INDUSTRIAL", "DOMINIO_EMAIL", "PORTE", "CEP_2_DIG"],
+    "OutputCols":["probas"]
+}
