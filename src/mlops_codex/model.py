@@ -23,7 +23,7 @@ from mlops_codex.preprocessing import MLOpsPreprocessing
 from mlops_codex.validations import (
     file_extension_validation,
     validate_group_existence,
-    validate_python_version,
+    validate_python_version, validate_data,
 )
 
 logger = get_logger()
@@ -835,10 +835,9 @@ class AsyncModel(MLOpsModel):
 
     def predict(
         self,
-        data: Optional[Union[Tuple[str, str], List[Tuple[str, str]]]] = None,
+        data: Union[str, Tuple[str, str], List[Tuple[str, str]], MLOpsDataset, List[MLOpsDataset]],
         preprocessing: MLOpsPreprocessing = None,
         group_token=None,
-        dataset: Union[MLOpsDataset, str] = None,
         wait_complete: bool =True,
     ):
         """
@@ -846,14 +845,14 @@ class AsyncModel(MLOpsModel):
 
         Parameters
         ----------
-        data: Optional[Union[Tuple[str, str], List[Tuple[str, str]]]], default=None
-            Input data. It must be a 'parquet' or 'csv' file
+        data: str | tuple[str, str] | list[tuple[str, str]] | MLOpsDataset | None
+            Data that will be used to run the model. You can upload a dataset hash as string, a tuple with file name and file path,
+            a list of tuples with file name and file path, a MLOpsDataset or a list of MLOpsDataset.
+            If you provide a single string, it will consider it as a dataset hash.
         preprocessing: MLOpsPreprocessing, default=None
             Class for preprocessing data.
         group_token: str, default=None
             Token of the group
-        dataset: Union[MLOpsDataset, str], default=None
-            Dataset class or dataset hash used for prediction. You must choose between dataset and data
         wait_complete: bool, default=True
             Wait for model to be ready and returns a MLOpsModel instance with the new model.
 
@@ -868,17 +867,7 @@ class AsyncModel(MLOpsModel):
 
         logger.info("Validating data...")
 
-        if data is None and dataset is None:
-            raise InputError("Either data or dataset must be specified")
-
-        if data and dataset:
-            raise InputError("Only one of data or dataset can be specified")
-
-        for name, path in data:
-            file_extension_validation(path, {"csv", "parquet"})
-
-        files = None
-        form_data = None
+        validate_data(data, {"csv", "parquet"})
 
         if preprocessing:
             logger.info("Preprocessing data...")
@@ -903,19 +892,16 @@ class AsyncModel(MLOpsModel):
             files = [
                 ("input", ("preprocessed_data", open(preprocessed_data_path, "rb")))
             ]
-
-        elif dataset:
-            dataset_hash = (
-                dataset.dataset_hash if isinstance(dataset, MLOpsDataset) else dataset
-            )
-            form_data = {"dataset_hash": dataset_hash}
+        else:
+            files = [
+                ("input", ("dataset", open(data, "rb")))
+            ]
 
         logger.info("Running data prediction...")
 
         response = make_request(
             url=f"{self.base_url}/model/async/run/{self.group}/{self.model_hash}",
             method="POST",
-            data=form_data,
             files=files,
             success_code=202,
             custom_exception=ModelError,
