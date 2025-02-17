@@ -852,13 +852,7 @@ class AsyncModel(MLOpsModel):
 
     def predict(
         self,
-        data: Union[
-            str,
-            Tuple[str, str],
-            List[Tuple[str, str]],
-            MLOpsDataset,
-            List[MLOpsDataset],
-        ],
+        data: Union[str, Tuple[str, str], List[Tuple[str, str]], MLOpsDataset, List[MLOpsDataset]],
         preprocessing: MLOpsPreprocessing = None,
         group_token=None,
         wait_complete: bool = True,
@@ -948,13 +942,33 @@ class AsyncModel(MLOpsModel):
 
     def __call__(
         self,
-        data: Optional[Union[Tuple[str, str], List[Tuple[str, str]]]] = None,
+        data: Union[str, Tuple[str, str], List[Tuple[str, str]], MLOpsDataset, List[MLOpsDataset]],
         preprocessing: MLOpsPreprocessing = None,
         group_token=None,
-        dataset: Union[MLOpsDataset, str] = None,
         wait_complete=True,
     ):
-        self.predict(data, preprocessing, group_token, dataset, wait_complete)
+        """
+        Run the hosted model for a specific input. It will show the result of the prediction
+
+        Parameters
+        ----------
+        data: str | tuple[str, str] | list[tuple[str, str]] | MLOpsDataset | None
+            Data that will be used to run the model. You can upload a dataset hash as string, a tuple with file name and file path,
+            a list of tuples with file name and file path, a MLOpsDataset or a list of MLOpsDataset.
+            If you provide a single string, it will consider it as a dataset hash.
+        preprocessing: MLOpsPreprocessing, default=None
+            Class for preprocessing data.
+        group_token: str, default=None
+            Token of the group
+        wait_complete: bool, default=True
+            Wait for model to be ready and returns a MLOpsModel instance with the new model.
+
+        Returns
+        -------
+        ModelExecution
+            Class to handle model execution
+        """
+        self.predict(data, preprocessing, group_token, wait_complete)
 
     def get_model_execution(self, execution_id: Union[int, str]):
         """
