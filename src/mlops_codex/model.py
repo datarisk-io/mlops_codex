@@ -675,7 +675,7 @@ class MLOpsModel(BaseMLOps):
         if wait_complete:
             self.wait_monitoring(period=period)
 
-        logger.info(f"Model monitoring host finished successfully.")
+        logger.info("Model monitoring host finished successfully.")
 
 
 class SyncModel(MLOpsModel):
@@ -750,7 +750,7 @@ class SyncModel(MLOpsModel):
             },
         ).json()
 
-        logger.info(f"Prediction result:\n")
+        logger.info("Prediction result:\n")
         formated_response = parse_json_to_yaml(response)
         print(formated_response)
 
