@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from typing import Set, Tuple
 
 from mlops_codex.base import BaseMLOpsClient
+from mlops_codex.dataset import MLOpsDataset
 from mlops_codex.exceptions import GroupError, InputError
 
 
@@ -64,3 +65,19 @@ def file_extension_validation(file_name: str, permitted_extensions: Set[str]):
     if file_name.split(".")[-1] not in permitted_extensions:
         raise InputError(f"File {file_name} must have extension {permitted_extensions}")
     return True
+
+def validate_data(data, permitted_extensions: Set[str]):
+    if isinstance(data, list) and isinstance(data[0], tuple):
+        for name, path in data:
+            file_extension_validation(path, permitted_extensions)
+    elif isinstance(data, str):
+        file_extension_validation(data, permitted_extensions)
+    elif isinstance(data, tuple):
+        name, path = data
+        file_extension_validation(path, permitted_extensions)
+    elif isinstance(data, MLOpsDataset) or isinstance(data[0], MLOpsDataset):
+        return True
+    else:
+        raise InputError(
+            "Invalid data type. Please provide a valid data type such as list | str | tuple | MLOpsDataset"
+        )
