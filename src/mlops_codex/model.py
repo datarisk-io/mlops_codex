@@ -224,6 +224,7 @@ class MLOpsModel(BaseMLOps):
             sleep(30)
             current_status = self.status()
             print(".", end="", flush=True)
+        print()
 
         if current_status == ModelState.Deployed:
             logger.info("Model deployed successfully")
@@ -455,7 +456,7 @@ class MLOpsModel(BaseMLOps):
         self.group_token = group_token
         logger.info(f"Token for group {self.group} added.")
 
-    def model_info(self) -> None:
+    def info(self) -> None:
         """Show the model data in a better format"""
         describe = self._describe()
         formatted_response = parse_json_to_yaml(describe)
@@ -548,6 +549,7 @@ class MLOpsModel(BaseMLOps):
             sleep(30)
             current_status = self.host_monitoring_status(period)
             print(".", end="", flush=True)
+        print()
 
         if current_status == MonitoringStatus.Validated:
             logger.info("Model monitoring host finished successfully.")
@@ -799,7 +801,7 @@ class AsyncModel(MLOpsModel):
         ).json()
 
         status = ModelExecutionState[response["Status"]]
-        if status != ModelExecutionState.Succeeded:
+        if status == ModelExecutionState.Failed:
             msg = response["Message"]
             logger.info(f"{msg} - Status: {status}")
         return status
@@ -824,6 +826,7 @@ class AsyncModel(MLOpsModel):
             sleep(30)
             current_status = self.execution_status(execution_id, group_token)
             print(".", end="", flush=True)
+        print()
 
         if current_status == ModelExecutionState.Succeeded:
             logger.info("Prediction succeeded")
@@ -1002,6 +1005,12 @@ class ModelExecution:
         self.exec_id = exec_id
         self.model = model
 
+    def __repr__(self):
+        return f"AsyncModel Execution - Execution ID: {self.exec_id}"
+
+    def __str__(self):
+        return f"AsyncModel Execution - Execution ID: {self.exec_id}"
+
     def get_status(self):
         """
         Get the status of the asynchronous model execution.
@@ -1034,7 +1043,6 @@ class ModelExecution:
             Token of the group to download the preprocessing script execution.
         """
         url = f"{self.model.base_url}/model/async/result/{self.model.group}/{self.exec_id}"
-        token = refresh_token(*self.model.credentials, self.model.base_url)
         if group_token:
             self.model.set_token(group_token)
 
@@ -1043,7 +1051,7 @@ class ModelExecution:
             method="GET",
             success_code=200,
             headers={
-                "Authorization": f"Bearer {token}",
+                "Authorization": f"Bearer {self.model.group_token}",
                 "Neomaril-Origin": "Codex",
                 "Neomaril-Method": self.download.__qualname__,
             }
