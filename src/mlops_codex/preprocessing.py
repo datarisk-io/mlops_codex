@@ -411,9 +411,10 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
             sleep(30)
             status, dataset_hash, _ = self.host_status(preprocessing_script_hash)
             print(".", end="", flush=True)
+        print()
 
         if status == ModelState.Deployed:
-            logger.debug("\nPreprocessing script finished successfully")
+            logger.debug("Preprocessing script finished successfully")
             return status, dataset_hash
         return status, None
 
@@ -1555,7 +1556,7 @@ class MLOpsPreprocessing(BaseMLOps):
                     print(".", end="")
 
                 logger.info(
-                    f"Preprocessing script execution {self.preprocessing_id} statu = {status}"
+                    f"Preprocessing script execution {self.preprocessing_id} status = {status}"
                 )
             run = PreprocessExecution(
                 preprocess_hash=self.preprocessing_id,
@@ -1896,7 +1897,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         preprocessing_id: str,
         group: str,
         group_token: Optional[str] = None,
-        wait_for_ready: Optional[bool] = True,
+        wait_complete: Optional[bool] = True,
     ) -> MLOpsPreprocessing:
         """
         Access a preprocessing using its id
@@ -1909,7 +1910,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
             Group the preprocessing is inserted.
         group_token: Optional[str], optional
             Token for executing the preprocessing (show when creating a group). It can be informed when getting the preprocessing or when running predictions, or using the env variable MLOPS_GROUP_TOKEN
-        wait_for_ready: Optional[bool], optional
+        wait_complete: Optional[bool], optional
             If the preprocessing is being deployed, wait for it to be ready instead of failing the request. Defaults to True.
 
         Raises
@@ -1923,10 +1924,6 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         -------
         MLOpsPreprocessing
             A MLOpsPreprocessing instance with the preprocessing hash from `preprocessing_id`
-
-        Example
-        -------
-        >>> preprocessing.get_preprocessing(preprocessing_id='M9c3af308c754ee7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4', group='ex_group')
         """
         try:
             response = self.__get_preprocessing_status(
@@ -1938,7 +1935,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         status = response["Status"]
 
         if status == "Building":
-            if wait_for_ready:
+            if wait_complete:
                 print("Waiting for deploy to be ready.", end="")
                 while status == "Building":
                     response = self.__get_preprocessing_status(
@@ -1947,6 +1944,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
                     status = response["Status"]
                     print(".", end="", flush=True)
                     sleep(10)
+                print()
             else:
                 logger.info("Returning preprocessing, but preprocessing is not ready.")
                 MLOpsPreprocessing(
@@ -2334,7 +2332,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         python_version: str = "3.10",
         operation="Sync",
         input_type: str = "json|csv|parquet",
-        wait_for_ready: bool = True,
+        wait_complete: bool = True,
     ) -> MLOpsPreprocessing:
         """
         Deploy a new preprocessing to MLOps.
@@ -2367,7 +2365,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
             Defines which kind operation is being executed (Sync or Async). Default value is Sync
         input_type: str
             The type of the input file that should be 'json', 'csv' or 'parquet'
-        wait_for_ready: Optional[bool]
+        wait_complete: Optional[bool]
             Wait for preprocessing to be ready and returns a MLOpsPreprocessing instance with the new preprocessing. Defaults to True
 
         Raises
@@ -2394,15 +2392,11 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
                 python_version=python_version,
                 schema_files_path=schema,
                 extra_files=extra_files,
-                wait_read=wait_for_ready,
+                wait_read=wait_complete,
             )
 
             # The MLOpsPreprocessingAsyncV2Client is hosted internally
-            return self.get_preprocessing(
-                preprocessing_id=preprocessing_id,
-                group=group,
-                wait_for_ready=wait_for_ready,
-            )
+            return self.get_preprocessing(preprocessing_id=preprocessing_id, group=group, wait_complete=wait_complete)
 
         preprocessing_id = self.__upload_preprocessing(
             preprocessing_name=preprocessing_name,
@@ -2421,13 +2415,8 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         self.__host_preprocessing(
             operation=operation.lower(), preprocessing_id=preprocessing_id, group=group
         )
-        time.sleep(10)
 
-        return self.get_preprocessing(
-            preprocessing_id=preprocessing_id,
-            group=group,
-            wait_for_ready=wait_for_ready,
-        )
+        return self.get_preprocessing(preprocessing_id=preprocessing_id, group=group, wait_complete=wait_complete)
 
     def get_execution(
         self, preprocessing_id: str, exec_id: str, group: Optional[str] = None
@@ -2449,6 +2438,5 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         MLOpsExecution
             The new execution
         """
-        return self.get_preprocessing(
-            preprocessing_id=preprocessing_id, group=group
-        ).get_preprocessing_execution(exec_id)
+        return self.get_preprocessing(preprocessing_id=preprocessing_id,
+                                      group=group).get_preprocessing_execution(exec_id)
