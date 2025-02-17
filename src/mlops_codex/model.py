@@ -8,7 +8,7 @@ from typing import Optional, Union, Tuple, List
 
 from mlops_codex.__model_states import ModelExecutionState, ModelState, MonitoringStatus
 from mlops_codex.__utils import (
-    parse_json_to_yaml,
+    parse_json_to_yaml, parse_dict_or_file,
 )
 from mlops_codex.base import BaseMLOps, BaseMLOpsClient, MLOpsExecution
 from mlops_codex.datasources import MLOpsDataset
@@ -555,6 +555,7 @@ class MLOpsModel(BaseMLOps):
             logger.info("Model monitoring host finished successfully.")
         else:
             logger.info(f"Model monitoring host finished unsuccessfully. Status {current_status}")
+            raise ModelError("Model monitoring host failed.")
 
     def register_monitoring(
         self,
@@ -564,7 +565,7 @@ class MLOpsModel(BaseMLOps):
         configuration_file: Union[str, dict],
         preprocess_file: Optional[str] = None,
         requirements_file: Optional[str] = None,
-        wait_ready: Optional[bool] = False,
+        wait_complete: Optional[bool] = False,
     ) -> str:
         """
         Register the model monitoring configuration at the database
@@ -581,7 +582,7 @@ class MLOpsModel(BaseMLOps):
             Path of the preprocess script
         requirements_file: Optional[str], default=None
             Path of the requirements file
-        wait_ready: bool, default=False
+        wait_complete: bool, default=False
             If it is True, wait until the monitoring host is Deployed or Failed
 
         Raises
@@ -596,7 +597,7 @@ class MLOpsModel(BaseMLOps):
         """
 
         logger.info("Registering model monitoring configuration")
-        conf = parse_json_to_yaml(configuration_file)
+        conf = parse_dict_or_file(configuration_file)
 
         if isinstance(configuration_file, str):
             with open(configuration_file, "rb") as f:
@@ -651,18 +652,15 @@ class MLOpsModel(BaseMLOps):
             },
         ).json()
 
-        data = response.json()
-        model_id = data["ModelHash"]
-        logger.info(f'{data["Message"]} - Hash: "{model_id}"')
+        model_id = response["ModelHash"]
+        logger.info(f'{response["Message"]} - Hash: "{model_id}"')
 
         self.host_monitoring(period=period)
 
-        if wait_ready:
+        if wait_complete:
             self.wait_monitoring(period=period)
 
         logger.info(f"Model monitoring host finished successfully.")
-
-        return model_id
 
 
 class SyncModel(MLOpsModel):
