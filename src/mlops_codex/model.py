@@ -462,9 +462,7 @@ class MLOpsModel(BaseMLOps):
         group_token: str
             Token for executing the model (show when creating a group). You can set this using the MLOPS_GROUP_TOKEN env variable
         """
-
         self.group_token = group_token
-        logger.info(f"Token for group {self.group} added.")
 
     def info(self) -> None:
         """Show the model data in a better format"""
