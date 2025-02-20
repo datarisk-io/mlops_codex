@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Optional
 
+from mlops_codex.__utils import parse_json_to_yaml
 from mlops_codex.base import BaseMLOpsClient
 from mlops_codex.exceptions import DatasetNotFoundError
 from mlops_codex.http_request_handler import make_request, refresh_token
@@ -28,8 +29,47 @@ class MLOpsDatasetClient(BaseMLOpsClient):
     ) -> None:
         super().__init__(login=login, password=password, url=url)
 
+    def __query_datasets(
+        self,
+        *,
+        origin: Optional[str] = None,
+        origin_id: Optional[int] = None,
+        datasource_name: Optional[str] = None,
+        group: Optional[str] = None,
+    ):
+        url = f"{self.base_url}/datasets/list"
+        token = refresh_token(*self.credentials, self.base_url)
+
+        query = {}
+
+        if group:
+            query["group"] = group
+
+        if origin and origin != "Datasource":
+            query["origin"] = origin
+            if origin_id:
+                query["origin_id"] = origin_id
+
+        if origin == "Datasource":
+            query["origin"] = origin
+            if datasource_name:
+                query["datasource"] = datasource_name
+
+        response = make_request(
+            url=url,
+            method="GET",
+            success_code=200,
+            headers={
+                "Authorization": "Bearer " + token,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.list_datasets.__qualname__,
+            },
+            params=query,
+        )
+        return response
+
     def load_dataset(self, dataset_hash: str):
-        result = self.list_datasets()
+        result = self.__query_datasets().json()["Results"]
         for r in result:
             if r["DatasetHash"] == dataset_hash:
                 return MLOpsDataset(
@@ -83,7 +123,7 @@ class MLOpsDatasetClient(BaseMLOpsClient):
         origin_id: Optional[int] = None,
         datasource_name: Optional[str] = None,
         group: Optional[str] = None,
-    ) -> List:
+    ) -> None:
         """
         List datasets from datasources.
 
@@ -98,45 +138,13 @@ class MLOpsDatasetClient(BaseMLOpsClient):
         group: Optional[str]
             Name of the group where we will search the dataset
 
-        Returns
-        ----------
-        list
-            A list of datasets information.
-
         Example
         -------
         >>> dataset.list_datasets()
         """
-        url = f"{self.base_url}/datasets/list"
-        token = refresh_token(*self.credentials, self.base_url)
-
-        query = {}
-
-        if group:
-            query["group"] = group
-
-        if origin and origin != "Datasource":
-            query["origin"] = origin
-            if origin_id:
-                query["origin_id"] = origin_id
-
-        if origin == "Datasource":
-            query["origin"] = origin
-            if datasource_name:
-                query["datasource"] = datasource_name
-
-        response = make_request(
-            url=url,
-            method="GET",
-            success_code=200,
-            headers={
-                "Authorization": "Bearer " + token,
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.list_datasets.__qualname__,
-            },
-            params=query,
-        )
-        return response.json().get("Results")
+        response = self.__query_datasets(origin=origin, origin_id=origin_id, datasource_name=datasource_name, group=group)
+        formatted_response = parse_json_to_yaml(response.json())
+        print(formatted_response)
 
 
 @dataclass(frozen=True)
