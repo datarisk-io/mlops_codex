@@ -31,7 +31,7 @@ class MLOpsDatasetClient(BaseMLOpsClient):
     def load_dataset(self, dataset_hash: str):
         result = self.list_datasets()
         for r in result:
-            if r["Hash"] == dataset_hash:
+            if r["DatasetHash"] == dataset_hash:
                 return MLOpsDataset(
                     login=self.credentials[0],
                     password=self.credentials[1],
