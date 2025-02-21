@@ -351,11 +351,10 @@ class MLOpsDataSource(BaseMLOps):
                 dataset = MLOpsDataset(
                     login=self.credentials[0],
                     password=self.credentials[1],
-                    url=self.base_url,
-                    dataset_hash=dataset_hash,
+                    base_url=self.base_url,
+                    hash=dataset_hash,
                     dataset_name=dataset_name,
                     group=self.group,
-                    origin="Datasource",
                 )
                 return dataset
             else:
@@ -364,11 +363,10 @@ class MLOpsDataSource(BaseMLOps):
                     dataset = MLOpsDataset(
                         login=self.credentials[0],
                         password=self.credentials[1],
-                        url=self.base_url,
-                        dataset_hash=ds,
+                        base_url=self.base_url,
+                        hash=ds,
                         dataset_name=dataset_name + f"_{i}",
                         group=self.group,
-                        origin="Datasource",
                     )
                     dts[f"dataset_{i}"] = dataset
                 return dts
@@ -443,11 +441,10 @@ class MLOpsDataSource(BaseMLOps):
                 return MLOpsDataset(
                     login=self.credentials[0],
                     password=self.credentials[1],
-                    url=self.base_url,
-                    dataset_hash=dataset.get("Hash"),
+                    base_url=self.base_url,
+                    hash=dataset.get("Hash"),
                     dataset_name=dataset.get("Name"),
                     group=self.group,
-                    origin=dataset.get("Origin"),
                 )
         raise DatasetNotFoundError("Dataset hash not found!")
 

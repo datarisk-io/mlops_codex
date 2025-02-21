@@ -3,7 +3,8 @@ import sys
 from loguru import logger
 
 
-def configure_logger(log_levels=["INFO", "ERROR"]):
+def configure_logger():
+    log_levels = ["INFO", "ERROR", "WARNING", "CRITICAL"]
     logger.remove()
 
     for level in log_levels:

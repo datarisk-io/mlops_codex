@@ -485,7 +485,7 @@ class MLOpsExecution(BaseMLOps):
 
     def __str__(self):
         return (
-            f'MLOPS {self.exec_type }Execution:{self.exec_id} (Status: {self.status})"'
+            f'MLOPS {self.exec_type}Execution:{self.exec_id} (Status: {self.status})"'
         )
 
     def get_status(self) -> dict:
@@ -592,7 +592,7 @@ class MLOpsExecution(BaseMLOps):
             with open(path + filename, "wb") as f:
                 f.write(response.content)
 
-            logger.info(f"Output saved in {path+filename}")
+            logger.info(f"Output saved in {path + filename}")
         elif self.status == ModelExecutionState.Failed:
             raise ExecutionError("Execution failed")
         else:

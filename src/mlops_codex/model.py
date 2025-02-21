@@ -3,13 +3,10 @@
 
 import json
 import os
-from http import HTTPStatus
 from time import sleep
-from typing import Optional, Union
+from typing import List, Optional, Tuple, Union
 
-import requests
-
-from mlops_codex.__model_states import ModelState
+from mlops_codex.__model_states import ModelExecutionState, ModelState, MonitoringStatus
 from mlops_codex.__utils import (
     parse_dict_or_file,
     parse_json_to_yaml,
@@ -17,19 +14,58 @@ from mlops_codex.__utils import (
 from mlops_codex.base import BaseMLOps, BaseMLOpsClient, MLOpsExecution
 from mlops_codex.datasources import MLOpsDataset
 from mlops_codex.exceptions import (
-    AuthenticationError,
-    ExecutionError,
     InputError,
     ModelError,
     PreprocessingError,
-    ServerError,
 )
-from mlops_codex.http_request_handler import refresh_token, try_login
+from mlops_codex.http_request_handler import make_request, refresh_token
 from mlops_codex.logger_config import get_logger
 from mlops_codex.preprocessing import MLOpsPreprocessing
-from mlops_codex.validations import validate_group_existence, validate_python_version
+from mlops_codex.validations import (
+    file_extension_validation,
+    validate_data,
+    validate_group_existence,
+    validate_python_version,
+)
 
 logger = get_logger()
+
+
+def _model_status(url, credentials, group, model_hash):
+    """Get the status of a model
+
+    Args:
+        url: Url used to connect to the MLOps server
+        credentials: User credentials
+        group: Group where the model is located
+        model_hash: Hash of the model
+
+    Returns:
+        ModelState: Status of the model
+    """
+    token = refresh_token(*credentials, url)
+
+    response = make_request(
+        url=f"{url}/model/status/{group}/{model_hash}",
+        method="GET",
+        success_code=200,
+        custom_exception=ModelError,
+        custom_exception_message=f"Model with hash {model_hash} not found for group {group}.",
+        specific_error_code=404,
+        logger_msg=f"Model with hash {model_hash} not found for group {group}.",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Neomaril-Origin": "Codex",
+            "Neomaril-Method": _model_status.__qualname__,
+        },
+    ).json()
+
+    status = response["Status"]
+
+    if status == "Failed":
+        logger.info(f"Model failed. Reason: {response['Message']}")
+
+    return ModelState[status]
 
 
 class MLOpsModel(BaseMLOps):
@@ -42,7 +78,7 @@ class MLOpsModel(BaseMLOps):
         Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
     password: str
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
-    model_id: str
+    model_hash: str
         Model id (hash) from the model you want to access
     group: str
         Group the model is inserted.
@@ -57,35 +93,13 @@ class MLOpsModel(BaseMLOps):
         When the model can't be accessed in the server
     AuthenticationError
         Invalid credentials
-
-    Example
-    --------
-    Getting a model, testing its health and running the prediction
-
-    .. code-block:: python
-
-        from mlops_codex.model import MLOpsModelClient
-        from mlops_codex.model import MLOpsModel
-
-        client = MLOpsModelClient('123456')
-
-        model = client.get_model(model_id='M9c3af308c754ee7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4',
-                                 group='ex_group')
-
-        if model.health() = 'OK':
-            model.wait_ready()
-            model.predict(model.schema)
-        else:
-            model.restart_model(False)
-            model.wait_ready()
-            model.predict(model.schema)
-
     """
 
     def __init__(
         self,
         *,
-        model_id: str,
+        name: str,
+        model_hash: str,
         group: str,
         login: Optional[str] = None,
         password: Optional[str] = None,
@@ -94,56 +108,97 @@ class MLOpsModel(BaseMLOps):
     ) -> None:
         super().__init__(login=login, password=password, url=url)
 
-        self.model_id = model_id
+        self.model_hash = model_hash
         self.group = group
-        self.__token = group_token if group_token else os.getenv("MLOPS_GROUP_TOKEN")
+        self.group_token = (
+            group_token if group_token else os.getenv("MLOPS_GROUP_TOKEN")
+        )
+        self.name = name
 
-        url = f"{self.base_url}/model/describe/{self.group}/{self.model_id}"
-        response = requests.get(
-            url,
+    def __repr__(self) -> str:
+        return f"MLOpsModel(name={self.name}, model_hash={self.model_hash}, group={self.group}, group_token={self.group_token})"
+
+    def __str__(self):
+        return f"MLOpsModel(name={self.name}, model_hash={self.model_hash}, group={self.group}, group_token={self.group_token})"
+
+    def host(self, operation):
+        """
+        Builds the model execution environment
+
+        Parameters
+        ----------
+        operation: str
+            The model operation type (Sync or Async)
+
+        Raises
+        ------
+        InputError
+            Some input parameters is invalid
+        """
+        logger.info(f"MLOpsModel hosting {self.name}...")
+        token = refresh_token(*self.credentials, self.base_url)
+        _ = make_request(
+            url=f"{self.base_url}/model/{operation.lower()}/host/{self.group}/{self.model_hash}",
+            method="GET",
+            success_code=202,
             headers={
-                "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url)
+                "Authorization": f"Bearer {token}",
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.host.__qualname__,
             },
         )
 
-        formatted_msg = parse_json_to_yaml(response.json())
+    def _describe(self):
+        """
+        Get a description of the model
 
-        if response.status_code == 401:
-            logger.error(
-                "Login or password are invalid, please check your credentials."
-            )
-            raise AuthenticationError("Login not authorized.")
+        Returns:
+            dict: Description of the model
+        """
+        url = f"{self.base_url}/model/describe/{self.group}/{self.model_hash}"
+        token = refresh_token(*self.credentials, self.base_url)
+        response = make_request(
+            url=url,
+            method="GET",
+            success_code=200,
+            custom_exception=ModelError,
+            custom_exception_message=f"Model with hash {self.model_hash} not found for group {self.group}.",
+            specific_error_code=404,
+            logger_msg=f"Model with hash {self.model_hash} not found for group {self.group}.",
+            headers={
+                "Authorization": f"Bearer {token}",
+            },
+        ).json()
+        return response
 
-        if response.status_code == 404:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ModelError(f'Model "{model_id}" not found.')
+    def _describe_execution(self, execution_id: Union[str, int]):
+        """
+        Get a description of the model execution
 
-        if response.status_code >= 500:
-            logger.error("Server is not available. Please, try it later.")
-            raise ServerError("Server is not available!")
+        Args:
+            execution_id: Execution id of the model
 
-        self.model_data = response.json()["Description"]
-        self.name = self.model_data["Name"]
-        self.status = ModelState[self.model_data["Status"]]
-        self.operation = self.model_data["Operation"].lower()
-        self.docs = (
-            f"{self.base_url}/model/{self.operation}/docs/{self.group}/{self.model_id}"
-        )
-        self.__model_ready = self.status == ModelState.Deployed
+        Returns:
+            dict: Description of the model execution
+        """
+        url = f"{self.base_url}/model/describe/{self.group}/{self.model_hash}/{execution_id}"
+        token = refresh_token(*self.credentials, self.base_url)
 
-    def __repr__(self) -> str:
-        status = self.__get_status()
-        return f"""MLOpsModel(name="{self.name}", group="{self.group}", 
-                                status="{status}",
-                                model_id="{self.model_id}",
-                                operation="{self.operation.title()}",
-                                )"""
+        response = make_request(
+            url=url,
+            method="GET",
+            success_code=200,
+            custom_exception=ModelError,
+            custom_exception_message=f"Model with hash {self.model_hash} and execution id {execution_id} not found for group {self.group}.",
+            specific_error_code=404,
+            logger_msg=f"Model with hash {self.model_hash} and execution id {execution_id} not found for group {self.group}.",
+            headers={
+                "Authorization": f"Bearer {token}",
+            },
+        ).json()
+        return response
 
-    def __str__(self):
-        return f'MLOPS model "{self.name} (Group: {self.group}, Id: {self.model_id})"'
-
-    def __get_status(self):
+    def status(self):
         """
         Gets the status of the model.
 
@@ -156,51 +211,31 @@ class MLOpsModel(BaseMLOps):
         -------
         str
             The model status
-
         """
-        url = f"{self.base_url}/model/status/{self.group}/{self.model_id}"
-        response = requests.get(
-            url,
-            headers={
-                "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url)
-            },
+        return _model_status(
+            self.base_url, self.credentials, self.group, self.model_hash
         )
-        if response.status_code == 200:
-            return ModelState[response.json().get("Status")]
-
-        formatted_msg = parse_json_to_yaml(response.json())
-
-        if response.status_code == 401:
-            logger.error(
-                "Login or password are invalid, please check your credentials."
-            )
-            raise AuthenticationError("Login not authorized.")
-
-        if response.status_code >= 500:
-            logger.error("Server is not available. Please, try it later.")
-            raise ServerError("Server is not available!")
-
-        logger.error(f"Something went wrong...\n{formatted_msg}")
-        raise ModelError("Could not get the status of the model")
 
     def wait_ready(self):
         """
-        Waits the model to be with status 'Deployed'
-
-        Example
-        -------
-        >>> model.wait_ready()
+        Waits the model to be with status different from Ready or Building
         """
-        if self.status in [ModelState.Ready, ModelState.Building]:
-            self.status = self.__get_status()
-            while self.status == ModelState.Building:
-                sleep(30)
-                self.status = self.__get_status()
+        current_status = ModelState.Building
+        print("Waiting for model finish building...", end="", flush=True)
+        while current_status in [ModelState.Ready, ModelState.Building]:
+            sleep(30)
+            current_status = self.status()
+            print(".", end="", flush=True)
+        print()
 
-    def health(self) -> str:
+        if current_status == ModelState.Deployed:
+            logger.info("Model deployed successfully")
+        else:
+            logger.info(f"Model deployed failed. Status {current_status}")
+
+    def health(self):
         """
-        Get the model deployment process health state.
+        Get the model health state.
 
         Raises
         ------
@@ -210,59 +245,33 @@ class MLOpsModel(BaseMLOps):
             Raised if the server encounters an issue.
         ModelError
             Raised if it can not get the health of the model
-
-        Returns
-        -------
-        str
-            OK - if it is possible to get the health state
-            NOK - if an exception occurs
-
-        Example
-        -------
-        >>> model.health()
-         'OK'
         """
-        if self.operation == "async":
-            try:
-                try_login(
-                    *self.credentials,
-                    self.base_url,
-                )
-                return "OK"
-            except Exception as e:
-                logger.error("Server error: " + e)
-                return "NOK"
-        elif self.operation == "sync":
-            url = f"{self.base_url}/model/sync/health/{self.group}/{self.model_id}"
-            response = requests.get(
-                url,
-                headers={
-                    "Authorization": "Bearer " + self.__token,
-                    "Neomaril-Origin": "Codex",
-                    "Neomaril-Method": self.health.__qualname__,
-                },
+        url = f"{self.base_url}/model/sync/health/{self.group}/{self.model_hash}"
+        response = make_request(
+            url=url,
+            method="GET",
+            success_code=200,
+            custom_exception=ModelError,
+            custom_exception_message=f"Model with hash {self.model_hash} not found.",
+            specific_error_code=404,
+            logger_msg=f"Model with hash {self.model_hash} not found.",
+            headers={
+                "Authorization": "Bearer " + self.group_token,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.health.__qualname__,
+            },
+        ).json()["Message"]
+
+        if response == "OK":
+            logger.info("Model is healthy")
+        else:
+            logger.info(
+                "Model is not healthy. If you wish to use this model, consider using the 'restart_model' function."
             )
-            if response.status_code == 200:
-                return response.json()["Message"]
 
-            formatted_msg = parse_json_to_yaml(response.json())
-
-            if response.status_code == 401:
-                logger.error(
-                    "Login or password are invalid, please check your credentials."
-                )
-                raise AuthenticationError("Login not authorized.")
-
-            if response.status_code >= 500:
-                logger.error("Server is not available. Please, try it later.")
-                raise ServerError("Server is not available!")
-
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ModelError("Could not get the health of the model")
-
-    def restart_model(self, *, wait_for_ready: bool = True):
+    def restart_model(self, wait_for_ready: bool = True):
         """
-        Restart a model deployment process health state. Be sure your model is one of these states:
+        Restart a model deployment process health state. The model will be restarted if the state is one of following states:
             - Deployed;
             - Disabled;
             - DisabledRecovery;
@@ -270,8 +279,8 @@ class MLOpsModel(BaseMLOps):
 
         Parameters
         -----------
-        wait_for_ready: bool
-            If the model is being deployed, wait for it to be ready instead of failing the request. Defaults to True
+        wait_for_ready: bool, default=True
+            If the model is being deployed, wait for it to be ready instead of failing the request
 
         Raises
         ------
@@ -281,48 +290,41 @@ class MLOpsModel(BaseMLOps):
             Raised if the server encounters an issue.
         ModelError
             Raised if model could not be restarted.
-
-        Example
-        -------
-        >>> model.restart_model()
         """
 
-        url = f"{self.base_url}/model/restart/{self.group}/{self.model_id}"
-        response = requests.get(
-            url,
+        current_status = self.status()
+        if current_status not in [
+            ModelState.Deployed,
+            ModelState.Disabled,
+            ModelState.DisabledRecovery,
+            ModelState.FailedRecovery,
+        ]:
+            logger.info(
+                f"Model can't be restarted because it is current {current_status}"
+            )
+            return None
+
+        url = f"{self.base_url}/model/restart/{self.group}/{self.model_hash}"
+        token = refresh_token(*self.credentials, self.base_url)
+
+        _ = make_request(
+            url=url,
+            method="GET",
+            success_code=200,
+            custom_exception=ModelError,
+            custom_exception_message=f"Model with hash {self.model_hash} not found.",
+            specific_error_code=404,
+            logger_msg=f"Model with hash {self.model_hash} not found.",
             headers={
-                "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url),
+                "Authorization": f"Bearer {token}",
                 "Neomaril-Origin": "Codex",
                 "Neomaril-Method": self.restart_model.__qualname__,
             },
         )
 
-        formatted_msg = parse_json_to_yaml(response.json())
-
-        if response.status_code == 401:
-            logger.error(
-                "Login or password are invalid, please check your credentials."
-            )
-            raise AuthenticationError("Login not authorized.")
-
-        if response.status_code >= 500:
-            logger.error("Server is not available. Please, try it later.")
-            raise ServerError("Server is not available!")
-
-        if response.status_code != 200:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ModelError("Could not restart the model")
-
-        logger.info("Model is restarting")
-        self.status = self.__get_status()
+        logger.info("Model is restarting...")
         if wait_for_ready:
-            print("Waiting for deploy to be ready.", end="")
-            while self.status == ModelState.Building:
-                sleep(30)
-                self.status = self.__get_status()
-                print(".", end="", flush=True)
-        print("Model is deployed", flush=True)
+            self.wait_ready()
 
     def get_logs(
         self,
@@ -330,20 +332,20 @@ class MLOpsModel(BaseMLOps):
         start: Optional[str] = None,
         end: Optional[str] = None,
         routine: Optional[str] = None,
-        type: Optional[str] = None,
+        log_type: Optional[str] = None,
     ):
         """
         Get the logs
 
         Parameters
         -----------
-        start: Optional[str], optional
+        start: Optional[str], default=None
             Date to start filter. At the format aaaa-mm-dd
-        end: Optional[str], optional
+        end: Optional[str], default=None
             Date to end filter. At the format aaaa-mm-dd
-        routine: Optional[str], optional
-            Type of routine beeing executed, can assume values Host or Run
-        type: Optional[str], optional
+        routine: Optional[str], default=None
+            Type of routine being executed, can assume values Host or Run
+        log_type: Optional[str], default=None
             Defines the type of the logs that are going to be filtered, can assume the values Ok, Error, Debug or Warning
 
         Raises
@@ -355,31 +357,22 @@ class MLOpsModel(BaseMLOps):
         -------
         dict
             Logs list
-
-        Example
-        -------
-        >>> model.get_logs(start='2023-01-31', end='2023-02-24', routine='Run', type='Error')
-         {'Results':
-            [{'ModelHash': 'M9c3af308c754ee7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4',
-                'RegisteredAt': '2023-01-31T16:06:45.5955220Z',
-                'OutputType': 'Error',
-                'OutputData': '',
-                'Routine': 'Run'}]
-         }
         """
-        url = f"{self.base_url}/model/logs/{self.group}/{self.model_id}"
-        return self._logs(
+        url = f"{self.base_url}/model/logs/{self.group}/{self.model_hash}"
+        logs_result = self._logs(
             url=url,
             credentials=self.credentials,
             start=start,
             end=end,
             routine=routine,
-            type=type,
+            type=log_type,
         )
+        formatted_logs = parse_json_to_yaml(logs_result)
+        print(formatted_logs)
 
     def delete(self):
         """
-        Deletes the current model. IMPORTANT! For now this is irreversible, if you want to use the model again later you will need to upload again (and it will have a new ID).
+        Deletes the current model.
 
         Raises
         ------
@@ -387,21 +380,32 @@ class MLOpsModel(BaseMLOps):
             Raised if there is an authentication issue.
         ServerError
             Model deleting failed
-
-        Returns
-        -------
-        str
-            If model is at status=Deployed deletes the model and return a json with his information.
-            If it isn't Deployed it returns the message that the model is under another state
-
-        Example
-        -------
-        >>> model.delete()
         """
 
+        user_input = input(
+            "Are you sure you want to delete this model? [Type the name of the model to delete]"
+        )
+
+        if user_input != self.name:
+            logger.info(
+                f"Model deletion failed. {user_input} is not the name of this model."
+            )
+            return None
+
+        logger.warning(
+            "This is irreversible, if you want to use the model again later you will need to upload again (and it will have a new hash)."
+        )
+
         token = refresh_token(*self.credentials, self.base_url)
-        req = requests.delete(
-            f"{self.base_url}/model/delete/{self.group}/{self.model_id}",
+
+        _ = make_request(
+            url=f"{self.base_url}/model/delete/{self.group}/{self.model_hash}",
+            method="DELETE",
+            success_code=200,
+            custom_exception=ModelError,
+            custom_exception_message=f"Model with hash {self.model_hash} not found.",
+            specific_error_code=404,
+            logger_msg=f"Model with hash {self.model_hash} not found.",
             headers={
                 "Authorization": "Bearer " + token,
                 "Neomaril-Origin": "Codex",
@@ -409,32 +413,9 @@ class MLOpsModel(BaseMLOps):
             },
         )
 
-        formatted_msg = parse_json_to_yaml(req.json())
+        logger.info(f"Model with hash {self.model_hash} deleted.")
 
-        if req.status_code == 401:
-            logger.error(
-                "Login or password are invalid, please check your credentials."
-            )
-            raise AuthenticationError("Login not authorized.")
-
-        if req.status_code >= 500:
-            logger.error("Server is not available. Please, try it later.")
-            raise ServerError("Server is not available!")
-
-        if req.status_code != 200:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ModelError("Failed to delete model.")
-
-        response = requests.get(
-            f"{self.base_url}/model/describe/{self.group}/{self.model_id}",
-            headers={"Authorization": "Bearer " + token},
-        )
-
-        self.model_data = response.json()["Description"]
-        self.status = ModelState[self.model_data["Status"]]
-        self.__model_ready = False
-
-        return req.json()
+        self._describe()
 
     def disable(self):
         """
@@ -447,22 +428,18 @@ class MLOpsModel(BaseMLOps):
             Raised if there is an authentication issue.
         ServerError
             Model disable failed
-
-        Returns
-        -------
-        dict
-            status=Deployed: disables the model and return a json.
-            If it isn't Deployed it returns the message that the model is under another state
-
-        Example
-        -------
-        >>> model.disable()
-
         """
 
         token = refresh_token(*self.credentials, self.base_url)
-        req = requests.post(
-            f"{self.base_url}/model/disable/{self.group}/{self.model_id}",
+
+        _ = make_request(
+            url=f"{self.base_url}/model/disable/{self.group}/{self.model_hash}",
+            method="POST",
+            success_code=200,
+            custom_exception=ModelError,
+            custom_exception_message=f"Model with hash {self.model_hash} not found.",
+            specific_error_code=404,
+            logger_msg=f"Model with hash {self.model_hash} not found.",
             headers={
                 "Authorization": "Bearer " + token,
                 "Neomaril-Origin": "Codex",
@@ -470,34 +447,11 @@ class MLOpsModel(BaseMLOps):
             },
         )
 
-        formatted_msg = parse_json_to_yaml(req.json())
-
-        if req.status_code == 401:
-            logger.error(
-                "Login or password are invalid, please check your credentials."
-            )
-            raise AuthenticationError("Login not authorized.")
-
-        if req.status_code >= 500:
-            logger.error("Server is not available. Please, try it later.")
-            raise ServerError("Server is not available!")
-
-        if req.status_code != 200:
-            logger.error(f"Something went wrong...\n{formatted_msg}")
-            raise ModelError("Failed to delete model.")
-
-        response = requests.get(
-            f"{self.base_url}/model/describe/{self.group}/{self.model_id}",
-            headers={"Authorization": "Bearer " + token},
+        logger.info(
+            f"Model with hash {self.model_hash} disabled. If you wish to use this model, consider using the 'restart_model' function."
         )
 
-        self.model_data = response.json()["Description"]
-        self.status = ModelState[self.model_data["Status"]]
-        self.__model_ready = False
-
-        print(f"The model {self.model_id} was disabled")
-
-        return req.json()
+        self._describe()
 
     def set_token(self, group_token: str) -> None:
         """
@@ -507,337 +461,27 @@ class MLOpsModel(BaseMLOps):
         ----------
         group_token: str
             Token for executing the model (show when creating a group). You can set this using the MLOPS_GROUP_TOKEN env variable
-
-        Example
-        -------
-        >>> model.set_token('6cb64889a45a45ea8749881e30c136df')
         """
+        self.group_token = group_token
 
-        self.__token = group_token
-        logger.info(f"Token for group {self.group} added.")
+    def info(self) -> None:
+        """Show the model data in a better format"""
+        describe = self._describe()
+        formatted_response = parse_json_to_yaml(describe)
+        logger.info(f"Result:\n{formatted_response}")
 
-    def predict(
-        self,
-        *,
-        data: Optional[Union[dict, str, MLOpsExecution]] = None,
-        dataset: Union[str, MLOpsDataset] = None,
-        preprocessing: Optional[MLOpsPreprocessing] = None,
-        group_token: Optional[str] = None,
-        wait_complete: Optional[bool] = False,
-    ) -> Union[dict, MLOpsExecution]:
-        """
-        Runs a prediction from the current model.
+    def execution_info(self, execution_id: str):
+        """Show the model execution data in a better format"""
+        describe = self._describe_execution(execution_id)
+        formatted_response = parse_json_to_yaml(describe)
+        logger.info(f"Result:\n{formatted_response}")
 
-        Parameters
-        ----------
-        data: Union[dict, str]
-            The same data that is used in the source file.
-            If Sync is a dict, the keys that are needed inside this dict are the ones in the `schema` attribute.
-            If Async is a string with the file path with the same filename used in the source file.
-        group_token: Optional[str], optional
-            Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable MLOPS_GROUP_TOKEN
-        wait_complete: Optional[bool], optional
-            Boolean that informs if a model training is completed (True) or not (False). Default value is False
-
-        Raises
-        ------
-        ModelError
-            Model is not available
-        InputError
-            Model requires a dataset or a data input
-
-        Returns
-        -------
-        Union[dict, MLOpsExecution]
-            The return of the scoring function in the source file for Sync models or the execution class for Async models.
-        """
-        if not (data or dataset):
-            raise InputError(
-                "Invalid data input. Run training requires a data or dataset"
-            )
-        if self.__model_ready:
-            if (group_token is not None) | (self.__token is not None):
-                url = f"{self.base_url}/model/{self.operation}/run/{self.group}/{self.model_id}"
-                if self.__token and not group_token:
-                    group_token = self.__token
-                if group_token and not self.__token:
-                    self.__token = group_token
-                if self.operation == "sync":
-                    model_input = {"Input": data}
-
-                    if preprocessing:
-                        model_input["ScriptHash"] = preprocessing.preprocessing_id
-
-                    req = requests.post(
-                        url,
-                        data=json.dumps(model_input),
-                        headers={
-                            "Authorization": "Bearer " + group_token,
-                            "Neomaril-Origin": "Codex",
-                            "Neomaril-Method": self.predict.__qualname__,
-                        },
-                    )
-
-                    return req.json()
-
-                elif self.operation == "async":
-                    if preprocessing:
-                        if preprocessing.operation == "async":
-                            preprocessing.set_token(group_token)
-                            pre_run = preprocessing.run(data=data)
-                            pre_run.wait_ready()
-                            if pre_run.status != "Succeeded":
-                                logger.error(
-                                    "Preprocessing failed, we wont send any data to it"
-                                )
-                                logger.info("Returning Preprocessing run instead.")
-                                return pre_run
-                            data = "./result_preprocessing"
-                            pre_run.download_result(
-                                path="./", filename="result_preprocessing"
-                            )
-                        else:
-                            raise PreprocessingError(
-                                "Can only use async preprocessing with async models"
-                            )
-
-                    form_data = {}
-                    if data:
-                        files = [("input", (data.split("/")[-1], open(data, "rb")))]
-                    elif dataset:
-                        dataset_hash = (
-                            dataset
-                            if isinstance(dataset, str)
-                            else dataset.dataset_hash
-                        )
-                        form_data["dataset_hash"] = dataset_hash
-
-                    req = requests.post(
-                        url,
-                        files=files,
-                        data=form_data,
-                        headers={
-                            "Authorization": "Bearer " + group_token,
-                            "Neomaril-Origin": "Codex",
-                            "Neomaril-Method": self.predict.__qualname__,
-                        },
-                    )
-
-                    if req.status_code == 202:
-                        message = req.json()
-                        logger.info(message["Message"])
-                        exec_id = message["ExecutionId"]
-                        run = MLOpsExecution(
-                            parent_id=self.model_id,
-                            exec_type="AsyncModel",
-                            group=self.group,
-                            exec_id=exec_id,
-                            login=self.credentials[0],
-                            password=self.credentials[1],
-                            url=self.base_url,
-                            group_token=group_token,
-                        )
-                        response = run.get_status()
-                        status = response["Status"]
-                        if wait_complete:
-                            run.wait_ready()
-                        if status == "Failed":
-                            logger.error(response["Message"])
-                            raise ExecutionError("Training execution failed")
-                        return run
-                    elif req.status_code >= 500:
-                        logger.error("Server is not available. Please, try it later.")
-                        raise ServerError("Server is not available!")
-                    else:
-                        logger.error(req.text)
-                        raise Exception("Unexpected error")
-
-            else:
-                raise InputError("Group token not informed")
-        else:
-            url = f"{self.base_url}/model/describe/{self.group}/{self.model_id}"
-            response = requests.get(
-                url,
-                headers={
-                    "Authorization": "Bearer "
-                    + refresh_token(*self.credentials, self.base_url),
-                    "Neomaril-Origin": "Codex",
-                    "Neomaril-Method": self.predict.__qualname__,
-                },
-            ).json()["Description"]
-            if response["Status"] == "Deployed":
-                self.model_data = response
-                self.status = ModelState[response["Status"]]
-                self.__model_ready = True
-                return self.predict(
-                    data=data,
-                    dataset=dataset,
-                    preprocessing=preprocessing,
-                    group_token=group_token,
-                    wait_complete=wait_complete,
-                )
-
-            else:
-                raise ModelError("Model is not available to predictions")
-
-    def generate_predict_code(self, *, language: str = "curl") -> str:
-        """
-        Generates predict code for the model to be used outside MLOps Codex
-
-        Parameters
-        ----------
-        language: str
-            The generated code language. Supported languages are 'curl', 'python' or 'javascript'
-
-        Raises
-        ------
-        InputError
-            Unsupported language
-
-        Returns
-        -------
-        str
-            The generated code.
-        """
-        if language not in ["curl", "python", "javascript"]:
-            raise InputError("Suported languages are curl, python or javascript")
-
-        if self.operation == "sync":
-            payload = json.dumps({"Input": {"DATA": "DATA"}})
-            base_url = self.base_url
-            if language == "curl":
-                return f"""curl --request POST \\
-                    --url {base_url}/model/sync/run/{self.group}/{self.model_id} \\
-                    --header 'Authorization: Bearer TOKEN' \\
-                    --header 'Content-Type: application/json' \\
-                    --data '{payload}'
-                """
-            if language == "python":
-                return f"""
-                    import requests
-
-                    url = "{base_url}/model/sync/run/{self.group}/{self.model_id}"
-
-                    payload = {payload}
-                    headers = {{
-                        "Content-Type": "application/json",
-                        "Authorization": "Bearer TOKEN"
-                    }}
-
-                    response = requests.request("POST", url, json=payload, headers=headers)
-
-                    print(response.text)
-                """
-            if language == "javascript":
-                return f"""
-                    const options = {{
-                    method: 'POST',
-                    headers: {{'Content-Type': 'application/json', Authorization: 'Bearer TOKEN'}},
-                    body: '{payload}'
-                    }};
-
-                    fetch('{base_url}/model/sync/run/{self.group}/{self.model_id}', options)
-                    .then(response => response.json())
-                    .then(response => console.log(response))
-                    .catch(err => console.error(err));
-
-                """
-        if self.operation == "async":
-            if language == "curl":
-                return f"""
-                    curl --request POST \
-                    --url {self.base_url}/model/async/run/{self.group}/{self.model_id} \\
-                    --header 'Authorization: Bearer TOKEN' \\
-                    --header 'Content-Type: multipart/form-data' \\
-                    --form "input=@/path/to/file"
-                """
-            if language == "python":
-                return f"""
-                    import requests
-
-                    url = "{self.base_url}/model/async/run/{self.group}/{self.model_id}"
-
-                    upload_data = [
-                        ("input", ('filename', open('/path/to/file', 'rb'))),
-                    ]
-
-                    headers = {{
-                        "Content-Type": "multipart/form-data",
-                        "Authorization": "Bearer TOKEN"
-                    }}
-
-                    response = requests.request("POST", url, files=upload_data, headers=headers)
-
-                    print(response.text)
-                """
-            if language == "javascript":
-                return f"""
-                    const form = new FormData();
-                    form.append("input", "/path/to/file");
-
-                    const options = {{
-                    method: 'POST',
-                    headers: {{
-                        'Content-Type': 'multipart/form-data',
-                        Authorization: 'Bearer TOKEN'
-                    }}
-                    }};
-
-                    options.body = form;
-
-                    fetch('{self.base_url}/model/async/run/{self.group}/{self.model_id}', options)
-                    .then(response => response.json())
-                    .then(response => console.log(response))
-                    .catch(err => console.error(err));
-                """
-
-    def __call__(self, data: dict) -> dict:
-        return self.predict(data=data)
-
-    def get_model_execution(self, exec_id: str) -> MLOpsExecution:
-        """
-        Get an execution instace for that model.
-
-        Parameters
-        ----------
-        exec_id: str
-            Execution id
-
-        Raises
-        ------
-        ModelError
-            If the user tries to get an execution from a Sync model
-
-        Example
-        -------
-        >>> model.get_model_execution('1')
-        """
-        if self.operation == "async":
-            run = MLOpsExecution(
-                parent_id=self.model_id,
-                exec_type="AsyncModel",
-                group=self.group,
-                exec_id=exec_id,
-                login=self.credentials[0],
-                password=self.credentials[1],
-                url=self.base_url,
-                group_token=self.__token,
-            )
-            run.get_status()
-            return run
-        else:
-            raise ModelError("Sync models don't have executions")
-
-    def __host_monitoring_status(self, *, group: str, model_id: str, period: str):
+    def host_monitoring_status(self, period: str):
         """
         Get the host status for the monitoring configuration
 
         Parameters
         ----------
-        group: str
-            Group the model is inserted.
-        model_id: str
-            The uploaded model id (hash)
         period: str
             The monitoring period (Day, Week, Month)
 
@@ -848,54 +492,34 @@ class MLOpsModel(BaseMLOps):
         ServerError
             Unexpected server error
         """
-        url = f"{self.base_url}/monitoring/status/{group}/{model_id}/{period}"
 
-        response = requests.get(
-            url,
-            headers={
-                "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url)
-            },
+        url = (
+            f"{self.base_url}/monitoring/status/{self.group}/{self.model_hash}/{period}"
         )
+        token = refresh_token(*self.credentials, self.base_url)
 
-        if response.status_code == 200:
-            message = response.json()
+        response = make_request(
+            url=url,
+            method="GET",
+            success_code=200,
+            headers={
+                "Authorization": f"Bearer {token}",
+            },
+        ).json()
 
-            status = message["Status"]
-            if status == "Validating":
-                logger.info("Waiting the monitoring host.")
-                sleep(30)
-                self.__host_monitoring_status(
-                    group=group, model_id=model_id, period=period
-                )  # recursive
-            if status == "Validated":
-                logger.info(f'Model monitoring host validated - Hash: "{model_id}"')
+        status = MonitoringStatus[response["Status"]]
+        if status == MonitoringStatus.Invalidated:
+            msg = response["Message"]
+            logger.info(f"Monitoring host {self.model_hash} invalidated. Reason: {msg}")
 
-            if status == "Invalidated":
-                res_message = message["Message"]
-                logger.error(f"Model monitoring host message: {res_message}")
-                raise ExecutionError("Monitoring host failed")
+        return status
 
-        if response.status_code == 401:
-            logger.error(
-                "Login or password are invalid, please check your credentials."
-            )
-            raise AuthenticationError("Login not authorized.")
-
-        if response.status_code >= 500:
-            logger.error(response.text)
-            raise ModelError("Could not get host monitoring status")
-
-    def __host_monitoring(self, *, group: str, model_id: str, period: str):
+    def host_monitoring(self, period: str):
         """
         Host the monitoring configuration
 
         Parameters
         ----------
-        group: str
-            Group the model is inserted.
-        model_id: str
-            The uploaded model id (hash)
         period: str
             The monitoring period (Day, Week, Month)
 
@@ -904,34 +528,47 @@ class MLOpsModel(BaseMLOps):
         InputError
             Monitoring host error
         """
-        url = f"{self.base_url}/monitoring/host/{group}/{model_id}/{period}"
 
-        response = requests.get(
-            url,
+        logger.info(f"Monitoring host for {self.model_hash} model started.")
+
+        url = f"{self.base_url}/monitoring/host/{self.group}/{self.model_hash}/{period}"
+        token = refresh_token(*self.credentials, self.base_url)
+
+        _ = make_request(
+            url=url,
+            method="GET",
+            success_code=200,
             headers={
-                "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url)
+                "Authorization": f"Bearer {token}",
             },
         )
 
-        if response.status_code == 200:
-            logger.info(f'Model monitoring host started - Hash: "{model_id}"')
-            return HTTPStatus.OK
+    def wait_monitoring(self, period: str):
+        """
+        Wait for the monitoring configuration
 
-        formatted_msg = parse_json_to_yaml(response.json())
+        Parameters
+        ----------
+        period (str): Period of monitoring. It must be 'Day', 'Week' or 'Month'
+        """
+        current_status = MonitoringStatus.Validating
+        print("Waiting for monitoring host to finish...", end="", flush=True)
+        while current_status in [
+            MonitoringStatus.Unvalidated,
+            MonitoringStatus.Validating,
+        ]:
+            sleep(30)
+            current_status = self.host_monitoring_status(period)
+            print(".", end="", flush=True)
+        print()
 
-        if response.status_code == 401:
-            logger.error(
-                "Login or password are invalid, please check your credentials."
+        if current_status == MonitoringStatus.Validated:
+            logger.info("Model monitoring host finished successfully.")
+        else:
+            logger.info(
+                f"Model monitoring host finished unsuccessfully. Status {current_status}"
             )
-            raise AuthenticationError("Login not authorized.")
-
-        if response.status_code >= 500:
-            logger.error("Server is not available. Please, try it later.")
-            raise ServerError("Server is not available!")
-
-        logger.error(f"Model monitoring host error:\n{formatted_msg}")
-        raise InputError("Monitoring host error")
+            raise ModelError("Model monitoring host failed.")
 
     def register_monitoring(
         self,
@@ -941,6 +578,7 @@ class MLOpsModel(BaseMLOps):
         configuration_file: Union[str, dict],
         preprocess_file: Optional[str] = None,
         requirements_file: Optional[str] = None,
+        wait_complete: Optional[bool] = False,
     ) -> str:
         """
         Register the model monitoring configuration at the database
@@ -952,11 +590,13 @@ class MLOpsModel(BaseMLOps):
         shap_reference: str
             Name of the preprocess function
         configuration_file: str or dict
-            Path of the configuration file, but it could be a dict
-        preprocess_file: Optional[str], optional
+            Path of the configuration file in json format. It can also be a dict
+        preprocess_file: Optional[str], default=None
             Path of the preprocess script
-        requirements_file: str
+        requirements_file: Optional[str], default=None
             Path of the requirements file
+        wait_complete: bool, default=False
+            If it is True, wait until the monitoring host is Deployed or Failed
 
         Raises
         ------
@@ -967,22 +607,23 @@ class MLOpsModel(BaseMLOps):
         -------
         str
             Model id (hash)
-
-        Example
-        -------
-        >>> model.register_monitoring('parse', 'get_shap', configuration_file=PATH+'configuration.json', preprocess_file=PATH+'preprocess.py', requirements_file=PATH+'requirements.txt')
         """
-        url = f"{self.base_url}/monitoring/register/{self.group}/{self.model_id}"
+
+        logger.info("Registering model monitoring configuration")
+        conf = parse_dict_or_file(configuration_file)
 
         if isinstance(configuration_file, str):
             with open(configuration_file, "rb") as f:
-                conf_dict = json.load(f)
+                configuration_file = json.load(f)
 
-            conf = open(configuration_file, "rb")
+        period = configuration_file["Period"]
 
-        elif isinstance(configuration_file, dict):
-            conf = json.dumps(configuration_file)
-            conf_dict = configuration_file
+        if period.title() not in ("Day", "Week", "Month", "Year"):
+            raise InputError(
+                "Invalid period. Expected 'Day', 'Week', 'Month' or 'Year'"
+            )
+
+        period = period.title()
 
         upload_data = [
             ("configuration", ("configuration.json", conf)),
@@ -1009,49 +650,451 @@ class MLOpsModel(BaseMLOps):
                 ("requirements", ("requirements.txt", open(requirements_file, "rb")))
             )
 
-        response = requests.post(
-            url,
+        url = f"{self.base_url}/monitoring/register/{self.group}/{self.model_hash}"
+        token = refresh_token(*self.credentials, self.base_url)
+        response = make_request(
+            url=url,
+            method="POST",
             data=form_data,
             files=upload_data,
+            success_code=201,
             headers={
-                "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url),
+                "Authorization": f"Bearer {token}",
                 "Neomaril-Origin": "Codex",
                 "Neomaril-Method": self.register_monitoring.__qualname__,
             },
+        ).json()
+
+        model_id = response["ModelHash"]
+        logger.info(f'{response["Message"]} - Hash: "{model_id}"')
+
+        self.host_monitoring(period=period)
+
+        if wait_complete:
+            self.wait_monitoring(period=period)
+
+        logger.info("Model monitoring host finished successfully.")
+
+
+class SyncModel(MLOpsModel):
+    def __init__(
+        self,
+        name: str,
+        model_hash: str,
+        group: str,
+        login: Optional[str] = None,
+        password: Optional[str] = None,
+        group_token: Optional[str] = None,
+        url: Optional[str] = None,
+    ):
+        super().__init__(
+            name=name,
+            model_hash=model_hash,
+            group=group,
+            login=login,
+            password=password,
+            group_token=group_token,
+            url=url,
         )
 
-        if response.status_code == 201:
-            data = response.json()
-            model_id = data["ModelHash"]
-            period = conf_dict["Period"]
-            logger.info(f'{data["Message"]} - Hash: "{model_id}"')
+    def predict(
+        self,
+        json_data: Union[str, dict],
+        preprocessing: Optional[MLOpsPreprocessing] = None,
+        group_token: Optional[str] = None,
+    ):
+        """
+        Run the hosted model for a specific input. It will show the result of the prediction
 
-            self.__host_monitoring(group=self.group, model_id=model_id, period=period)
-            self.__host_monitoring_status(
-                group=self.group, model_id=model_id, period=period
+        Parameters
+        ----------
+        json_data: Union[str, dict]
+            Input file that will be used to run the model. It must be a dict or a json file
+        preprocessing: MLOpsPreprocessing, default=None
+            Class for preprocessing json_data
+        group_token: str, default=None
+            Token of the group
+        """
+        if group_token:
+            self.set_token(group_token)
+
+        logger.info("Validating data...")
+
+        if isinstance(json_data, str) and json_data.endswith(".json"):
+            with open(json_data, "r", encoding="utf-8") as f:
+                json_data = json.load(f)
+
+        upload_data = {"Input": json_data}
+
+        if preprocessing:
+            logger.info("Found preprocessing...")
+            upload_data["ScriptHash"] = preprocessing.preprocessing_id
+
+        logger.info("Running data prediction...")
+
+        response = make_request(
+            url=f"{self.base_url}/model/sync/run/{self.group}/{self.model_hash}",
+            method="POST",
+            data=json.dumps(upload_data),
+            success_code=200,
+            custom_exception=ModelError,
+            custom_exception_message=f"Failed to predict data for model {self.model_hash} in group {self.group}",
+            specific_error_code=404,
+            logger_msg=f"Failed to predict data for model {self.model_hash} in group {self.group}",
+            headers={
+                "Authorization": f"Bearer {self.group_token}",
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.predict.__qualname__,
+            },
+        ).json()
+
+        logger.info("Prediction result:\n")
+        formated_response = parse_json_to_yaml(response)
+        print(formated_response)
+
+    def __call__(
+        self,
+        json_data: Union[str, dict],
+        preprocessing: MLOpsPreprocessing = None,
+        group_token=None,
+    ):
+        self.predict(json_data, preprocessing, group_token)
+
+
+class AsyncModel(MLOpsModel):
+    def __init__(
+        self,
+        name: str,
+        model_hash: str,
+        group: str,
+        login: Optional[str] = None,
+        password: Optional[str] = None,
+        group_token: Optional[str] = None,
+        url: Optional[str] = None,
+    ):
+        super().__init__(
+            name=name,
+            model_hash=model_hash,
+            group=group,
+            login=login,
+            password=password,
+            group_token=group_token,
+            url=url,
+        )
+
+    def execution_status(
+        self, execution_id: Union[int, str], group_token: Optional[str] = None
+    ):
+        """
+        Get the execution status of the model
+
+        Parameters
+        ----------
+        execution_id: Union[int, str]
+            Execution id of a model prediction
+        group_token: Optional[str], default=None
+            Token of the group
+
+        Returns
+        -------
+        ModelExecutionStatus
+            Status of the execution
+        """
+        if group_token:
+            self.set_token(group_token)
+
+        url = f"{self.base_url}/model/async/status/{self.group}/{execution_id}"
+        response = make_request(
+            url=url,
+            method="GET",
+            success_code=200,
+            headers={
+                "Authorization": f"Bearer {self.group_token}",
+            },
+        ).json()
+
+        status = ModelExecutionState[response["Status"]]
+        if status == ModelExecutionState.Failed:
+            msg = response["Message"]
+            logger.info(f"{msg} - Status: {status}")
+        return status
+
+    def wait_run_ready(
+        self, execution_id: Union[int, str], group_token: Optional[str] = None
+    ):
+        """
+        Loop until the model is ready to run
+
+        Parameters
+        ----------
+        execution_id: Union[int, str]
+            Execution id of a model prediction
+        group_token: Optional[str], default=None
+            Token of the group
+        """
+        current_status = ModelExecutionState.Running
+        print("Waiting for model finish prediction...", end="", flush=True)
+        while current_status in [
+            ModelExecutionState.Requested,
+            ModelExecutionState.Running,
+        ]:
+            sleep(30)
+            current_status = self.execution_status(execution_id, group_token)
+            print(".", end="", flush=True)
+        print()
+
+        if current_status == ModelExecutionState.Succeeded:
+            logger.info("Prediction succeeded")
+        else:
+            logger.info(f"Prediction failed. Status {current_status}")
+
+    def predict(
+        self,
+        data: Union[str, Tuple[str, str], List[Tuple[str, str]], MLOpsDataset, List[MLOpsDataset]],
+        preprocessing: MLOpsPreprocessing = None,
+        group_token=None,
+        wait_complete: bool = True,
+    ):
+        """
+        Run the hosted model for a specific input. It will show the result of the prediction
+
+        Parameters
+        ----------
+        data: str | tuple[str, str] | list[tuple[str, str]] | MLOpsDataset | None
+            Data that will be used to run the model. You can upload a dataset hash as string, a tuple with file name and file path,
+            a list of tuples with file name and file path, a MLOpsDataset or a list of MLOpsDataset.
+            If you provide a single string, it will consider it as a dataset hash.
+        preprocessing: MLOpsPreprocessing, default=None
+            Class for preprocessing data.
+        group_token: str, default=None
+            Token of the group
+        wait_complete: bool, default=True
+            Wait for model to be ready and returns a MLOpsModel instance with the new model.
+
+        Returns
+        -------
+        ModelExecution
+            Class to handle model execution
+        """
+
+        if group_token:
+            self.set_token(group_token)
+
+        logger.info("Validating data...")
+
+        validate_data(data, {"csv", "parquet"})
+
+        if preprocessing:
+            logger.info("Preprocessing data...")
+            preprocessing.set_token(self.group_token)
+            preprocessing_run = preprocessing.run(
+                data=data,
+                group_token=self.group_token,
+                wait_complete=True,
             )
+            if preprocessing_run.get_status() != ModelExecutionState.Succeeded:
+                logger.error(f"Fail preprocessing {data} file")
+                raise PreprocessingError(
+                    "Fail during preprocessing script. Please check your input file and your preprocessing script."
+                )
+            logger.info("Data preprocessing succeeded. Downloading file...")
 
-            return model_id
+            preprocessing_run.download()
 
-        formatted_msg = parse_json_to_yaml(response.json())
+            logger.info("Preprocessing complete.")
 
-        if response.status_code == 401:
-            logger.error(
-                "Login or password are invalid, please check your credentials."
-            )
-            raise AuthenticationError("Login not authorized.")
+            preprocessed_data_path = "./preprocessed_data.parquet"
+            files = [
+                ("input", ("preprocessed_data", open(preprocessed_data_path, "rb")))
+            ]
+        else:
+            files = [("input", ("dataset", open(data, "rb")))]
 
-        if response.status_code >= 500:
-            logger.error("Server is not available. Please, try it later.")
-            raise ServerError("Server is not available!")
+        logger.info("Running data prediction...")
 
-        logger.error(f"Upload error:\n{formatted_msg}")
-        raise InputError("Invalid parameters for model creation")
+        response = make_request(
+            url=f"{self.base_url}/model/async/run/{self.group}/{self.model_hash}",
+            method="POST",
+            files=files,
+            success_code=202,
+            custom_exception=ModelError,
+            custom_exception_message=f"Failed to predict data for model {self.model_hash} in group {self.group}",
+            specific_error_code=404,
+            logger_msg=f"Failed to predict data for model {self.model_hash} in group {self.group}",
+            headers={
+                "Authorization": f"Bearer {self.group_token}",
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.predict.__qualname__,
+            },
+        ).json()
 
-    def model_info(self) -> None:
-        """Show the model data in a better format"""
-        logger.info(f"Result:\n{parse_json_to_yaml(self.model_data)}")
+        execution_id = response["ExecutionId"]
+
+        if wait_complete:
+            self.wait_run_ready(execution_id, self.group_token)
+
+        logger.info("Analysis complete. Predictions are now available!")
+
+        model_execution = ModelExecution(exec_id=execution_id, model=self)
+        return model_execution
+
+    def __call__(
+        self,
+        data: Union[str, Tuple[str, str], List[Tuple[str, str]], MLOpsDataset, List[MLOpsDataset]],
+        preprocessing: MLOpsPreprocessing = None,
+        group_token=None,
+        wait_complete=True,
+    ):
+        """
+        Run the hosted model for a specific input. It will show the result of the prediction
+
+        Parameters
+        ----------
+        data: str | tuple[str, str] | list[tuple[str, str]] | MLOpsDataset | None
+            Data that will be used to run the model. You can upload a dataset hash as string, a tuple with file name and file path,
+            a list of tuples with file name and file path, a MLOpsDataset or a list of MLOpsDataset.
+            If you provide a single string, it will consider it as a dataset hash.
+        preprocessing: MLOpsPreprocessing, default=None
+            Class for preprocessing data.
+        group_token: str, default=None
+            Token of the group
+        wait_complete: bool, default=True
+            Wait for model to be ready and returns a MLOpsModel instance with the new model.
+
+        Returns
+        -------
+        ModelExecution
+            Class to handle model execution
+        """
+        self.predict(data, preprocessing, group_token, wait_complete)
+
+    def get_model_execution(self, execution_id: Union[int, str]):
+        """
+        Get a model execution by its id
+
+        Parameters
+        ----------
+         execution_id: Union[int, str]
+            Execution id of a model prediction
+
+        Returns
+        -------
+            MLOpsExecution: Class to handle model execution
+        """
+        logger.info(f"Getting model execution {execution_id}...")
+        self._describe_execution(execution_id)
+
+        run = MLOpsExecution(
+            parent_id=self.model_hash,
+            exec_type="AsyncModel",
+            group=self.group,
+            exec_id=execution_id,
+            login=self.credentials[0],
+            password=self.credentials[1],
+            url=self.base_url,
+            group_token=self.group_token,
+        )
+        run.get_status()
+
+        logger.info(f"Model execution {execution_id} successfully loaded.")
+        return run
+
+
+class ModelExecution:
+    """
+    Class to manage new asynchronous model execution. For while, it is a temporary solution
+
+    Parameters
+    ----------
+    exec_id: int
+        Execution id for that specific training run
+    model: AsyncModel
+        Asynchronous model to handle data for model execution
+
+    Raises
+    ------
+    AuthenticationError
+        Invalid credentials
+    """
+
+    def __init__(self, exec_id: int, model: AsyncModel) -> None:
+        self.exec_id = exec_id
+        self.model = model
+
+    def __repr__(self):
+        return f"AsyncModel Execution - Execution ID: {self.exec_id}"
+
+    def __str__(self):
+        return f"AsyncModel Execution - Execution ID: {self.exec_id}"
+
+    def get_status(self):
+        """
+        Get the status of the asynchronous model execution.
+
+        Returns
+        -------
+        str
+            Status of the asynchronous model execution.
+        """
+        status = self.model.execution_status(execution_id=self.exec_id)
+        return status.name
+
+    def wait_ready(self):
+        """
+        Wait for the asynchronous model execution to finish.
+        """
+        self.model.wait_run_ready(execution_id=self.exec_id)
+
+    def download(
+        self,
+        name: Optional[str] = "predictions.zip",
+        path: Optional[str] = "./",
+        group_token: Optional[str] = None,
+    ):
+        """
+        Download the asynchronous model execution.
+
+        Parameters
+        ----------
+        name: Optional[str], default="predictions.zip"
+            Name of the file to be downloaded
+        path: Optional[str], default="./"
+            Path where to save the downloaded file.
+        group_token: Optional[str], default=None
+            Token of the group to download the preprocessing script execution.
+        """
+        url = f"{self.model.base_url}/model/async/result/{self.model.group}/{self.exec_id}"
+        if group_token:
+            self.model.set_token(group_token)
+
+        response = make_request(
+            url=url,
+            method="GET",
+            success_code=200,
+            headers={
+                "Authorization": f"Bearer {self.model.group_token}",
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.download.__qualname__,
+            },
+        )
+
+        if not name.endswith(".zip"):
+            name = f"{name}.zip"
+
+        if not path.endswith("/"):
+            path = path + "/"
+
+        with open(path + name, "wb") as f:
+            f.write(response.content)
+
+        logger.info(f"Downloaded model execution in {path}{name}")
+
+    def execution_info(self):
+        """
+        Log the information about the asynchronous model execution.
+        """
+        response = self.model._describe_execution(execution_id=self.exec_id)
+        logger.info(f"Result:\n{parse_json_to_yaml(response)}")
 
 
 class MLOpsModelClient(BaseMLOpsClient):
@@ -1101,19 +1144,19 @@ class MLOpsModelClient(BaseMLOpsClient):
                             requirements_file=data_path+'requirements.txt'
                             )
 
-            return model.model_id
+            return model.model_hash
 
         client = MLOpsModelClient('123456')
         client.create_group('ex_group', 'Group for example purpose')
 
         data_path = './samples/syncModel/'
 
-        model_id = new_sync_model(client, 'ex_group', data_path)
+        model_hash = new_sync_model(client, 'ex_group', data_path)
 
         model_list = client.search_models()
         print(model_list)
 
-        model = client.get_model(model_id, 'ex_group')
+        model = client.get_model(model_hash, 'ex_group')
 
         print(model.health())
 
@@ -1141,10 +1184,10 @@ class MLOpsModelClient(BaseMLOpsClient):
                             input_type='csv'
                             )
 
-            return model.model_id
+            return model.model_hash
 
-        def run_model(client, model_id, data_path):
-            model = client.get_model(model_id, 'ex_group')
+        def run_model(client, model_hash, data_path):
+            model = client.get_model(model_hash, 'ex_group')
 
             execution = model.predict(data_path+'input.csv')
 
@@ -1155,9 +1198,9 @@ class MLOpsModelClient(BaseMLOpsClient):
 
         data_path = './samples/asyncModel/'
 
-        model_id = new_async_model(client, 'ex_group', data_path)
+        model_hash = new_async_model(client, 'ex_group', data_path)
 
-        execution = run_model(client, model_id, data_path)
+        execution = run_model(client, model_hash, data_path)
 
         execution.get_status()
 
@@ -1170,16 +1213,16 @@ class MLOpsModelClient(BaseMLOpsClient):
     def __str__(self):
         return f"MLOPS {self.base_url} Model client:{self.user_token}"
 
-    def __get_model_status(self, model_id: str, group: str) -> dict:
+    def status(self, model_hash: str, group: str):
         """
-        Gets the status of the model with the hash equal to `model_id`
+        Gets the status of the model with the hash equal to `model_hash`
 
         Parameters
         ----------
+        model_hash: str
+            Model id (hash) from the model being searched
         group: str
             Group the model is inserted
-        model_id: str
-            Model id (hash) from the model being searched
 
         Raises
         ------
@@ -1192,40 +1235,22 @@ class MLOpsModelClient(BaseMLOpsClient):
             The model status and a message if the status is 'Failed'
         """
 
-        url = f"{self.base_url}/model/status/{group}/{model_id}"
-        response = requests.get(
-            url,
-            headers={
-                "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url)
-            },
-        )
-        if response.status_code not in [200, 410]:
-            raise ModelError(f'Model "{model_id}" not found')
-
-        return response.json()
+        return _model_status(self.base_url, self.credentials, group, model_hash)
 
     def get_model(
-        self,
-        *,
-        model_id: str,
-        group: str,
-        group_token: Optional[str] = None,
-        wait_for_ready: Optional[bool] = True,
+        self, model_hash: str, group: str, group_token: Optional[str] = None
     ) -> MLOpsModel:
         """
         Acess a model using its id
 
         Parameters
         ----------
-        model_id: str
+        model_hash: str
             Model id (hash) that needs to be acessed
         group: str
-            Group the model is inserted.
-        group_token: Optional[str], optional
-            Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable MLOPS_GROUP_TOKEN
-        wait_for_ready: Optional[bool], optional
-            If the model is being deployed, wait for it to be ready instead of failing the request. Defaults to True
+            Group the model was inserted
+        group_token: Optional[str], default = None
+            Token of the group being accessed
 
         Raises
         ------
@@ -1237,59 +1262,45 @@ class MLOpsModelClient(BaseMLOpsClient):
         Returns
         -------
         MLOpsModel
-            A MLOpsModel instance with the model hash from `model_id`
+            A MLOpsModel instance with the model hash from `model_hash`
 
         Example
         -------
-        >>> model.get_model(model_id='M9c3af308c754ee7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4', group='ex_group')
+        >>> model.get_model(model_hash='M9c3af308c754ee7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4')
         """
-        try:
-            response = self.__get_model_status(model_id, group)
-        except KeyError:
-            raise ModelError("Model not found")
+        logger.info(f"Trying to get a model with hash {model_hash}")
 
-        status = response["Status"]
+        url = f"{self.base_url}/model/describe/{group}/{model_hash}"
+        token = refresh_token(*self.credentials, self.base_url)
+        response = make_request(
+            url=url,
+            method="GET",
+            success_code=200,
+            headers={"Authorization": f"Bearer {token}"},
+        ).json()["Description"]
 
-        if status == "Building":
-            if wait_for_ready:
-                print("Waiting for deploy to be ready.", end="")
-                while status == "Building":
-                    response = self.__get_model_status(model_id, group)
-                    status = response["Status"]
-                    print(".", end="", flush=True)
-                    sleep(10)
-            else:
-                logger.info("Returning model, but model is not ready.")
-                MLOpsModel(
-                    model_id=model_id,
-                    login=self.credentials[0],
-                    password=self.credentials[1],
-                    group=group,
-                    url=self.base_url,
-                    group_token=group_token,
-                )
+        logger.info("Model has been founded")
 
-        if status in ["Disabled", "Ready"]:
-            raise ModelError(
-                f'Model "{model_id}" unavailable (disabled or deploy process is incomplete)'
-            )
-        elif status == "Failed":
-            logger.error(str(response["Message"]))
-            raise ModelError(
-                f'Model "{model_id}" deploy failed, so model is unavailable.'
-            )
-        elif status == "Deployed":
-            logger.info(f"Model {model_id} its deployed. Fetching model.")
-            return MLOpsModel(
-                model_id=model_id,
+        if response["Operation"] == "Sync":
+            return SyncModel(
+                name=response["Name"],
                 login=self.credentials[0],
                 password=self.credentials[1],
-                group=group,
                 url=self.base_url,
+                model_hash=model_hash,
+                group=group,
                 group_token=group_token,
             )
-        else:
-            raise ServerError("Unknown model status: ", status)
+
+        return AsyncModel(
+            name=response["Name"],
+            login=self.credentials[0],
+            password=self.credentials[1],
+            url=self.base_url,
+            model_hash=model_hash,
+            group=group,
+            group_token=group_token,
+        )
 
     def search_models(
         self,
@@ -1304,14 +1315,14 @@ class MLOpsModelClient(BaseMLOpsClient):
 
         Parameters
         ----------
-        name: Optional[str], optional
+        name: Optional[str], default=None
             Text that it's expected to be on the model name. It runs similar to a LIKE query on SQL
-        state: Optional[str], optional
+        state: Optional[str], default=None
             Text that it's expected to be on the state. It runs similar to a LIKE query on SQL
-        group: Optional[str], optional
+        group: Optional[str], default=None
             Text that it's expected to be on the group name. It runs similar to a LIKE query on SQL
-        only_deployed: Optional[bool], optional
-            If it's True, filter only models ready to be used (status == "Deployed"). Defaults to False
+        only_deployed: Optional[bool], default=False
+            If it's True, filter only models ready to be used (status == "Deployed").
 
         Raises
         ------
@@ -1326,6 +1337,13 @@ class MLOpsModelClient(BaseMLOpsClient):
         -------
         >>> client.search_models(group='ex_group', only_deployed=True)
         """
+        search_parameters = " | ".join(
+            [p for p in [name, state, group, only_deployed] if p is not None]
+        )
+        logger.info(
+            f"Trying to search for models given: {search_parameters} parameters"
+        )
+
         url = f"{self.base_url}/model/search"
 
         query = {}
@@ -1342,74 +1360,72 @@ class MLOpsModelClient(BaseMLOpsClient):
         if only_deployed:
             query["state"] = "Deployed"
 
-        response = requests.get(
-            url,
+        token = refresh_token(*self.credentials, self.base_url)
+        response = make_request(
+            url=url,
+            method="GET",
+            success_code=200,
             params=query,
             headers={
-                "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url),
+                "Authorization": f"Bearer {token}",
                 "Neomaril-Origin": "Codex",
                 "Neomaril-Method": self.search_models.__qualname__,
             },
-        )
+        ).json()
 
-        if response.status_code == 200:
-            results = response.json()["Results"]
-            parsed_results = []
-            for r in results:
-                if schema := r.get("Schema"):
-                    r["Schema"] = json.loads(schema)
-                parsed_results.append(r)
+        logger.info(f"Found {response['Count']} models")
 
-            return [
-                MLOpsModel(
-                    model_id=m["ModelHash"],
+        results = response["Results"]
+        models = []
+        for result in results:
+            if result["Operation"] == "Sync":
+                model = SyncModel(
+                    name=result["Name"],
                     login=self.credentials[0],
                     password=self.credentials[1],
-                    group=m["Group"],
                     url=self.base_url,
+                    model_hash=result["ModelHash"],
+                    group=result["Group"],
                 )
-                for m in parsed_results
-            ]
+                models.append(model)
+            else:
+                model = AsyncModel(
+                    name=result["Name"],
+                    login=self.credentials[0],
+                    password=self.credentials[1],
+                    url=self.base_url,
+                    model_hash=result["ModelHash"],
+                    group=result["Group"],
+                )
+                models.append(model)
 
-        formatted_msg = parse_json_to_yaml(response.json())
+        logger.info(f"Returning {len(models)} models")
 
-        if response.status_code == 401:
-            logger.error(
-                "Login or password are invalid, please check your credentials."
-            )
-            raise AuthenticationError("Login not authorized.")
-
-        if response.status_code >= 500:
-            logger.error("Server is not available. Please, try it later.")
-            raise ServerError("Server is not available!")
-
-        logger.error(f"Something went wrong...\n{formatted_msg}")
-        raise ModelError("Could not search the model")
+        return models
 
     def get_logs(
         self,
         *,
-        model_id,
+        model_hash,
         start: Optional[str] = None,
         end: Optional[str] = None,
         routine: Optional[str] = None,
-        type: Optional[str] = None,
+        log_type: Optional[str] = None,
     ):
         """
         Get the logs
 
         Parameters
         ----------
-        model_id: str
+        model_hash: str
             Model id (hash)
-        start: str, optional
+        start: Optional[str], default=None
             Date to start filter. At the format aaaa-mm-dd
-        end: str, optional
+        end: Optional[str], default=None
             Date to end filter. At the format aaaa-mm-dd
-        routine: str, optional
+        routine: Optional[str], default=None
             Type of routine being executed, can assume values 'Host' (for deployment logs) or 'Run' (for execution logs)
-        type: str, optional
+        log_type: Optional[str], default=None
             Defines the type of the logs that are going to be filtered, can assume the values 'Ok', 'Error', 'Debug' or 'Warning'
 
         Raises
@@ -1421,26 +1437,15 @@ class MLOpsModelClient(BaseMLOpsClient):
         -------
         dict
             Logs list
-
-        Example
-        -------
-        >>> model.get_logs(routine='Run')
-         {'Results':
-            [{'ModelHash': 'B4c3af308c3e452e7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4',
-                'RegisteredAt': '2023-02-03T16:06:45.5955220Z',
-                'OutputType': 'Ok',
-                'OutputData': '',
-                'Routine': 'Run'}]
-         }
         """
-        url = f"{self.base_url}/model/logs/{model_id}"
+        url = f"{self.base_url}/model/logs/{model_hash}"
         return self._logs(
             url=url,
             credentials=self.credentials,
             start=start,
             end=end,
             routine=routine,
-            type=type,
+            type=log_type,
         )
 
     def __upload_model(
@@ -1480,10 +1485,10 @@ class MLOpsModelClient(BaseMLOpsClient):
             Group the model is inserted.
         extra_files: Optional[list], optional
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
-        env: str, optional
+        env: Optional[str], default=True
             Flag that choose which environment (dev, staging, production) of MLOps you are using. Default is True
-        python_version: Optional[str], optional
-            Python version for the model environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.10'
+        python_version: Optional[str], default='3.10'
+            Python version for the model environment. Available versions are 3.8, 3.9, 3.10
         operation: Optional[str], optional
             Defines which kind operation is being executed (Sync or Async). Default value is Sync
         input_type: str
@@ -1502,36 +1507,41 @@ class MLOpsModelClient(BaseMLOpsClient):
 
         url = f"{self.base_url}/model/upload/{group}"
 
-        file_extesions = {"py": "script.py", "ipynb": "notebook.ipynb"}
+        if operation == "Async" and input_type not in ["json", "csv", "parquet"]:
+            raise InputError(
+                "For async models the input_type must be 'json', 'csv' or 'parquet'"
+            )
+
+        if operation == "Sync" and input_type != "json":
+            raise InputError("For sync models the input_type must be 'json'")
+
+        file_extension_validation(source_file, {"py", "ipynb"})
+        file_extension_validation(schema, {"csv", "parquet", "json"})
+        validate_python_version(python_version)
+
+        python_version = "Python" + python_version.replace(".", "")
 
         upload_data = [
             (
                 "source",
-                (file_extesions[source_file.split(".")[-1]], open(source_file, "rb")),
+                (source_file, open(source_file, "rb")),
             ),
-            ("model", (model_file.split("/")[-1], open(model_file, "rb"))),
+            ("model", (model_file, open(model_file, "rb"))),
             ("requirements", ("requirements.txt", open(requirements_file, "rb"))),
         ]
 
         if schema:
-            upload_data.append(("schema", (schema, parse_dict_or_file(schema))))
-        else:
-            raise InputError("Schema file is mandatory")
-
-        if operation == "Sync":
-            input_type = "json"
-        else:
-            if input_type == "json|csv|parquet":
-                raise InputError("Choose a input type from " + input_type)
+            file_extension_validation(schema, {"csv", "parquet", "json"})
+            upload_data.append(("schema", (schema, open(schema, "rb"))))
 
         if env:
-            upload_data.append(("env", (".env", open(env, "r"))))
+            file_extension_validation(env, {"env"})
+            upload_data.append(("env", (env, open(env, "rb"))))
 
         if extra_files:
             extra_data = [
                 ("extra", (c.split("/")[-1], open(c, "rb"))) for c in extra_files
             ]
-
             upload_data += extra_data
 
         form_data = {
@@ -1539,90 +1549,29 @@ class MLOpsModelClient(BaseMLOpsClient):
             "model_reference": model_reference,
             "operation": operation,
             "input_type": input_type,
-            "python_version": "Python" + python_version.replace(".", ""),
+            "python_version": python_version,
         }
 
-        response = requests.post(
-            url,
+        token = refresh_token(*self.credentials, url)
+
+        response = make_request(
+            url=f"{url}/model/upload/{group}",
+            method="POST",
+            success_code=201,
             data=form_data,
             files=upload_data,
             headers={
-                "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url),
+                "Authorization": f"Bearer {token}",
                 "Neomaril-Origin": "Codex",
                 "Neomaril-Method": self.__upload_model.__qualname__,
             },
-        )
+        ).json()
 
-        if response.status_code == 201:
-            data = response.json()
-            model_id = data["ModelHash"]
-            logger.info(f'{data["Message"]} - Hash: "{model_id}"')
-            return model_id
+        model_hash = response["ModelHash"]
+        msg = response["Message"]
+        logger.info(f"{msg} - Hash: {model_hash}")
 
-        formatted_msg = parse_json_to_yaml(response.json())
-
-        if response.status_code == 401:
-            logger.error(
-                "Login or password are invalid, please check your credentials."
-            )
-            raise AuthenticationError("Login not authorized.")
-
-        if response.status_code >= 500:
-            logger.error("Server is not available. Please, try it later.")
-            raise ServerError("Server is not available!")
-
-        logger.error(f"Upload error:\n{formatted_msg}")
-        raise InputError("Invalid parameters for model creation")
-
-    def __host_model(self, *, operation: str, model_id: str, group: str) -> None:
-        """
-        Builds the model execution environment
-
-        Parameters
-        ----------
-        operation: str
-            The model operation type (Sync or Async)
-        model_id: str
-            The uploaded model id (hash)
-        group: str
-            Group the model is inserted. Default is 'datarisk' (public group)
-
-        Raises
-        ------
-        InputError
-            Some input parameters is invalid
-        """
-
-        url = f"{self.base_url}/model/{operation}/host/{group}/{model_id}"
-
-        response = requests.get(
-            url,
-            headers={
-                "Authorization": "Bearer "
-                + refresh_token(*self.credentials, self.base_url),
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.create_model.__qualname__,
-            },
-        )
-        if response.status_code == 202:
-            logger.info(f"Model host in process - Hash: {model_id}")
-            return HTTPStatus.OK
-
-        formatted_msg = parse_json_to_yaml(response.json())
-
-        if response.status_code == 401:
-            logger.error(
-                "Login or password are invalid, please check your credentials."
-            )
-            raise AuthenticationError("Login not authorized.")
-
-        if response.status_code >= 500:
-            logger.error("Server is not available. Please, try it later.")
-            raise ServerError("Server is not available!")
-
-        logger.error(f"Something went wrong...\n{formatted_msg}")
-        raise InputError("Invalid parameters for model creation")
+        return model_hash
 
     def create_model(
         self,
@@ -1633,14 +1582,14 @@ class MLOpsModelClient(BaseMLOpsClient):
         model_file: str,
         requirements_file: str,
         group: str,
+        input_type: str,
         schema: Optional[Union[str, dict]] = None,
         extra_files: Optional[list] = None,
         env: Optional[str] = None,
         python_version: str = "3.10",
-        operation="Sync",
-        input_type: str = "json|csv|parquet",
+        operation: Optional[str] = "Sync",
         wait_for_ready: bool = True,
-    ) -> Union[MLOpsModel, str]:
+    ) -> MLOpsModel:
         """
         Deploy a new model to MLOps.
 
@@ -1664,14 +1613,14 @@ class MLOpsModelClient(BaseMLOpsClient):
             A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
         env: str, optional
             .env file to be used in your model environment. This will be encrypted in the server.
-        python_version: str, optional
-            Python version for the model environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.10'
-        operation: str
-            Defines which kind operation is being executed (Sync or Async). Default value is Sync
+        python_version: str, default="3.10"
+            Python version for the model environment. Available versions are 3.8, 3.9, 3.10.
+        operation: Optional[str], default="Sync"
+            Defines which kind operation is being executed (Sync or Async)
         input_type: str
             The type of the input file that should be 'json', 'csv' or 'parquet'
         wait_for_ready: bool, optional
-            Wait for model to be ready and returns a MLOpsModel instance with the new model. Defaults to True
+            Wait for model to be ready and returns a MLOpsModel instance with the new model
 
         Raises
         ------
@@ -1680,18 +1629,22 @@ class MLOpsModelClient(BaseMLOpsClient):
 
         Returns
         -------
-        Union[MLOpsModel, str]
+        MLOpsModel
             Returns the new model, if wait_for_ready=True runs the deployment process synchronously. If it's False, returns nothing after sending all the data to server and runs the deployment asynchronously
-
-        Example
-        -------
-        >>> model = client.create_model('Model Example Sync', 'score',  './samples/syncModel/app.py', './samples/syncModel/'model.pkl', './samples/syncModel/requirements.txt','./samples/syncModel/schema.json', group=group, operation="Sync")
         """
+
+        logger.info(f"Creating a new model {model_name}. Validating data")
 
         validate_python_version(python_version)
         validate_group_existence(group, self)
 
-        model_id = self.__upload_model(
+        if operation.title() != "Sync" or operation.title() != "Async":
+            raise InputError("operation must be either 'Sync' or 'Async'")
+
+        operation = operation.title()
+
+        logger.info("Building model...")
+        model_hash = self.__upload_model(
             model_name=model_name,
             model_reference=model_reference,
             source_file=source_file,
@@ -1706,21 +1659,32 @@ class MLOpsModelClient(BaseMLOpsClient):
             input_type=input_type,
         )
 
-        self.__host_model(operation=operation.lower(), model_id=model_id, group=group)
-
-        return self.get_model(
-            model_id=model_id, group=group, wait_for_ready=wait_for_ready
+        builder = SyncModel if operation == "Sync" else AsyncModel
+        model = builder(
+            name=model_name,
+            login=self.credentials[0],
+            password=self.credentials[1],
+            url=self.base_url,
+            model_hash=model_hash,
+            group=group,
         )
 
+        model.host(operation=operation)
+
+        if wait_for_ready:
+            model.wait_ready()
+
+        return model
+
     def get_model_execution(
-        self, *, model_id: str, exec_id: str, group: Optional[str] = None
-    ) -> MLOpsExecution:
+        self, *, model_hash: str, exec_id: str, group: Optional[str] = None
+    ) -> Union[MLOpsModel, None]:
         """
         Get an execution instace (Async model only).
 
         Parameters
         ----------
-        model_id: str
+        model_hash: str
             Model id (hash)
         exec_id: str
             Execution id
@@ -1734,8 +1698,16 @@ class MLOpsModelClient(BaseMLOpsClient):
 
         Example
         -------
-        >>> model.get_model_execution( model_id='M9c3af308c754ee7b96b2f4a273984414d40a33be90242908f9fc4aa28ba8ec4', exec_id = '1')
+        >>> model.get_model_execution(model_hash=,exec_id='1')
         """
-        return self.get_model(model_id=model_id, group=group).get_model_execution(
-            exec_id
-        )
+
+        logger.info(f"Getting execution for {model_hash}...")
+
+        model = self.get_model(model_hash=model_hash, group=group)
+        if isinstance(model, SyncModel):
+            logger.info(
+                f"You can not get {model.name} execution. It must be a asynchronous model."
+            )
+            return None
+        logger.info(f"Found execution for {model_hash}...")
+        return model.get_model_execution(execution_id=exec_id)

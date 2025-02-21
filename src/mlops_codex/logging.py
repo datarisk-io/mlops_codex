@@ -1,5 +1,5 @@
-import os
 import json
+import os
 from typing import Union
 
 from mlops_codex.exceptions import InputError
@@ -91,7 +91,7 @@ class Logger:
 
         else:
             raise InputError(
-                f'Invalid level {level}. Valid options are {" ".join(self.__levels)}'
+                f"Invalid level {level}. Valid options are {' '.join(self.__levels)}"
             )
 
     def debug(self, message: str) -> None:

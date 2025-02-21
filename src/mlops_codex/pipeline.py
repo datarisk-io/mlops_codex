@@ -29,8 +29,8 @@ class MLOpsPipeline(BaseMLOps):
         Group the model is inserted
     url: str
         URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
-    python_version: str
-        Python version for the model environment. Available versions are 3.8, 3.9, 3.10. Defaults to '3.9'
+    python_version: str, default="3.9"
+        Python version for the model environment. Available versions are 3.8, 3.9, 3.10.
 
     Example
     --------
@@ -52,7 +52,7 @@ class MLOpsPipeline(BaseMLOps):
         login: Optional[str] = None,
         password: Optional[str] = None,
         url: Optional[str] = None,
-        python_version: float = 3.9,
+        python_version: str = "3.10",
     ) -> None:
         super().__init__(login=login, password=password, url=url)
 
@@ -68,13 +68,14 @@ class MLOpsPipeline(BaseMLOps):
         self.__model = None
         self.__model_id = None
 
-    def __try_create_group(self, client, group: str):
+    @staticmethod
+    def __try_create_group(client, group: str):
         groups = client.list_groups()
 
         if group not in [g["Name"] for g in groups]:
             client.create_group(name=group, description="Created with Codex Pipeline")
 
-    def register_train_config(self, **kwargs) -> dict:
+    def register_train_config(self, **kwargs) -> None:
         """
         Set the files for configure the training
 
@@ -85,7 +86,7 @@ class MLOpsPipeline(BaseMLOps):
         """
         self.train_config = kwargs
 
-    def register_deploy_config(self, **kwargs) -> dict:
+    def register_deploy_config(self, **kwargs) -> None:
         """
         Set the files for configure the deployment
 
@@ -96,7 +97,7 @@ class MLOpsPipeline(BaseMLOps):
         """
         self.deploy_config = kwargs
 
-    def register_monitoring_config(self, **kwargs) -> dict:
+    def register_monitoring_config(self, **kwargs) -> None:
         """
         Set the files for configure the monitoring
 
@@ -104,10 +105,6 @@ class MLOpsPipeline(BaseMLOps):
         ----------
         kwargs: list or dict
             List or dictionary with the necessary files for monitoring
-
-        Example
-        -------
-        >>> pipeline.register_monitoring_config(directory = "./samples/monitoring", preprocess = "preprocess.py", preprocess_function = "score", shap_function = "score", config = "configuration.json", packages = "requirements.txt")
         """
         self.monitoring_config = kwargs
 
@@ -130,12 +127,6 @@ class MLOpsPipeline(BaseMLOps):
         -------
         MLOpsPipeline
             The new pipeline
-
-        Example
-        --------
-        >>> pipeline = MLOpsPipeline.from_config_file('./samples/pipeline-just-model.yml')
-        >>> pipeline.register_monitoring_config(directory = "./samples/monitoring", preprocess = "preprocess.py", preprocess_function = "score", shap_function = "score", config = "configuration.json", packages = "requirements.txt")
-        >>> pipeline.start()
         """
         with open(path, "rb") as stream:
             try:
@@ -144,7 +135,7 @@ class MLOpsPipeline(BaseMLOps):
                 print(exc)
 
         loaded = load_dotenv()
-        # Somethings when running as a script the default version might not work
+        # Something's when running as a script the default version might not work
         if not loaded:
             load_dotenv(find_dotenv(usecwd=True))
         logger.info("Loading .env")
@@ -361,7 +352,7 @@ class MLOpsPipeline(BaseMLOps):
 
         if self.__model.status == "Deployed":
             logger.info("Model deployement finished")
-            return self.__model.model_id
+            return self.__model.model_hash
 
         else:
             raise ModelError(
@@ -399,10 +390,10 @@ class MLOpsPipeline(BaseMLOps):
                 f.truncate()
 
         model = MLOpsModel(
-            model_id=conf.get("model_id", model_id),
+            model_hash=conf.get("model_hash", model_id),
+            group=self.group,
             login=self.credentials[0],
             password=self.credentials[1],
-            group=self.group,
             group_token=os.getenv("MLOPS_GROUP_TOKEN"),
             url=self.base_url,
         )
