@@ -1279,13 +1279,22 @@ class PreprocessExecution:
             path=path,
         )
 
-    def execution_info(self):
+    def execution_info(self, generate_output=False):
         """
         Log the information about a preprocessing script execution.
+
+        Parameters
+        ----------
+        generate_output: bool
+            If true, output will be generated to be manipulated
         """
         response = self.__client.describe_execution(
             preprocessing_script_hash=self.preprocessing_hash, execution_id=self.exec_id
         )
+
+        if generate_output:
+            return response
+
         logger.info(f"Result:\n{parse_json_to_yaml(response)}")
 
 
