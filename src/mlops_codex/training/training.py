@@ -21,6 +21,7 @@ from mlops_codex.exceptions import (
 )
 from mlops_codex.http_request_handler import refresh_token, make_request
 from mlops_codex.logger_config import get_logger
+from mlops_codex.shared import constants
 from mlops_codex.training.base import ITrainingExecution
 from mlops_codex.training.training_types import CustomTrainingExecution, AutoMLTrainingExecution
 from mlops_codex.validations import validate_group_existence, file_extension_validation
@@ -734,26 +735,13 @@ class MLOpsTrainingClient(BaseMLOpsClient):
         Invalid credentials
     ServerError
         Server unavailable
-
-    Example
-    -------
-    .. code-block:: python
-
-        from mlops_codex.training import MLOpsTrainingClient
-
-        client = MLOpsTrainingClient('123456')
-        client.create_group('ex_group', 'Group for example purpose')
-        training = client.create_training_experiment('Training example', 'Classification',  'Custom', 'ex_group')
-        print(client.get_training(training.training_id, 'ex_group').training_data)
-
     """
 
-    # TODO: improve it!
     def __repr__(self) -> str:
-        return f'Codex version 2.2.8'
+        return f'Codex version {constants.CODEX_VERSION}'
 
     def __str__(self):
-        return f'Codex version 2.2.8'
+        return f'Codex version {constants.CODEX_VERSION}'
 
     def get_training(self, *, training_hash: str, group: str) -> MLOpsTrainingExperiment:
         """
