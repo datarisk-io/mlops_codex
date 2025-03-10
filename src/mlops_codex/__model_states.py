@@ -7,6 +7,15 @@ application
 from enum import Enum
 
 
+class ModelTypes(str, Enum):
+
+    Async = "Async"
+    Sync = "Sync"
+
+    def __str__(self):
+        return self.name
+
+
 class ModelState(str, Enum):
     """
     States of a model
