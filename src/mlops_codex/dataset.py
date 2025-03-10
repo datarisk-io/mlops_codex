@@ -9,6 +9,29 @@ from mlops_codex.logger_config import get_logger
 
 logger = get_logger()
 
+def validate_dataset(dataset):
+    """
+    Check if a dataset is a valid hash or a valid MLOps Dataset
+    Args:
+        dataset: dataset provided by the user
+
+    Returns:
+        str: if the dataset is a valid hash or a valid MLOps Dataset
+    """
+
+    if not isinstance(dataset, (MLOpsDataset, str)):
+        raise TypeError("Dataset must be a MLOpsDataset or str")
+
+    if isinstance(dataset, MLOpsDataset):
+        dataset_hash = dataset.hash
+    else:
+        dataset_hash = dataset
+
+    if not dataset_hash.startswith("D"):
+        raise ValueError("The provided dataset hash is not valid. Check your dataset hash")
+
+    return dataset_hash
+
 
 class MLOpsDatasetClient(BaseMLOpsClient):
     """
