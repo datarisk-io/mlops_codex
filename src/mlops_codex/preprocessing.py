@@ -484,9 +484,7 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
             )
 
         validate_group_existence(group, self)
-        validate_python_version(python_version)
-
-        python_version = "Python" + python_version.replace(".", "")
+        python_version = validate_python_version(python_version)
 
         token = refresh_token(*self.credentials, self.base_url)
 
@@ -2409,7 +2407,6 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         """
 
         validate_group_existence(group, self)
-        validate_python_version(python_version)
 
         if operation == "Async":
             preprocessing_id = self.__new_preprocessing_client.create(

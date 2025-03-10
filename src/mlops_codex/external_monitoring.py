@@ -200,9 +200,7 @@ class MLOpsExternalMonitoring(BaseMLOps):
                 logger.error(f"You must pass the following arguments: {missing_args}")
                 raise InputError("Missing files, function entrypoint or python version")
 
-        validate_python_version(python_version)
-
-        python_version = "Python" + python_version.replace(".", "")
+        python_version= validate_python_version(python_version)
 
         uploads = [
             ("model", model_file, "model-file", None),
@@ -584,8 +582,7 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
                 raise InputError("Date is not in the correct format") from exc
 
         if kwargs.get("python_version"):
-            validate_python_version(kwargs.get("python_version"))
-            python_version = "Python" + kwargs.get("python_version").replace(".", "")
+            python_version = validate_python_version(kwargs.get("python_version"))
             configuration_file["PythonVersion"] = python_version
 
         external_monitoring_hash = self.__register(
