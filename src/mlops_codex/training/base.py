@@ -2,7 +2,7 @@ import abc
 from time import sleep
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from mlops_codex.__model_states import ModelExecutionState
 from mlops_codex.base import BaseMLOps
@@ -15,16 +15,16 @@ logger = get_logger()
 
 
 class ITrainingExecution(BaseModel, abc.ABC):
-    training_hash: str
-    group: str
-    execution_id: int = None
-    model_type: str = None
-    experiment_name: str = None
-    # TODO: not show these variables above!!
-    login: str = None
-    password: str = None
-    url: str = "https://neomaril.datarisk.net/"
-    mlops_class: BaseMLOps = None
+    training_hash: str = Field(frozen=True, title="Training hash", validate_default=True)
+    group: str = Field(frozen=True, title="Training hash", validate_default=True)
+    execution_id: int = Field(default=None, gt=0)
+    model_type: str = Field(default=None)
+    experiment_name: str = Field(default=None)
+
+    login: str = Field(default=None, repr=False)
+    password: str = Field(default=None, repr=False)
+    url: str = Field(default="https://neomaril.datarisk.net/", repr=False)
+    mlops_class: BaseMLOps = Field(default=None, repr=False)
 
 
     class Config:
