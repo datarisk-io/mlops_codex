@@ -189,7 +189,7 @@ class MLOpsPipeline(BaseMLOps):
 
         Example
         -------
-        >>> pipeline.run_training()
+        >>> pipeline.run_training(run_name=,training_type=)
         """
         logger.info("Running training")
         client = MLOpsTrainingClient(
@@ -210,48 +210,30 @@ class MLOpsPipeline(BaseMLOps):
         extra_files = conf.get("extra")
 
         if conf["training_type"] == "Custom":
-            self.__training_run = self.__training.run_training(
-                run_name=run_name,
-                training_type=conf["training_type"],
-                train_data=os.path.join(PATH, conf["data"]),
-                source_file=os.path.join(PATH, conf["source"]),
-                requirements_file=os.path.join(PATH, conf["packages"]),
-                training_reference=conf["train_function"],
-                extra_files=(
+            self.__training_run = self.__training.run_training(run_name=run_name, training_type=conf["training_type"],
+                                                               requirements_file=os.path.join(PATH, conf["packages"]),
+                                                               source_file=os.path.join(PATH, conf["source"]),
+                                                               python_version=str(self.python_version),
+                                                               training_reference=conf["train_function"], extra_files=(
                     [os.path.join(PATH, e) for e in extra_files]
                     if extra_files
                     else None
-                ),
-                python_version=str(self.python_version),
-                wait_complete=True,
-            )
+                ), wait_complete=True)
 
         elif conf["training_type"] == "AutoML":
-            self.__training_run = self.__training.run_training(
-                run_name=run_name,
-                training_type=os.path.join(PATH, conf["data"]),
-                conf_dict=os.path.join(PATH, conf["config"]),
-                wait_complete=True,
-            )
+            self.__training_run = self.__training.run_training(run_name=run_name,
+                                                               training_type=os.path.join(PATH, conf["data"]),
+                                                               conf_dict=os.path.join(PATH, conf["config"]),
+                                                               wait_complete=True)
 
         elif conf["training_type"] == "External":
-            self.__training_run = self.__training.run_training(
-                run_name=run_name,
-                training_type=conf["training_type"],
-                X_train=os.path.join(PATH, conf["X_train"]),
-                y_train=os.path.join(PATH, conf["y_train"]),
-                model_outputs=os.path.join(PATH, conf["model_outputs"]),
-                model_file=conf["model_file"],
-                model_metrics=conf["model_metrics"],
-                model_params=conf["model_params"],
-                python_version=conf["python_version"],
-                extra_files=(
+            self.__training_run = self.__training.run_training(run_name=run_name, training_type=conf["training_type"],
+                                                               python_version=conf["python_version"],
+                                                               model_file=conf["model_file"], extra_files=(
                     [os.path.join(PATH, e) for e in extra_files]
                     if extra_files
                     else None
-                ),
-                wait_complete=True,
-            )
+                ), wait_complete=True)
         else:
             raise TrainingError(
                 f"Invalid training_type {conf['training_type']}. Valid options are Custom, AutoML and External"
@@ -260,7 +242,7 @@ class MLOpsPipeline(BaseMLOps):
         status = self.__training_run.get_status()
         if status["Status"] == "Succeeded":
             logger.info("Model training finished")
-            return self.__training.training_id, self.__training_run.exec_id
+            return self.__training.training_hash, self.__training_run.exec_id
         else:
             raise TrainingError("Training failed: " + status["Message"])
 
