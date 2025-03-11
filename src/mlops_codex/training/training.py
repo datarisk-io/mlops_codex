@@ -5,26 +5,29 @@ import os
 import re
 import sys
 from contextlib import contextmanager
-from typing import Any, List, Optional, Union
+from typing import Any, Optional, Union
 
 import cloudpickle
 import numpy as np
 import pandas as pd
 from lazy_imports import try_import
 
-from mlops_codex.base import BaseMLOps, BaseMLOpsClient, MLOpsExecution
-from mlops_codex.datasources import MLOpsDataset
+from mlops_codex.base import BaseMLOps, BaseMLOpsClient
 from mlops_codex.dataset import validate_dataset
+from mlops_codex.datasources import MLOpsDataset
 from mlops_codex.exceptions import (
     InputError,
     TrainingError,
 )
-from mlops_codex.http_request_handler import refresh_token, make_request
+from mlops_codex.http_request_handler import make_request, refresh_token
 from mlops_codex.logger_config import get_logger
 from mlops_codex.shared import constants
 from mlops_codex.training.base import ITrainingExecution
-from mlops_codex.training.training_types import CustomTrainingExecution, AutoMLTrainingExecution
-from mlops_codex.validations import validate_group_existence, file_extension_validation
+from mlops_codex.training.training_types import (
+    AutoMLTrainingExecution,
+    CustomTrainingExecution,
+)
+from mlops_codex.validations import file_extension_validation, validate_group_existence
 
 patt = re.compile(r"(\d+)")
 logger = get_logger()
@@ -461,8 +464,8 @@ class MLOpsTrainingExperiment(BaseMLOps):
             specific_error_code=404,
             logger_msg=f'Experiment "{training_hash}" not found.',
             headers={
-                f'Authorization': f'Bearer {token}',
-            }
+                "Authorization": f"Bearer {token}",
+            },
         )
 
         training_data = response.json()["Description"]
@@ -488,10 +491,10 @@ class MLOpsTrainingExperiment(BaseMLOps):
             success_code=200,
             custom_exception=TrainingError,
             headers={
-                f'Authorization': f'Bearer {token}',
+                "Authorization": f"Bearer {token}",
                 "Neomaril-Origin": "Codex",
                 "Neomaril-Method": self.__describe.__qualname__,
-            }
+            },
         )
 
         return response.json()
@@ -599,7 +602,9 @@ class MLOpsTrainingExperiment(BaseMLOps):
         """
 
         if training_type not in ("Custom", "External", "AutoML"):
-            raise InputError("Training type needs be: 'Custom', 'AutoML' or 'External'.")
+            raise InputError(
+                "Training type needs be: 'Custom', 'AutoML' or 'External'."
+            )
 
         if dataset is None and train_data is None:
             raise InputError(
@@ -615,7 +620,6 @@ class MLOpsTrainingExperiment(BaseMLOps):
         if train_data:
             file_extension_validation(train_data, {"csv", "parquet", "txt"})
             upload_data["input"] = open(train_data, "rb")
-
 
         if dataset is not None:
             dataset_hash = validate_dataset(dataset)
@@ -647,7 +651,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
                     "extra_files": extra_files,
                     "env": env,
                     "wait_complete": wait_complete,
-                }
+                },
             ),
             "AutoML": (
                 AutoMLTrainingExecution,
@@ -662,9 +666,9 @@ class MLOpsTrainingExperiment(BaseMLOps):
                     "input_data": input_data,
                     "upload_data": upload_data,
                     "conf_dict": conf_dict,
-                    "extra_files": extra_files
-                }
-            )
+                    "extra_files": extra_files,
+                },
+            ),
         }
 
         builder_train_class, params = builder[training_type]
@@ -686,7 +690,6 @@ class MLOpsTrainingExperiment(BaseMLOps):
             The chosen execution
         """
         raise NotImplementedError()
-
 
     @contextmanager
     def log_train(
@@ -710,10 +713,15 @@ class MLOpsTrainingExperiment(BaseMLOps):
 
         finally:
             self.trainer._processing_logging_inputs()
-            self.run_training(run_name=self.trainer.name, training_type="External",
-                              description=self.trainer.description, requirements_file=self.trainer.requirements,
-                              python_version=self.trainer.python_version, model_file=self.trainer.model,
-                              extra_files=self.trainer.extras)
+            self.run_training(
+                run_name=self.trainer.name,
+                training_type="External",
+                description=self.trainer.description,
+                requirements_file=self.trainer.requirements,
+                python_version=self.trainer.python_version,
+                model_file=self.trainer.model,
+                extra_files=self.trainer.extras,
+            )
 
 
 class MLOpsTrainingClient(BaseMLOpsClient):
@@ -738,12 +746,14 @@ class MLOpsTrainingClient(BaseMLOpsClient):
     """
 
     def __repr__(self) -> str:
-        return f'Codex version {constants.CODEX_VERSION}'
+        return f"Codex version {constants.CODEX_VERSION}"
 
     def __str__(self):
-        return f'Codex version {constants.CODEX_VERSION}'
+        return f"Codex version {constants.CODEX_VERSION}"
 
-    def get_training(self, *, training_hash: str, group: str) -> MLOpsTrainingExperiment:
+    def get_training(
+        self, *, training_hash: str, group: str
+    ) -> MLOpsTrainingExperiment:
         """
         Acess a model using its id
 
@@ -771,8 +781,13 @@ class MLOpsTrainingClient(BaseMLOpsClient):
         >>> training = get_training('Tfb3274827a24dc39d5b78603f348aee8d3dbfe791574dc4a6681a7e2a6622fa')
         """
 
-        return MLOpsTrainingExperiment(training_hash=training_hash, login=self.credentials[0],
-                                       password=self.credentials[1], group=group, url=self.base_url)
+        return MLOpsTrainingExperiment(
+            training_hash=training_hash,
+            login=self.credentials[0],
+            password=self.credentials[1],
+            group=group,
+            url=self.base_url,
+        )
 
     def __get_repeated_thash(
         self, model_type: str, experiment_name: str, group: str
@@ -809,7 +824,7 @@ class MLOpsTrainingClient(BaseMLOpsClient):
             success_code=200,
             headers={
                 "Authorization": f"Bearer {token}",
-            }
+            },
         )
 
         results = response.json().get("Results")
@@ -823,7 +838,9 @@ class MLOpsTrainingClient(BaseMLOpsClient):
                 logger.info("Found experiment with same attributes...")
                 return result["TrainingHash"]
 
-    def __register_training(self, experiment_name: str, model_type: str, group: str) -> str:
+    def __register_training(
+        self, experiment_name: str, model_type: str, group: str
+    ) -> str:
         """Creates a train experiment. A train experiment can aggregate multiple training runs (also called executions).
         Each execution can eventually become a deployed model or not.
 
@@ -862,7 +879,7 @@ class MLOpsTrainingClient(BaseMLOpsClient):
                 "Authorization": f"Bearer {token}",
                 "Neomaril-Origin": "Codex",
                 "Neomaril-Method": self.__register_training.__qualname__,
-            }
+            },
         )
 
         response_data = response.json()
@@ -930,8 +947,14 @@ class MLOpsTrainingClient(BaseMLOpsClient):
                 else "Could not find experiment. Creating a new one..."
             )
             logger.info(msg)
-            training_hash = self.__register_training(experiment_name=experiment_name, model_type=model_type,
-                                                     group=group)
+            training_hash = self.__register_training(
+                experiment_name=experiment_name, model_type=model_type, group=group
+            )
 
-        return MLOpsTrainingExperiment(training_hash=training_hash, login=self.credentials[0],
-                                       password=self.credentials[1], group=group, url=self.base_url)
+        return MLOpsTrainingExperiment(
+            training_hash=training_hash,
+            login=self.credentials[0],
+            password=self.credentials[1],
+            group=group,
+            url=self.base_url,
+        )
