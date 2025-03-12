@@ -145,7 +145,6 @@ class CustomTrainingExecution(ITrainingExecution):
         msg = response.json()["Message"]
         logger.info(msg)
 
-
     def __init__(self, **data):
         super().__init__(**data)
         self.execution_id = self._register_execution(
@@ -168,7 +167,7 @@ class CustomTrainingExecution(ITrainingExecution):
             python_version=python_version,
         )
 
-        for path, name in data["extras"]:
+        for name, path in data["extra_files"]:
             self._upload_extra_files(extra_files_path=path, name=name)
 
         if data["env"]:
@@ -211,7 +210,7 @@ class AutoMLTrainingExecution(ITrainingExecution):
             input_data=values["input_data"], upload_data=values["upload_data"]
         )
 
-        for path, name in values["extras"]:
+        for path, name in values["extra_files"]:
             self._upload_extra_files(extra_files_path=path, name=name)
 
         self.host()
