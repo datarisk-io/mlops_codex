@@ -39,7 +39,7 @@ class ITrainingExecution(BaseModel, abc.ABC):
             )
 
         url = f"{self.mlops_class.base_url}/training/describe/{self.group}/{self.training_hash}"
-        token = refresh_token(*self.mlops_class.credentials, self.base_url)
+        token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
 
         response = make_request(
             url=url,
