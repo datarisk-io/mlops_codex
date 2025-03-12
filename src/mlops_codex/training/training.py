@@ -611,6 +611,9 @@ class MLOpsTrainingExperiment(BaseMLOps):
                 "You must provide a data to train your model. It can be a path to a file or a dataset hash."
             )
 
+        if description is None:
+            description = f"Training is {training_type}"
+
         if extra_files is None:
             extra_files = []
 
