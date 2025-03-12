@@ -34,8 +34,6 @@ class CustomTrainingExecution(ITrainingExecution):
                 f"The parameters {fields_required} it's mandatory on custom training."
             )
 
-        python_version = validate_python_version(values["python_version"])
-
         source_file = values["source_file"]
         file_extension_validation(source_file, {"py", "ipynb"})
 
@@ -52,7 +50,6 @@ class CustomTrainingExecution(ITrainingExecution):
         )
 
         data = {key: values[key] for key in keys}
-        data["python_version"] = python_version
 
         return data
 
@@ -129,7 +126,7 @@ class CustomTrainingExecution(ITrainingExecution):
         token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
         upload_data = {"script": open(script_path, "rb")}
         input_data = {
-            "train_reference": train_reference,
+            "training_reference": train_reference,
             "python_version": python_version,
         }
         response = make_request(
@@ -163,10 +160,12 @@ class CustomTrainingExecution(ITrainingExecution):
 
         self._upload_requirements(requirements_file=data["requirements_file"])
 
+        python_version = validate_python_version(data["python_version"])
+
         self.__upload_script_file(
             script_path=data["source_file"],
             train_reference=data["training_reference"],
-            python_version=data["python_version"],
+            python_version=python_version,
         )
 
         for path, name in data["extras"]:
