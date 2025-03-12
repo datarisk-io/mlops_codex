@@ -190,7 +190,7 @@ class ITrainingExecution(BaseModel, abc.ABC):
         return status
 
     def host(self):
-        url = f"{self.mlops_class.base_url}/training/execution/{self.execution_id}"
+        url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}"
         token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
 
         response = make_request(
