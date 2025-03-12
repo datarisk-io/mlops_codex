@@ -177,8 +177,6 @@ class ITrainingExecution(BaseModel, abc.ABC):
             logger_msg=f"Experiment with execution id {self.execution_id} not found.",
             headers={
                 "Authorization": f"Bearer {token}",
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.status.__qualname__,
             },
         ).json()
 
