@@ -12,10 +12,10 @@ logger = get_logger()
 
 
 class CustomTrainingExecution(ITrainingExecution):
-
     @model_validator(mode="before")
     @classmethod
     def validate(cls, values):
+        logger.info("Validating data...")
 
         fields_required = (
             "input_data",
@@ -181,7 +181,8 @@ class CustomTrainingExecution(ITrainingExecution):
 
 class AutoMLTrainingExecution(ITrainingExecution):
     @model_validator(mode="before")
-    def validate(self, values):
+    @classmethod
+    def validate(cls, values):
         fields_required = (
             "train_data",
             "conf_dict",
@@ -198,25 +199,18 @@ class AutoMLTrainingExecution(ITrainingExecution):
 
         file_extension_validation(values["conf_dict"], {"json"})
 
-        self.execution_id = self._register_execution(
-            run_name=values["run_name"],
-            description=values["description"],
-            training_type="AutoML",
+        keys = (
+            "training_hash",
+            "group",
+            "model_type",
+            "login",
+            "password",
+            "url",
         )
 
-        self.__upload_conf_dict(conf_dict=values["conf_dict"])
+        data = {key: values[key] for key in keys}
 
-        self._upload_input_file(
-            input_data=values["input_data"], upload_data=values["upload_data"]
-        )
-
-        for path, name in values["extra_files"]:
-            self._upload_extra_files(extra_files_path=path, name=name)
-
-        self.host()
-
-        if values["wait_complete"]:
-            self.wait_ready()
+        return data
 
     def __upload_conf_dict(self, conf_dict):
         url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/confi-dict/file"
@@ -240,3 +234,26 @@ class AutoMLTrainingExecution(ITrainingExecution):
 
     def promote(self, *args, **kwargs):
         raise NotImplementedError()
+
+    def __init__(self, **data):
+        super().__init__(**data)
+
+        self.execution_id = self._register_execution(
+            run_name=data["run_name"],
+            description=data["description"],
+            training_type="AutoML",
+        )
+
+        self.__upload_conf_dict(conf_dict=data["conf_dict"])
+
+        self._upload_input_file(
+            input_data=data["input_data"], upload_data=data["upload_data"]
+        )
+
+        for name, path in data["extra_files"]:
+            self._upload_extra_files(extra_files_path=path, name=name)
+
+        self.host()
+
+        if data["wait_complete"]:
+            self.wait_ready()
