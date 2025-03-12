@@ -12,28 +12,29 @@ logger = get_logger()
 
 
 class CustomTrainingExecution(ITrainingExecution):
+
     @model_validator(mode="before")
-    def validate(self, values):
+    @classmethod
+    def validate(cls, values):
+
         fields_required = (
             "input_data",
             "upload_data",
             "run_name",
-            "train_data",
             "source_file",
             "requirements_file",
-            "train_reference",
+            "training_reference",
             "python_version",
         )
 
         if (not all(k in values for k in fields_required)) or (
-            not all(v for v in values.values())
+            not all(values[f] for f in fields_required)
         ):
             raise InputError(
                 f"The parameters {fields_required} it's mandatory on custom training."
             )
 
-        python_version = values["python_version"]
-        python_version = validate_python_version(python_version)
+        python_version = validate_python_version(values["python_version"])
 
         source_file = values["source_file"]
         file_extension_validation(source_file, {"py", "ipynb"})
@@ -41,34 +42,19 @@ class CustomTrainingExecution(ITrainingExecution):
         requirements_file = values["requirements_file"]
         file_extension_validation(requirements_file, {"txt"})
 
-        self.execution_id = self._register_execution(
-            run_name=values["run_name"],
-            description=values["description"],
-            training_type="Custom",
+        keys = (
+            "training_hash",
+            "group",
+            "model_type",
+            "login",
+            "password",
+            "url",
         )
 
-        self._upload_input_file(
-            input_data=values["input_data"], upload_data=values["upload_data"]
-        )
+        data = {key: values[key] for key in keys}
+        data["python_version"] = python_version
 
-        self._upload_requirements(requirements_file=requirements_file)
-
-        self.__upload_script_file(
-            script_path=source_file,
-            train_reference=values["train_reference"],
-            python_version=python_version,
-        )
-
-        for path, name in values["extras"]:
-            self._upload_extra_files(extra_files_path=path, name=name)
-
-        if values["env"]:
-            self._upload_env_file(env_file=values["env"])
-
-        self.host()
-
-        if values["wait_complete"]:
-            self.wait_ready()
+        return data
 
     # This function is not accessible to users. When the promote endpoint is changed, I'll make some updates here
     def __promote(
@@ -161,6 +147,39 @@ class CustomTrainingExecution(ITrainingExecution):
 
         msg = response.json()["Message"]
         logger.info(msg)
+
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        self.execution_id = self._register_execution(
+            run_name=data["run_name"],
+            description=data["description"],
+            training_type="Custom",
+        )
+
+        self._upload_input_file(
+            input_data=data["input_data"], upload_data=data["upload_data"]
+        )
+
+        self._upload_requirements(requirements_file=data["requirements_file"])
+
+
+        self.__upload_script_file(
+            script_path=data["source_file"],
+            train_reference=data["train_reference"],
+            python_version=data["python_version"],
+        )
+
+        for path, name in data["extras"]:
+            self._upload_extra_files(extra_files_path=path, name=name)
+
+        if data["env"]:
+            self._upload_env_file(env_file=data["env"])
+
+        self.host()
+
+        if data["wait_complete"]:
+            self.wait_ready()
 
 
 class AutoMLTrainingExecution(ITrainingExecution):
