@@ -19,8 +19,9 @@ class ITrainingExecution(BaseModel, abc.ABC):
         frozen=True, title="Training hash", validate_default=True
     )
     group: str = Field(frozen=True, title="Training hash", validate_default=True)
+    model_type: str = Field(frozen=True, title="Training type", validate_default=True)
+
     execution_id: int = Field(default=None, gt=0)
-    model_type: str = Field(default=None)
     experiment_name: str = Field(default=None)
 
     login: str = Field(default=None, repr=False)
@@ -54,7 +55,6 @@ class ITrainingExecution(BaseModel, abc.ABC):
         )
 
         training_data = response.json()["Description"]
-        self.model_type = training_data["ModelType"]
         self.experiment_name = training_data["ExperimentName"]
 
     def _register_execution(self, run_name: str, description: str, training_type: str):
