@@ -163,10 +163,9 @@ class CustomTrainingExecution(ITrainingExecution):
 
         self._upload_requirements(requirements_file=data["requirements_file"])
 
-
         self.__upload_script_file(
             script_path=data["source_file"],
-            train_reference=data["train_reference"],
+            train_reference=data["training_reference"],
             python_version=data["python_version"],
         )
 
