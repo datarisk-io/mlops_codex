@@ -184,14 +184,14 @@ class AutoMLTrainingExecution(ITrainingExecution):
     @classmethod
     def validate(cls, values):
         fields_required = (
-            "train_data",
+            "input_data",
+            "upload_data",
             "conf_dict",
             "run_name",
-            "description",
         )
 
         if (not all(k in values for k in fields_required)) or (
-            not all(v for v in values.values())
+            not all(values[f] for f in fields_required)
         ):
             raise InputError(
                 f"The parameters {fields_required} it's mandatory on automl training."
@@ -213,7 +213,7 @@ class AutoMLTrainingExecution(ITrainingExecution):
         return data
 
     def __upload_conf_dict(self, conf_dict):
-        url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/confi-dict/file"
+        url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/conf-dict/file"
         token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
 
         upload_data = {"conf_dict": parse_dict_or_file(conf_dict)}
