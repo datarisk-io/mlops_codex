@@ -483,6 +483,21 @@ class MLOpsTrainingExperiment(BaseMLOps):
         return f'MLOPS training experiment "{self.experiment_name} (Group: {self.group}, Id: {self.training_hash})"'
 
     def __describe(self):
+        """
+        Describe the training experiment.
+
+        Returns
+        -------
+        dict
+            Description of the training experiment.
+
+        Raises
+        ------
+        TrainingError
+            When the training can't be accessed in the server
+        AuthenticationError 
+            Invalid credentials
+        """
         url = f"{self.base_url}/training/describe/{self.group}/{self.training_hash}"
         token = refresh_token(*self.credentials, self.base_url)
         response = make_request(
@@ -500,6 +515,19 @@ class MLOpsTrainingExperiment(BaseMLOps):
         return response.json()
 
     def succeeded_executions(self, mode="dict"):
+        """
+        Get the succeeded executions.
+
+        Parameters
+        ----------
+        mode: str, optional
+            The mode of the return value. Can be "dict" or "count". Default is "dict".
+
+        Returns
+        -------
+        Union[dict, int]
+            The succeeded executions in the specified mode.
+        """
         describe = self.__describe().get("SucceededExecutions")
         if mode == "dict":
             return describe
@@ -509,6 +537,19 @@ class MLOpsTrainingExperiment(BaseMLOps):
             raise InputError(f"Invalid mode {mode}")
 
     def executions(self, mode="dict"):
+        """
+        Get the executions.
+
+        Parameters
+        ----------
+        mode: str, optional
+            The mode of the return value. Can be "dict" or "count". Default is "dict".
+
+        Returns
+        -------
+        Union[dict, int]
+            The executions in the specified mode.
+        """
         describe = self.__describe().get("Executions")
         if mode == "dict":
             return describe

@@ -12,9 +12,48 @@ logger = get_logger()
 
 
 class CustomTrainingExecution(ITrainingExecution):
+    """
+    Custom training execution class.
+
+    Parameters
+    ----------
+    training_hash: str
+        Training hash.
+    group: str
+        Group where the training is inserted.
+    model_type: str
+        Type of the model.
+    execution_id: int
+        Execution ID of a training.
+    experiment_name: str
+        Name of the experiment.
+    login: str
+        Login credential.
+    password: str
+        Password credential.
+    url: str
+        URL used to connect to the MLOps server.
+    mlops_class: BaseMLOps
+        MLOps class instance.
+    """
+
     @model_validator(mode="before")
     @classmethod
     def validate(cls, values):
+        """
+        Validates the input values for custom training execution.
+
+        Parameters
+        ----------
+        values: dict
+            Dictionary of input values.
+
+        Returns
+        -------
+        dict
+            Validated input values.
+        """
+
         logger.info("Validating data...")
 
         fields_required = (
@@ -67,6 +106,37 @@ class CustomTrainingExecution(ITrainingExecution):
         extra_files: list = None,
         wait_complete: bool = False,
     ):
+        """
+        Promotes the current execution.
+
+        Parameters
+        ----------
+        model_name: str
+            Name of the model.
+        operation: str
+            Operation type.
+        source_file: str
+            Path to the source file.
+        model_reference: str
+            Model reference.
+        schema: str
+            Schema file.
+        requirements_file: str, optional
+            Path to the requirements file.
+        input_type: str, optional
+            Input type.
+        env: str, optional
+            Path to the environment file.
+        extra_files: list, optional
+            List of extra files.
+        wait_complete: bool, optional
+            Whether to wait for completion.
+
+        Returns
+        -------
+        None
+        """
+
         schema_extension = schema.split(".")[-1]
         self._promote_validation(
             operation=operation,
@@ -117,11 +187,43 @@ class CustomTrainingExecution(ITrainingExecution):
         )
 
     def promote(self, *args, **kwargs):
+        """
+        Abstract method to promote the execution.
+
+        Parameters
+        ----------
+        args: tuple
+            Positional arguments.
+        kwargs: dict
+            Keyword arguments.
+
+        Returns
+        -------
+        None
+        """
+
         raise NotImplementedError()
 
     def __upload_script_file(
         self, script_path: str, train_reference: str, python_version: str
     ):
+        """
+        Uploads the script file.
+
+        Parameters
+        ----------
+        script_path: str
+            Path to the script file.
+        train_reference: str
+            Training reference.
+        python_version: str
+            Python version.
+
+        Returns
+        -------
+        None
+        """
+
         url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/script-file"
         token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
         upload_data = {"script": open(script_path, "rb")}
@@ -180,9 +282,48 @@ class CustomTrainingExecution(ITrainingExecution):
 
 
 class AutoMLTrainingExecution(ITrainingExecution):
+    """
+    AutoML training execution class.
+
+    Parameters
+    ----------
+    training_hash: str
+        Training hash.
+    group: str
+        Group where the training is inserted.
+    model_type: str
+        Type of the model.
+    execution_id: int
+        Execution ID of a training.
+    experiment_name: str
+        Name of the experiment.
+    login: str
+        Login credential.
+    password: str
+        Password credential.
+    url: str
+        URL used to connect to the MLOps server.
+    mlops_class: BaseMLOps
+        MLOps class instance.
+    """
+
     @model_validator(mode="before")
     @classmethod
     def validate(cls, values):
+        """
+        Validates the input values for AutoML training execution.
+
+        Parameters
+        ----------
+        values: dict
+            Dictionary of input values.
+
+        Returns
+        -------
+        dict
+            Validated input values.
+        """
+
         fields_required = (
             "input_data",
             "upload_data",
@@ -213,6 +354,19 @@ class AutoMLTrainingExecution(ITrainingExecution):
         return data
 
     def __upload_conf_dict(self, conf_dict):
+        """
+        Uploads the configuration dictionary.
+
+        Parameters
+        ----------
+        conf_dict: str
+            Path to the configuration dictionary.
+
+        Returns
+        -------
+        None
+        """
+
         url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/conf-dict/file"
         token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
 
@@ -233,6 +387,21 @@ class AutoMLTrainingExecution(ITrainingExecution):
         logger.info(msg)
 
     def promote(self, *args, **kwargs):
+        """
+        Abstract method to promote the execution.
+
+        Parameters
+        ----------
+        args: tuple
+            Positional arguments.
+        kwargs: dict
+            Keyword arguments.
+
+        Returns
+        -------
+        None
+        """
+        
         raise NotImplementedError()
 
     def __init__(self, **data):

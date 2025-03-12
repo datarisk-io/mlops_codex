@@ -15,6 +15,31 @@ logger = get_logger()
 
 
 class ITrainingExecution(BaseModel, abc.ABC):
+    """
+    Interface for training execution.
+
+    Parameters
+    ----------
+    training_hash: str
+        Training hash.
+    group: str
+        Group where the training is inserted.
+    model_type: str
+        Type of the model. It must be 'Custom', 'AutoML' or 'External'
+    execution_id: int
+        Execution ID of a training.
+    experiment_name: str
+        Name of the experiment.
+    login: str
+        Login credential.
+    password: str
+        Password credential.
+    url: str
+        Url used to connect to the MLOps server.
+    mlops_class: BaseMLOps
+        MLOps class instance.
+    """
+
     training_hash: str = Field(
         frozen=True, title="Training hash", validate_default=True
     )
@@ -33,6 +58,14 @@ class ITrainingExecution(BaseModel, abc.ABC):
         arbitrary_types_allowed = True
 
     def model_post_init(self, __context: Any) -> None:
+        """
+        Initializes the model after creation.
+
+        Parameters
+        ----------
+        __context: Any
+            Context for initialization.
+        """
         if self.mlops_class is None:
             self.mlops_class = BaseMLOps(
                 login=self.login, password=self.password, url=self.url
@@ -58,6 +91,23 @@ class ITrainingExecution(BaseModel, abc.ABC):
         self.experiment_name = training_data["ExperimentName"]
 
     def _register_execution(self, run_name: str, description: str, training_type: str):
+        """
+        Registers a new execution.
+
+        Parameters
+        ----------
+        run_name: str
+            Name of the run.
+        description: str
+            Description of the run.
+        training_type: str
+            Type of the training.
+
+        Returns
+        -------
+        int
+            Execution ID.
+        """
         url = f"{self.mlops_class.base_url}/v2/training/{self.training_hash}/execution"
         token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
         payload = {
@@ -79,6 +129,20 @@ class ITrainingExecution(BaseModel, abc.ABC):
         return execution_id
 
     def _upload_input_file(self, input_data: str, upload_data: str):
+        """
+        Uploads an input file.
+
+        Parameters
+        ----------
+        input_data: str
+            Input data to be uploaded. It is the payload.
+        upload_data: str
+            Data for the upload. It is the file.
+
+        Returns
+        -------
+        None
+        """
         url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/input/file"
         token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
 
@@ -102,6 +166,18 @@ class ITrainingExecution(BaseModel, abc.ABC):
         logger.info(f"Dataset hash = {dataset_hash}")
 
     def _upload_requirements(self, requirements_file: str):
+        """
+        Uploads a requirements file.
+
+        Parameters
+        ----------
+        requirements_file: str
+            Path to the requirements file.
+
+        Returns
+        -------
+        None
+        """
         url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/requirements-file"
         token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
 
@@ -123,6 +199,20 @@ class ITrainingExecution(BaseModel, abc.ABC):
         logger.info(msg)
 
     def _upload_extra_files(self, extra_files_path: str, name: str):
+        """
+        Uploads extra file.
+
+        Parameters
+        ----------
+        extra_files_path: str
+            Path to the extra file.
+        name: str
+            Name of the file.
+
+        Returns
+        -------
+        None
+        """
         url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/extra-files"
         token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
 
@@ -145,6 +235,18 @@ class ITrainingExecution(BaseModel, abc.ABC):
         logger.info(msg)
 
     def _upload_env_file(self, env_file: str):
+        """
+        Uploads an environment file.
+
+        Parameters
+        ----------
+        env_file: str
+            Path to the environment file.
+
+        Returns
+        -------
+        None
+        """
         url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/env/file"
         token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
 
@@ -166,6 +268,21 @@ class ITrainingExecution(BaseModel, abc.ABC):
 
     @property
     def status(self) -> str:
+        """
+        Gets the current status of the execution.
+
+        Returns
+        -------
+        str
+            Current status of the execution.
+
+        Raises
+        ------
+        TrainingError
+            If the execution is not found.
+        AuthenticationError
+            If the authentication fails.
+        """
         url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/status"
         token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
         response = make_request(
@@ -189,6 +306,13 @@ class ITrainingExecution(BaseModel, abc.ABC):
         return status
 
     def host(self):
+        """
+        Hosts the current execution.
+
+        Returns
+        -------
+        None
+        """
         url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}"
         token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
 
@@ -207,6 +331,13 @@ class ITrainingExecution(BaseModel, abc.ABC):
         logger.info(msg)
 
     def wait_ready(self):
+        """
+        Waits until the model is ready.
+
+        Returns
+        -------
+        None
+        """
         current_status = ModelExecutionState.Running
         print("Training your model...", end="", flush=True)
         while current_status in [
@@ -225,6 +356,18 @@ class ITrainingExecution(BaseModel, abc.ABC):
 
     # TODO: update it when promote endpoint updated
     def __promote_validation(self, **kwargs):
+        """
+        Validates the promotion process.
+
+        Parameters
+        ----------
+        kwargs: dict
+            Keyword arguments for validation.
+
+        Returns
+        -------
+        None
+        """
         if kwargs["operation"] == "Async":
             if kwargs["input_type"] is None:
                 raise InputError(
@@ -242,6 +385,19 @@ class ITrainingExecution(BaseModel, abc.ABC):
             )
 
     def __promote(self, **kwargs):
+        """
+        Promotes the current execution.
+
+        Parameters
+        ----------
+        kwargs: dict
+            Keyword arguments for promotion.
+
+        Returns
+        -------
+        Union[SyncModel, AsyncModel]
+            Promoted model instance.
+        """
         url = f"{self.mlops_class.base_url}/training/promote/{self.group}/{self.training_hash}/{self.execution_id}"
         token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
 
@@ -288,7 +444,28 @@ class ITrainingExecution(BaseModel, abc.ABC):
 
     @abc.abstractmethod
     def promote(self, *args, **kwargs):
+        """
+        Abstract method to promote the execution.
+
+        Parameters
+        ----------
+        args: tuple
+            Positional arguments.
+        kwargs: dict
+            Keyword arguments.
+
+        Returns
+        -------
+        None
+        """
         raise NotImplementedError()
 
     def execution_info(self):
+        """
+        Abstract method to get execution information.
+
+        Returns
+        -------
+        None
+        """
         raise NotImplementedError()
