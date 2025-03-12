@@ -636,6 +636,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
                 CustomTrainingExecution,
                 {
                     "training_hash": self.training_hash,
+                    "model_type": training_type,
                     "group": self.group,
                     "login": self.credentials[0],
                     "password": self.credentials[1],
@@ -657,6 +658,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
                 AutoMLTrainingExecution,
                 {
                     "training_hash": self.training_hash,
+                    "model_type": training_type,
                     "group": self.group,
                     "login": self.credentials[0],
                     "password": self.credentials[1],
