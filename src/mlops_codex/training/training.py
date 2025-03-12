@@ -672,6 +672,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
                     "upload_data": upload_data,
                     "conf_dict": conf_dict,
                     "extra_files": extra_files,
+                    "wait_complete": wait_complete,
                 },
             ),
         }
