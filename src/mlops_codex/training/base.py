@@ -98,7 +98,8 @@ class ITrainingExecution(BaseModel, abc.ABC):
         msg = response.json()["Message"]
         dataset_hash = response.json()["DatasetHash"]
 
-        logger.info(f"{msg}.\nDataset hash = {dataset_hash}")
+        logger.info(f"{msg}")
+        logger.info(f"Dataset hash = {dataset_hash}")
 
     def _upload_requirements(self, requirements_file: str):
         url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/requirements-file"
