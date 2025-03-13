@@ -1517,9 +1517,7 @@ class MLOpsModelClient(BaseMLOpsClient):
 
         file_extension_validation(source_file, {"py", "ipynb"})
         file_extension_validation(schema, {"csv", "parquet", "json"})
-        validate_python_version(python_version)
-
-        python_version = "Python" + python_version.replace(".", "")
+        python_version = validate_python_version(python_version)
 
         upload_data = [
             (
@@ -1635,7 +1633,6 @@ class MLOpsModelClient(BaseMLOpsClient):
 
         logger.info(f"Creating a new model {model_name}. Validating data")
 
-        validate_python_version(python_version)
         validate_group_existence(group, self)
 
         if operation.title() != "Sync" or operation.title() != "Async":

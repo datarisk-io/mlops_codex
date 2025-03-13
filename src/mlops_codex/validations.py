@@ -26,7 +26,7 @@ def validate_group_existence(group: str, client_object: BaseMLOpsClient) -> bool
     raise GroupError("Group dont exist. Create a group first.")
 
 
-def validate_python_version(python_version: str) -> bool:
+def validate_python_version(python_version: str) -> str:
     """
     Validates that the Python version is valid.
 
@@ -40,7 +40,7 @@ def validate_python_version(python_version: str) -> bool:
         raise InputError(
             "Invalid python version. Available versions are 3.8, 3.9, 3.10"
         )
-    return True
+    return "Python" + python_version.replace(".", "")
 
 
 def date_validation(start: str, end: str) -> Tuple[str, str]:
