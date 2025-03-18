@@ -183,7 +183,9 @@ class MLOpsTrainingLogger:
         """
         self.requirements = requirements
 
-    def save_plot(self, *, fig: object, filename: str, dpi: int = 300, ext: str = 'png'):
+    def save_plot(
+        self, *, fig: object, filename: str, dpi: int = 300, ext: str = "png"
+    ):
         """
         Save plot graphic image to the logger.
 
@@ -217,11 +219,13 @@ class MLOpsTrainingLogger:
                 return
 
         with try_import() as _:
-            import seaborn as sns
             import matplotlib.pyplot as plt
+            import seaborn as sns
 
             if isinstance(fig, sns.axisgrid.FacetGrid) or isinstance(fig, plt.Figure):
-                self.__save_seaborn_or_matplotlib_plot(fig=fig, dpi=dpi, filepath=filepath)
+                self.__save_seaborn_or_matplotlib_plot(
+                    fig=fig, dpi=dpi, filepath=filepath
+                )
                 return
 
         raise TypeError("The plot only accepts plots of Matplotlib/Plotly/Seaborn")
@@ -240,7 +244,7 @@ class MLOpsTrainingLogger:
             Extra keyword arguments passed to savefig() or write_image()/write_html().
         """
 
-        if filepath.endswith('html'):
+        if filepath.endswith("html"):
             fig.write_html(f"{filepath}")
             return
 
@@ -518,7 +522,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
         ------
         TrainingError
             When the training can't be accessed in the server
-        AuthenticationError 
+        AuthenticationError
             Invalid credentials
         """
         url = f"{self.base_url}/training/describe/{self.group}/{self.training_hash}"
@@ -771,8 +775,8 @@ class MLOpsTrainingExperiment(BaseMLOps):
                     "model_file": model_file,
                     "requirements_file": requirements_file,
                     "wait_complete": wait_complete,
-                }
-            )
+                },
+            ),
         }
 
         builder_train_class, params = builder[training_type]
@@ -848,7 +852,9 @@ class MLOpsTrainingExperiment(BaseMLOps):
                 python_version=self.trainer.python_version,
                 extra_files=self.trainer.extras,
             )
-            logger.info("Use the `get_training_execution()` method to get a training execution.")
+            logger.info(
+                "Use the `get_training_execution()` method to get a training execution."
+            )
 
 
 class MLOpsTrainingClient(BaseMLOpsClient):

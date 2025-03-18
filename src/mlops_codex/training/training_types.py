@@ -397,7 +397,7 @@ class AutoMLTrainingExecution(ITrainingExecution):
         -------
         None
         """
-        
+
         raise NotImplementedError()
 
     def __init__(self, **data):
@@ -425,7 +425,6 @@ class AutoMLTrainingExecution(ITrainingExecution):
 
 
 class ExternalTrainingExecution(ITrainingExecution):
-
     @model_validator(mode="before")
     @classmethod
     def validate(cls, values):
@@ -433,9 +432,15 @@ class ExternalTrainingExecution(ITrainingExecution):
 
         copy_dict = {
             "run_name": values["run_name"],
-            "features": values.get("features_file") if values.get("features_file") else values.get("features_hash"),
-            "target": values.get("target_file") if values.get("target_file") else values.get("target_hash"),
-            "output": values.get("output_file") if values.get("output_file") else values.get("output_hash"),
+            "features": values.get("features_file")
+            if values.get("features_file")
+            else values.get("features_hash"),
+            "target": values.get("target_file")
+            if values.get("target_file")
+            else values.get("target_hash"),
+            "output": values.get("output_file")
+            if values.get("output_file")
+            else values.get("output_hash"),
         }
 
         validate_input({"run_name", "features", "target", "output"}, copy_dict)
@@ -479,7 +484,7 @@ class ExternalTrainingExecution(ITrainingExecution):
                 "Authorization": f"Bearer {token}",
                 "Neomaril-Origin": "Codex",
                 "Neomaril-Method": self.__upload_file_or_hash.__qualname__,
-            }
+            },
         ).json()
 
         logger.info(response["Message"])
@@ -497,11 +502,10 @@ class ExternalTrainingExecution(ITrainingExecution):
                 "Authorization": f"Bearer {token}",
                 "Neomaril-Origin": "Codex",
                 "Neomaril-Method": self.__set_python_version.__qualname__,
-            }
+            },
         ).json()
 
         logger.info(response["Message"])
-
 
     def __init__(self, **data):
         super().__init__(**data)
@@ -515,15 +519,28 @@ class ExternalTrainingExecution(ITrainingExecution):
         for var in ["features", "target", "output"]:
             inp = data[f"{var}_hash"] if data[f"{var}_hash"] is not None else var
             form = "dataset_hash" if data[f"{var}_hash"] is not None else "dataset_name"
-            file = open(data[f"{var}_file"], "rb") if data[f"{var}_file"] is not None else var
-            self.__upload_file_or_hash(url=var, input_data={form: inp}, upload_data={var: file})
+            file = (
+                open(data[f"{var}_file"], "rb")
+                if data[f"{var}_file"] is not None
+                else var
+            )
+            self.__upload_file_or_hash(
+                url=var, input_data={form: inp}, upload_data={var: file}
+            )
 
         if data["metrics_file"]:
-            self.__upload_file_or_hash(url="metrics", upload_data={"metrics": open(data["metrics_file"], "rb")})
+            self.__upload_file_or_hash(
+                url="metrics", upload_data={"metrics": open(data["metrics_file"], "rb")}
+            )
         if data["parameters_file"]:
-            self.__upload_file_or_hash(url="parameters", upload_data={"parameters": open(data["parameters_file"], "rb")})
+            self.__upload_file_or_hash(
+                url="parameters",
+                upload_data={"parameters": open(data["parameters_file"], "rb")},
+            )
         if data["model_file"]:
-            self.__upload_file_or_hash(url="model", upload_data={"model": open(data["model_file"], "rb")})
+            self.__upload_file_or_hash(
+                url="model", upload_data={"model": open(data["model_file"], "rb")}
+            )
         if data["requirements_file"]:
             self._upload_requirements(requirements_file=data["requirements_file"])
 
