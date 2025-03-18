@@ -6,6 +6,7 @@ from mlops_codex.exceptions import InputError
 from mlops_codex.http_request_handler import make_request, refresh_token
 from mlops_codex.logger_config import get_logger
 from mlops_codex.training.base import ITrainingExecution
+from mlops_codex.training.validations import validate_input
 from mlops_codex.validations import file_extension_validation, validate_python_version
 
 logger = get_logger()
@@ -66,12 +67,7 @@ class CustomTrainingExecution(ITrainingExecution):
             "python_version",
         )
 
-        if (not all(k in values for k in fields_required)) or (
-            not all(values[f] for f in fields_required)
-        ):
-            raise InputError(
-                f"The parameters {fields_required} it's mandatory on custom training."
-            )
+        validate_input(fields_required, values)
 
         source_file = values["source_file"]
         file_extension_validation(source_file, {"py", "ipynb"})
@@ -426,3 +422,133 @@ class AutoMLTrainingExecution(ITrainingExecution):
 
         if data["wait_complete"]:
             self.wait_ready()
+
+
+class ExternalTrainingExecution(ITrainingExecution):
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate(cls, values):
+        logger.info("Validating external training execution...")
+
+        copy_dict = {
+            "run_name": values["run_name"],
+            "features": values.get("features_file") if values.get("features_file") else values.get("features_hash"),
+            "target": values.get("target_file") if values.get("target_file") else values.get("target_hash"),
+            "output": values.get("output_file") if values.get("output_file") else values.get("output_hash"),
+        }
+
+        validate_input({"run_name", "features", "target", "output"}, copy_dict)
+
+        if values["features_file"] and values["features_hash"]:
+            raise InputError("You must provide either features file or dataset hash.")
+
+        if values["output_file"] and values["output_hash"]:
+            raise InputError("You must provide either output file or dataset hash.")
+
+        if values["target_file"] and values["target_hash"]:
+            raise InputError("You must provide either target file or dataset hash.")
+
+        if values["requirements_file"]:
+            file_extension_validation(values["requirements_file"], {"txt"})
+
+        keys = (
+            "training_hash",
+            "group",
+            "model_type",
+            "login",
+            "password",
+            "url",
+        )
+
+        data = {key: values[key] for key in keys}
+
+        return data
+
+    # TODO: turn it into a generic function
+    def __upload_file_or_hash(self, url, input_data=None, upload_data=None):
+        url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/{url}/file"
+        token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
+        response = make_request(
+            url=url,
+            method="PATCH",
+            success_code=201,
+            files=upload_data,
+            data=input_data,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.__upload_file_or_hash.__qualname__,
+            }
+        ).json()
+
+        logger.info(response["Message"])
+
+    def __set_python_version(self, python_version: str):
+        url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/python-version"
+        token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
+        payload = {"PythonVersion": python_version}
+        response = make_request(
+            url=url,
+            method="PATCH",
+            success_code=201,
+            json=payload,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.__set_python_version.__qualname__,
+            }
+        ).json()
+
+        logger.info(response["Message"])
+
+
+    def __init__(self, **data):
+        super().__init__(**data)
+
+        self.execution_id = self._register_execution(
+            run_name=data["run_name"],
+            description=data["description"],
+            training_type="External",
+        )
+
+        for var in ["features", "target", "output"]:
+            inp = data[f"{var}_hash"] if data[f"{var}_hash"] is not None else var
+            form = "dataset_hash" if data[f"{var}_hash"] is not None else "dataset_name"
+            file = open(data[f"{var}_file"], "rb") if data[f"{var}_file"] is not None else var
+            self.__upload_file_or_hash(url=var, input_data={form: inp}, upload_data={var: file})
+
+        if data["metrics_file"]:
+            self.__upload_file_or_hash(url="metrics", upload_data={"metrics": open(data["metrics_file"], "rb")})
+        if data["parameters_file"]:
+            self.__upload_file_or_hash(url="parameters", upload_data={"parameters": open(data["parameters_file"], "rb")})
+        if data["model_file"]:
+            self.__upload_file_or_hash(url="model", upload_data={"model": open(data["model_file"], "rb")})
+        if data["requirements_file"]:
+            self._upload_requirements(requirements_file=data["requirements_file"])
+
+        python_version = validate_python_version(data["python_version"])
+        self.__set_python_version(python_version)
+
+        self.host()
+
+        if data["wait_complete"]:
+            self.wait_ready()
+
+    def promote(self, *args, **kwargs):
+        """
+        Abstract method to promote the execution.
+
+        Parameters
+        ----------
+        args: tuple
+            Positional arguments.
+        kwargs: dict
+            Keyword arguments.
+
+        Returns
+        -------
+        None
+        """
+
+        raise NotImplementedError()
