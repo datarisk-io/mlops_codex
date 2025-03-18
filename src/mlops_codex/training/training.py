@@ -26,6 +26,7 @@ from mlops_codex.training.base import ITrainingExecution
 from mlops_codex.training.training_types import (
     AutoMLTrainingExecution,
     CustomTrainingExecution,
+    ExternalTrainingExecution,
 )
 from mlops_codex.validations import file_extension_validation, validate_group_existence
 
@@ -573,8 +574,11 @@ class MLOpsTrainingExperiment(BaseMLOps):
         dataset_name: Optional[str] = "input",
         conf_dict: Union[dict, str] = None,
         features_file: Optional[str] = None,
+        features_hash: Optional[str] = None,
         target_file: Optional[str] = None,
-        predictions_file: Optional[str] = None,
+        target_hash: Optional[str] = None,
+        output_file: Optional[str] = None,
+        output_hash: Optional[str] = None,
         metrics_file: Optional[str] = None,
         parameters_file: Optional[str] = None,
         model_file: Optional[str] = None,
@@ -614,10 +618,16 @@ class MLOpsTrainingExperiment(BaseMLOps):
             for dealing with your data and how to train the model
         features_file: Optional[str], default=None
             Path to the features file. Obrigatory for 'External' training
+        features_hash: Optional[str], default=None
+            Dataset hash that will be used as features. Obrigatory for 'External' training
         target_file: Optional[str], default=None
             Path to the target file. Obrigatory for 'External' training
-        predictions_file: Optional[str], default=None
-            Path to the predictions file. Obrigatory for 'External' training
+        target_hash: Optional[str], default=None
+            Dataset hash that will be used as target. Obrigatory for 'External' training
+        output_file: Optional[str], default=None
+            Path to the output file. Obrigatory for 'External' training
+        output_hash: Optional[str], default=None
+            Dataset hash that will be used as output. Obrigatory for 'External' training
         metrics_file: Optional[str], default=None
             Path to the metrics file. Obrigatory for 'External' training
         parameters_file: Optional[str], default=None
@@ -647,7 +657,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
                 "Training type needs be: 'Custom', 'AutoML' or 'External'."
             )
 
-        if dataset is None and train_data is None:
+        if dataset is None and train_data is None and training_type != "External":
             raise InputError(
                 "You must provide a data to train your model. It can be a path to a file or a dataset hash."
             )
@@ -716,6 +726,31 @@ class MLOpsTrainingExperiment(BaseMLOps):
                     "wait_complete": wait_complete,
                 },
             ),
+            "External": (
+                ExternalTrainingExecution,
+                {
+                    "training_hash": self.training_hash,
+                    "model_type": training_type,
+                    "group": self.group,
+                    "login": self.credentials[0],
+                    "password": self.credentials[1],
+                    "url": self.base_url,
+                    "run_name": run_name,
+                    "python_version": python_version,
+                    "description": description,
+                    "features_file": features_file,
+                    "features_hash": features_hash,
+                    "target_file": target_file,
+                    "target_hash": target_hash,
+                    "output_file": output_file,
+                    "output_hash": output_hash,
+                    "metrics_file": metrics_file,
+                    "parameters_file": parameters_file,
+                    "model_file": model_file,
+                    "requirements_file": requirements_file,
+                    "wait_complete": wait_complete,
+                }
+            )
         }
 
         builder_train_class, params = builder[training_type]
