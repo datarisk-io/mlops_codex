@@ -215,7 +215,7 @@ class MLOpsTrainingLogger:
             import plotly
 
             if isinstance(fig, plotly.graph_objs.Figure):
-                self.__save_plotly_plot(fig=fig, filepath=filepath, ext=ext, plot=fig)
+                self.__save_plotly_plot(fig=fig, filepath=filepath)
                 return
 
         with try_import() as _:
