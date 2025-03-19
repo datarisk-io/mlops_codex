@@ -8,7 +8,7 @@ def validate_input(required, fields):
         not all(fields[f] for f in required)
     ):
         raise InputError(
-            f"The parameters {required} are mandatory for custom trainings."
+            f"The parameters {required} are mandatory for this training execution type."
         )
 
     return True
