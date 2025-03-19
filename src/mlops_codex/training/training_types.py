@@ -320,19 +320,7 @@ class AutoMLTrainingExecution(ITrainingExecution):
             Validated input values.
         """
 
-        fields_required = (
-            "input_data",
-            "upload_data",
-            "conf_dict",
-            "run_name",
-        )
-
-        if (not all(k in values for k in fields_required)) or (
-            not all(values[f] for f in fields_required)
-        ):
-            raise InputError(
-                f"The parameters {fields_required} it's mandatory on automl training."
-            )
+        validate_input({"input_data", "upload_data", "conf_dict", "run_name"}, values)
 
         file_extension_validation(values["conf_dict"], {"json"})
 
