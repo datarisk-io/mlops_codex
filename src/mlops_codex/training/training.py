@@ -796,6 +796,30 @@ class MLOpsTrainingClient(BaseMLOpsClient):
     def __str__(self):
         return f"Codex version {constants.CODEX_VERSION}"
 
+    def list(self, mode='dict'):
+        url = f"{self.base_url}/v2/training"
+        token = refresh_token(*self.credentials, self.base_url)
+        response = make_request(
+            url=url,
+            method="GET",
+            success_code=200,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.list.__qualname__,
+            },
+        )
+
+        if mode == 'dict':
+            return response.json()
+        if mode == 'count':
+            return len(response.json())
+        if mode == 'log':
+            yaml_data = parse_json_to_yaml(response.json())
+            print(yaml_data)
+            return
+        raise InputError(f'{mode} is invalid. The options are "count", "dict" or "log"')
+
     def get_training(
         self, *, training_hash: str, group: str
     ) -> MLOpsTrainingExperiment:
