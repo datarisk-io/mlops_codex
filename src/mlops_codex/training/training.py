@@ -26,6 +26,7 @@ from mlops_codex.training.base import ITrainingExecution
 from mlops_codex.training.training_types import (
     AutoMLTrainingExecution,
     CustomTrainingExecution,
+    ExternalTrainingExecution,
 )
 from mlops_codex.validations import file_extension_validation, validate_group_existence
 
@@ -67,34 +68,63 @@ class MLOpsTrainingLogger:
         name: str,
         X_train: pd.DataFrame,
         y_train: pd.DataFrame,
-        description: Optional[str] = None,
         save_path: Optional[str] = None,
     ):
-        """
-        Initialize a new MLOpsTrainingLogger.
-
-        Args:
-            name: The name of the training run.
-            X_train: The training data.
-            y_train: The training labels.
-        """
         self.name = name
         self.X_train = X_train
         self.y_train = y_train
-        self.description = description
-        self.model_outputs = None
+        self.output = None
         self.model = None
         self.metrics = {}
         self.params = {}
-        self.requirements = None
         self.python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
         self.extras = []
 
+        # Paths
+        self.features_file = None
+        self.target_file = None
+        self.output_file = None
+        self.metrics_file = None
+        self.params_file = None
+        self.requirements = None
+        self.model_file = None
+
         if not save_path:
             dir_name = self.name.replace(" ", "_")
-            if not os.path.exists(f"./{dir_name}"):
-                os.mkdir(f"./{dir_name}")
-            self.save_path = f"./{dir_name}"
+            save_path = f"./{dir_name}"
+
+        os.makedirs(save_path, exist_ok=True)
+        self.save_path = save_path
+
+    def _processing_logging_inputs(self):
+        """
+        Processing of everything that be logged and return object
+        """
+
+        self.__set_params()
+        self.params_file = self.__to_json("params", self.params)
+
+        self.features_file = self.__to_parquet(
+            output_filename="features",
+            input_data=self.__parse_data_objects(self.X_train),
+        )
+
+        self.target_file = self.__to_parquet(
+            output_filename="target", input_data=self.__parse_data_objects(self.y_train)
+        )
+
+        self.output_file = self.__to_parquet(
+            output_filename="predictions",
+            input_data=self.__parse_data_objects(self.output),
+        )
+
+        if self.model:
+            self.model_file = self.__to_pickle(
+                output_filename="model", input_data=self.model
+            )
+
+        if self.metrics:
+            self.metrics_file = self.__to_json("metrics", self.metrics)
 
     def save_model(self, model):
         """
@@ -105,7 +135,6 @@ class MLOpsTrainingLogger:
         model: object
             The trained model.
         """
-
         self.model = model
 
     def save_metric(self, *, name, value):
@@ -119,20 +148,18 @@ class MLOpsTrainingLogger:
         value: float
             The value of the metric.
         """
-
         self.metrics[name] = value
 
-    def save_model_output(self, model_output):
+    def save_model_output(self, output):
         """
         Save the model output to the logger.
 
         Parameters
         ----------
-        model_output: object
+        output: object
             The output of the trained model.
         """
-
-        self.model_outputs = model_output
+        self.output = output
 
     def set_python_version(self, version: str):
         """
@@ -143,7 +170,6 @@ class MLOpsTrainingLogger:
         version: str
             The Python version.
         """
-
         self.python_version = version
 
     def set_requirements(self, requirements: str):
@@ -155,54 +181,78 @@ class MLOpsTrainingLogger:
         requirements: str
             The path of project requirements.
         """
-
         self.requirements = requirements
 
-    def save_plot(self, *, plot: object, save_filename: str):
+    def save_plot(
+        self, *, fig: object, filename: str, dpi: int = 300, ext: str = "png"
+    ):
         """
         Save plot graphic image to the logger.
 
         Parameters
         ----------
-        plot: object
-            A Matplotlib/Plotly/Seaborn graphic object.
-        save_filename: str
-            A name to save the plot.
+        fig: matplotlib.figure.Figure, seaborn.axisgrid.FacetGrid, seaborn.axes._subplots.AxesSubplot plotly.graph_objects.Figure.
+            Figure object
+        filename: str
+            filename without extension (extension will be added automatically).
+        dpi: int, default=300
+            Resolution for matplotlib/seaborn plots. Default is 300.
+        ext: str, default='png'
+            File format to save (e.g., 'png', 'pdf', 'svg', 'html'). If None, defaults to 'png' for static images.
+        **kwargs
+            Additional keyword arguments passed to savefig() or write_image()/write_html().
+
+        Raises
+        ------
+        TypeError
+            If the figure type is not supported.
+
         """
 
-        filepath = f"./{save_filename}.png"
+        filepath = f"{self.save_path}/{filename}.{ext}"
 
         with try_import() as _:
             import plotly
 
-            if isinstance(plot, plotly.graph_objs.Figure):
-                self.save_plotly_plot(plot=plot, filepath=filepath)
-                return
-
-        with try_import() as _:
-            import seaborn as sns
-
-            if isinstance(plot, sns.axisgrid.FacetGrid):
-                self.save_seaborn_or_matplotlib_plot(plot=plot, filepath=filepath)
+            if isinstance(fig, plotly.graph_objs.Figure):
+                self.__save_plotly_plot(fig=fig, filepath=filepath)
                 return
 
         with try_import() as _:
             import matplotlib.pyplot as plt
+            import seaborn as sns
 
-            if isinstance(plot, plt.Figure):
-                self.save_seaborn_or_matplotlib_plot(plot=plot, filepath=filepath)
+            if isinstance(fig, sns.axisgrid.FacetGrid) or isinstance(fig, plt.Figure):
+                self.__save_seaborn_or_matplotlib_plot(
+                    fig=fig, dpi=dpi, filepath=filepath
+                )
                 return
 
-        raise ValueError("The plot only accepts plots of Matplotlib/Plotly/Seaborn")
+        raise TypeError("The plot only accepts plots of Matplotlib/Plotly/Seaborn")
 
-    def save_plotly_plot(self, *, plot, filepath):
-        image_data = plot.to_image()
-        with open(filepath, "wb") as f:
-            f.write(image_data)
+    def __save_plotly_plot(self, fig, filepath):
+        """
+        Save a plotly figure to the logger.
+
+        Parameters
+        ----------
+        fig: plotly.graph_objects.Figure
+            The figure to save.
+        filepath: str
+            Path to the file to save.
+        **kwargs:
+            Extra keyword arguments passed to savefig() or write_image()/write_html().
+        """
+
+        if filepath.endswith("html"):
+            fig.write_html(f"{filepath}")
+            return
+
+        fig.write_image(f"{filepath}")
         self.add_extra(extra=filepath)
 
-    def save_seaborn_or_matplotlib_plot(self, *, plot, filepath):
-        plot.savefig(filepath)
+    def __save_seaborn_or_matplotlib_plot(self, *, fig, dpi, filepath):
+        fig.savefig(filepath, dpi=dpi)
         self.add_extra(extra=filepath)
 
     def set_extra(self, extra: list):
@@ -214,7 +264,6 @@ class MLOpsTrainingLogger:
         extra: list
             A list of paths of the extra files.
         """
-
         self.extras = extra
 
     def add_extra(self, *, extra: Union[pd.DataFrame, str], filename: str = None):
@@ -241,6 +290,8 @@ class MLOpsTrainingLogger:
                 )
             else:
                 raise InputError("Needs a filename to save the dataframe parquet.")
+        else:
+            raise InputError("Extra must be a Pandas DataFrame or a path.")
 
     def add_requirements(self, filename: str):
         """
@@ -251,7 +302,6 @@ class MLOpsTrainingLogger:
         filename: str
             The name of output filename to save.
         """
-
         self.requirements = filename
 
     def __to_parquet(self, *, output_filename: str, input_data: pd.DataFrame):
@@ -264,6 +314,7 @@ class MLOpsTrainingLogger:
         """
         path = os.path.join(self.save_path, f"{output_filename}.parquet")
         input_data.to_parquet(path)
+        self.add_extra(extra=path)
         return path
 
     def __to_json(self, output_filename: str, input_data: dict):
@@ -275,8 +326,9 @@ class MLOpsTrainingLogger:
             input_data: A dictionary to save.
         """
         path = os.path.join(self.save_path, f"{output_filename}.json")
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(input_data, f)
+        with open(path, mode="w", encoding="utf-8") as json_file:
+            json.dump(input_data, json_file)
+        self.add_extra(extra=path)
         return path
 
     def __to_pickle(self, *, output_filename: str, input_data):
@@ -290,9 +342,13 @@ class MLOpsTrainingLogger:
         path = os.path.join(self.save_path, f"{output_filename}.pkl")
         with open(path, "wb") as f:
             cloudpickle.dump(input_data, f)
+        self.add_extra(extra=path)
         return path
 
-    def _set_params(self):
+    def __set_params(self):
+        """
+        Set parameters for training.
+        """
         missing = self.X_train.isna().sum()
         missing_dict = {
             k + "_missings": v
@@ -345,49 +401,20 @@ class MLOpsTrainingLogger:
         self.params = {**params, **self.params}
 
     @staticmethod
-    def _parse_data_objects(obj: Any) -> pd.DataFrame:
+    def __parse_data_objects(obj: Any) -> pd.DataFrame:
         """
-        Tranform data types to dataframe
+        Transform data types to dataframe
         """
-
         if isinstance(obj, pd.Series):
             return obj.to_frame()
-        elif isinstance(obj, np.ndarray):
+        elif isinstance(obj, (np.ndarray, list, tuple, dict)):
             array_df = pd.DataFrame(obj)
             array_df.columns = [str(c) for c in array_df.columns]
             return array_df
         elif isinstance(obj, pd.DataFrame):
             return obj
-
-    def _processing_logging_inputs(self):
-        """
-        Processing of everything that be logged.
-        """
-
-        self._set_params()
-        self.params = self.__to_json("params", self.params)
-
-        self.X_train = self.__to_parquet(
-            output_filename="features",
-            input_data=self._parse_data_objects(self.X_train),
-        )
-
-        self.y_train = self.__to_parquet(
-            output_filename="target", input_data=self._parse_data_objects(self.y_train)
-        )
-
-        self.model_outputs = self.__to_parquet(
-            output_filename="predictions",
-            input_data=self._parse_data_objects(self.model_outputs),
-        )
-
-        if self.model:
-            self.model = self.__to_pickle(
-                output_filename="model", input_data=self.model
-            )
-
-        if self.metrics:
-            self.metrics = self.__to_json("metrics", self.metrics)
+        else:
+            raise TypeError(f"{obj} couldn't be a DataFrame")
 
 
 class MLOpsTrainingExperiment(BaseMLOps):
@@ -495,7 +522,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
         ------
         TrainingError
             When the training can't be accessed in the server
-        AuthenticationError 
+        AuthenticationError
             Invalid credentials
         """
         url = f"{self.base_url}/training/describe/{self.group}/{self.training_hash}"
@@ -573,8 +600,11 @@ class MLOpsTrainingExperiment(BaseMLOps):
         dataset_name: Optional[str] = "input",
         conf_dict: Union[dict, str] = None,
         features_file: Optional[str] = None,
+        features_hash: Optional[str] = None,
         target_file: Optional[str] = None,
-        predictions_file: Optional[str] = None,
+        target_hash: Optional[str] = None,
+        output_file: Optional[str] = None,
+        output_hash: Optional[str] = None,
         metrics_file: Optional[str] = None,
         parameters_file: Optional[str] = None,
         model_file: Optional[str] = None,
@@ -614,10 +644,16 @@ class MLOpsTrainingExperiment(BaseMLOps):
             for dealing with your data and how to train the model
         features_file: Optional[str], default=None
             Path to the features file. Obrigatory for 'External' training
+        features_hash: Optional[str], default=None
+            Dataset hash that will be used as features. Obrigatory for 'External' training
         target_file: Optional[str], default=None
             Path to the target file. Obrigatory for 'External' training
-        predictions_file: Optional[str], default=None
-            Path to the predictions file. Obrigatory for 'External' training
+        target_hash: Optional[str], default=None
+            Dataset hash that will be used as target. Obrigatory for 'External' training
+        output_file: Optional[str], default=None
+            Path to the output file. Obrigatory for 'External' training
+        output_hash: Optional[str], default=None
+            Dataset hash that will be used as output. Obrigatory for 'External' training
         metrics_file: Optional[str], default=None
             Path to the metrics file. Obrigatory for 'External' training
         parameters_file: Optional[str], default=None
@@ -647,7 +683,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
                 "Training type needs be: 'Custom', 'AutoML' or 'External'."
             )
 
-        if dataset is None and train_data is None:
+        if dataset is None and train_data is None and training_type != "External":
             raise InputError(
                 "You must provide a data to train your model. It can be a path to a file or a dataset hash."
             )
@@ -716,6 +752,31 @@ class MLOpsTrainingExperiment(BaseMLOps):
                     "wait_complete": wait_complete,
                 },
             ),
+            "External": (
+                ExternalTrainingExecution,
+                {
+                    "training_hash": self.training_hash,
+                    "model_type": training_type,
+                    "group": self.group,
+                    "login": self.credentials[0],
+                    "password": self.credentials[1],
+                    "url": self.base_url,
+                    "run_name": run_name,
+                    "python_version": python_version,
+                    "description": description,
+                    "features_file": features_file,
+                    "features_hash": features_hash,
+                    "target_file": target_file,
+                    "target_hash": target_hash,
+                    "output_file": output_file,
+                    "output_hash": output_hash,
+                    "metrics_file": metrics_file,
+                    "parameters_file": parameters_file,
+                    "model_file": model_file,
+                    "requirements_file": requirements_file,
+                    "wait_complete": wait_complete,
+                },
+            ),
         }
 
         builder_train_class, params = builder[training_type]
@@ -748,12 +809,29 @@ class MLOpsTrainingExperiment(BaseMLOps):
         description: Optional[str] = None,
         save_path: Optional[str] = None,
     ):
+        """
+        Creates context manager that logs training progress.
+
+        name: str
+            Run name
+        X_train: DataFrame
+            Features
+        y_train: DataFrame
+            Target
+        description: str, default=None
+            Description
+        save_path: str, default=None
+            Path to save the trained model
+
+        Returns
+        -------
+        MLOpsTrainingLogger
+        """
         try:
             self.trainer = MLOpsTrainingLogger(
                 name=name,
                 X_train=X_train,
                 y_train=y_train,
-                description=description,
                 save_path=save_path,
             )
             yield self.trainer
@@ -763,11 +841,19 @@ class MLOpsTrainingExperiment(BaseMLOps):
             self.run_training(
                 run_name=self.trainer.name,
                 training_type="External",
-                description=self.trainer.description,
+                features_file=self.trainer.features_file,
+                target_file=self.trainer.target_file,
+                output_file=self.trainer.output_file,
+                metrics_file=self.trainer.metrics_file,
+                parameters_file=self.trainer.params_file,
+                model_file=self.trainer.model_file,
                 requirements_file=self.trainer.requirements,
+                description=description,
                 python_version=self.trainer.python_version,
-                model_file=self.trainer.model,
                 extra_files=self.trainer.extras,
+            )
+            logger.info(
+                "Use the `get_training_execution()` method to get a training execution."
             )
 
 
