@@ -245,6 +245,10 @@ class CustomTrainingExecution(ITrainingExecution):
 
     def __init__(self, **data):
         super().__init__(**data)
+
+        if data.get('is_copy', False):
+            return
+
         self.execution_id = self._register_execution(
             run_name=data["run_name"],
             description=data["description"],
@@ -275,6 +279,33 @@ class CustomTrainingExecution(ITrainingExecution):
 
         if data["wait_complete"]:
             self.wait_ready()
+
+    @classmethod
+    def _do_copy(cls, url, token, group, experiment_name, mlops_class):
+        response = make_request(
+            url=url,
+            method="POST",
+            success_code=201,
+            headers={
+                "Authorization": f"Bearer {token}"
+            },
+        ).json()
+
+        fields = dict(
+            training_hash=response["TrainingHash"],
+            group=group,
+            model_type='Custom',
+            execution_id=response["ExecutionId"],
+            experiment_name=experiment_name,
+            login=mlops_class.credentials[0],
+            password=mlops_class.credentials[1],
+            url=mlops_class.base_url,
+            mlops_class=mlops_class,
+            is_copy=True,
+        )
+
+        return cls.model_construct(**fields)
+
 
 
 class AutoMLTrainingExecution(ITrainingExecution):
@@ -391,6 +422,9 @@ class AutoMLTrainingExecution(ITrainingExecution):
     def __init__(self, **data):
         super().__init__(**data)
 
+        if data.get('is_copy', False):
+            return
+
         self.execution_id = self._register_execution(
             run_name=data["run_name"],
             description=data["description"],
@@ -410,6 +444,32 @@ class AutoMLTrainingExecution(ITrainingExecution):
 
         if data["wait_complete"]:
             self.wait_ready()
+
+    @classmethod
+    def _do_copy(cls, url, token, group, experiment_name, mlops_class):
+        response = make_request(
+            url=url,
+            method="POST",
+            success_code=200,
+            headers={
+                "Authorization": f"Bearer {token}"
+            },
+        ).json()
+
+        fields = dict(
+            training_hash=response["TrainingHash"],
+            group=group,
+            model_type='AutoML',
+            execution_id=response["ExecutionId"],
+            experiment_name=experiment_name,
+            login=mlops_class.credentials[0],
+            password=mlops_class.credentials[1],
+            url=mlops_class.base_url,
+            mlops_class=mlops_class,
+            is_copy=True,
+        )
+
+        return cls.model_construct(**fields)
 
 
 class ExternalTrainingExecution(ITrainingExecution):
@@ -498,6 +558,9 @@ class ExternalTrainingExecution(ITrainingExecution):
     def __init__(self, **data):
         super().__init__(**data)
 
+        if data.get('is_copy', False):
+            return
+
         self.execution_id = self._register_execution(
             run_name=data["run_name"],
             description=data["description"],
@@ -557,3 +620,29 @@ class ExternalTrainingExecution(ITrainingExecution):
         """
 
         raise NotImplementedError()
+
+    @classmethod
+    def _do_copy(cls, url, token, group, experiment_name, mlops_class):
+        response = make_request(
+            url=url,
+            method="POST",
+            success_code=200,
+            headers={
+                "Authorization": f"Bearer {token}"
+            },
+        ).json()
+
+        fields = dict(
+            training_hash=response["TrainingHash"],
+            group=group,
+            model_type='External',
+            execution_id=response["ExecutionId"],
+            experiment_name=experiment_name,
+            login=mlops_class.credentials[0],
+            password=mlops_class.credentials[1],
+            url=mlops_class.base_url,
+            mlops_class=mlops_class,
+            is_copy=True,
+        )
+
+        return cls.model_construct(**fields)
