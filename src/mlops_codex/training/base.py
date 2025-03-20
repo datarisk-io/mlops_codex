@@ -1,6 +1,6 @@
 import abc
 from time import sleep
-from typing import Any
+from typing import Any, Union
 
 from pydantic import BaseModel, Field
 
@@ -469,3 +469,16 @@ class ITrainingExecution(BaseModel, abc.ABC):
         None
         """
         raise NotImplementedError()
+
+    def copy_execution(self):
+        url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/copy"
+        token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
+        return self._do_copy(
+            url, token, self.group, self.experiment_name, self.mlops_class
+
+        )
+
+    @classmethod
+    @abc.abstractmethod
+    def _do_copy(cls, url, token, group, experiment_name, mlops_class):
+        pass
