@@ -542,23 +542,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
 
         return response.json()
 
-    def succeeded_executions(self, mode="dict"):
-        """
-        Get the succeeded executions.
-
-        Parameters
-        ----------
-        mode: str, optional
-            The mode of the return value. Can be "dict" or "count". Default is "dict".
-
-        Returns
-        -------
-        Union[dict, int]
-            The succeeded executions in the specified mode.
-        """
-        raise NotImplementedError("Succeeded executions not implemented.")
-
-    def executions(self, mode="dict"):
+    def project_info(self, mode="dict"):
         """
         Get the executions.
 
