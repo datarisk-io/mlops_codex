@@ -1,5 +1,5 @@
 pandas==1.4.0
 lightgbm==3.3.2
-scikit-learn==1.1.1
+scikit-learn==1.5.1
 cloudpickle>=2.0.0
 shap==0.45.0
