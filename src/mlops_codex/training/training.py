@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 from lazy_imports import try_import
 
+from mlops_codex.__utils import parse_json_to_yaml
 from mlops_codex.base import BaseMLOps, BaseMLOpsClient
 from mlops_codex.dataset import validate_dataset
 from mlops_codex.datasources import MLOpsDataset
@@ -525,7 +526,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
         AuthenticationError
             Invalid credentials
         """
-        url = f"{self.base_url}/training/describe/{self.group}/{self.training_hash}"
+        url = f"{self.base_url}/v2/training/{self.training_hash}"
         token = refresh_token(*self.credentials, self.base_url)
         response = make_request(
             url=url,
@@ -541,29 +542,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
 
         return response.json()
 
-    def succeeded_executions(self, mode="dict"):
-        """
-        Get the succeeded executions.
-
-        Parameters
-        ----------
-        mode: str, optional
-            The mode of the return value. Can be "dict" or "count". Default is "dict".
-
-        Returns
-        -------
-        Union[dict, int]
-            The succeeded executions in the specified mode.
-        """
-        describe = self.__describe().get("SucceededExecutions")
-        if mode == "dict":
-            return describe
-        elif mode == "count":
-            return len(describe)
-        else:
-            raise InputError(f"Invalid mode {mode}")
-
-    def executions(self, mode="dict"):
+    def project_info(self, mode="dict"):
         """
         Get the executions.
 
@@ -577,11 +556,14 @@ class MLOpsTrainingExperiment(BaseMLOps):
         Union[dict, int]
             The executions in the specified mode.
         """
-        describe = self.__describe().get("Executions")
+        describe = self.__describe()
         if mode == "dict":
             return describe
         elif mode == "count":
-            return len(describe)
+            return describe["ExperimentsQuantity"]
+        elif mode == 'log':
+            yaml_data = parse_json_to_yaml(describe)
+            print(yaml_data)
         else:
             raise InputError(f"Invalid mode {mode}")
 
@@ -797,7 +779,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
         MLOpsExecution
             The chosen execution
         """
-        raise NotImplementedError()
+        raise NotImplementedError("Get training execution not implemented.")
 
     @contextmanager
     def log_train(
@@ -884,6 +866,30 @@ class MLOpsTrainingClient(BaseMLOpsClient):
     def __str__(self):
         return f"Codex version {constants.CODEX_VERSION}"
 
+    def list(self, mode='dict'):
+        url = f"{self.base_url}/v2/training"
+        token = refresh_token(*self.credentials, self.base_url)
+        response = make_request(
+            url=url,
+            method="GET",
+            success_code=200,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.list.__qualname__,
+            },
+        )
+
+        if mode == 'dict':
+            return response.json()
+        if mode == 'count':
+            return len(response.json())
+        if mode == 'log':
+            yaml_data = parse_json_to_yaml(response.json())
+            print(yaml_data)
+            return
+        raise InputError(f'{mode} is invalid. The options are "count", "dict" or "log"')
+
     def get_training(
         self, *, training_hash: str, group: str
     ) -> MLOpsTrainingExperiment:
@@ -911,7 +917,8 @@ class MLOpsTrainingClient(BaseMLOpsClient):
 
         Example
         -------
-        >>> training = get_training('Tfb3274827a24dc39d5b78603f348aee8d3dbfe791574dc4a6681a7e2a6622fa')
+        >>> client = MLOpsTrainingClient()
+        >>> training = client.get_training('<TRAINING_HASH>', '<GROUP>')
         """
 
         return MLOpsTrainingExperiment(
