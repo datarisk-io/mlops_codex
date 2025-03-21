@@ -9,7 +9,6 @@ from mlops_codex.base import BaseMLOps
 from mlops_codex.exceptions import InputError, TrainingError
 from mlops_codex.http_request_handler import make_request, refresh_token
 from mlops_codex.logger_config import get_logger
-from mlops_codex.model import AsyncModel, SyncModel
 
 logger = get_logger()
 
@@ -398,49 +397,7 @@ class ITrainingExecution(BaseModel, abc.ABC):
         Union[SyncModel, AsyncModel]
             Promoted model instance.
         """
-        url = f"{self.mlops_class.base_url}/training/promote/{self.group}/{self.training_hash}/{self.execution_id}"
-        token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
-
-        upload_data = kwargs.get("upload_data")
-        input_data = kwargs.get("input_data")
-
-        response = make_request(
-            url=url,
-            method="POST",
-            success_code=201,
-            data=input_data,
-            files=upload_data,
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.__promote.__qualname__,
-            },
-        )
-
-        msg = response.json()["Message"]
-        logger.info(msg)
-
-        model_hash = response["ModelHash"]
-        operation = kwargs["operation"]
-        model_name = kwargs["model_name"]
-
-        builder = SyncModel if operation.title() == "Sync" else AsyncModel
-        model = builder(
-            name=model_name,
-            model_hash=model_hash,
-            login=self.mlops_class.credentials[0],
-            password=self.mlops_class.credentials[1],
-            url=self.mlops_class.base_url,
-            group=self.group,
-        )
-
-        model.host(operation=operation.title())
-
-        wait_complete = kwargs.get("wait_complete", False)
-        if wait_complete:
-            model.wait_ready()
-
-        return model
+        raise NotImplementedError("Promotion is not implemented.")
 
     @abc.abstractmethod
     def promote(self, *args, **kwargs):
@@ -458,7 +415,7 @@ class ITrainingExecution(BaseModel, abc.ABC):
         -------
         None
         """
-        raise NotImplementedError()
+        raise NotImplementedError("Promotion is not implemented.")
 
     def execution_info(self):
         """
@@ -468,4 +425,4 @@ class ITrainingExecution(BaseModel, abc.ABC):
         -------
         None
         """
-        raise NotImplementedError()
+        raise NotImplementedError("Execution info is not implemented.")
