@@ -41,7 +41,9 @@ def send_file(url, token, neomaril_method, input_data=None, upload_data=None):
 
     if "DatasetHash" in response:
         d_hash = response["DatasetHash"]
-        logger.info(f"Dataset hash = {d_hash}", )
+        logger.info(
+            f"Dataset hash = {d_hash}",
+        )
 
 
 def send_json(url, token, payload, neomaril_method):

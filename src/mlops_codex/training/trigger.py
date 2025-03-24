@@ -239,7 +239,7 @@ def trigger_external_training(**kwargs) -> int:
 
         if file_path is None and dataset_hash is None:
             continue
-        
+
         form_data, upload_data = parse_data(
             file_path=file_path,
             form_data="dataset_name" if file_path else "dataset_hash",
@@ -292,7 +292,11 @@ def trigger_external_training(**kwargs) -> int:
         send_json(
             url=f"{kwargs['url']}/v2/training/execution/{execution_id}/python-version",
             token=kwargs["token"],
-            input_data={"PythonVersion": validate_python_version(python_version=kwargs["python_version"])},
+            input_data={
+                "PythonVersion": validate_python_version(
+                    python_version=kwargs["python_version"]
+                )
+            },
             neomaril_method="Set python version",
         )
 

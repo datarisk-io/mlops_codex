@@ -128,16 +128,16 @@ class CustomTrainingExecution(ITrainingExecution):
             url=self.mlops_class.base_url,
             token=user_token,
             training_hash=self.training_hash,
-            run_name=data['run_name'],
-            description=data['description'],
-            input_data=data['input_data'],
-            upload_data=data['upload_data'],
-            requirements_file=data['requirements_file'],
-            source_file=data['source_file'],
-            training_reference=data['training_reference'],
-            python_version=data['python_version'],
-            extra_files=data['extra_files'],
-            env=data['env'],
+            run_name=data["run_name"],
+            description=data["description"],
+            input_data=data["input_data"],
+            upload_data=data["upload_data"],
+            requirements_file=data["requirements_file"],
+            source_file=data["source_file"],
+            training_reference=data["training_reference"],
+            python_version=data["python_version"],
+            extra_files=data["extra_files"],
+            env=data["env"],
         )
 
         self.host()
@@ -370,12 +370,12 @@ class AutoMLTrainingExecution(ITrainingExecution):
             url=self.mlops_class.base_url,
             token=user_token,
             training_hash=self.training_hash,
-            run_name=data['run_name'],
-            description=data['description'],
-            input_data=data['input_data'],
-            upload_data=data['upload_data'],
-            conf_dict=data['conf_dict'],
-            extra_files=data['extra_files']
+            run_name=data["run_name"],
+            description=data["description"],
+            input_data=data["input_data"],
+            upload_data=data["upload_data"],
+            conf_dict=data["conf_dict"],
+            extra_files=data["extra_files"],
         )
 
         self.host()
@@ -578,19 +578,19 @@ class ExternalTrainingExecution(ITrainingExecution):
             url=self.mlops_class.base_url,
             token=user_token,
             training_hash=self.training_hash,
-            run_name=data['run_name'],
-            description=data['description'],
-            features_file=data['features_file'],
-            features_hash=data['features_hash'],
-            target_file=data['target_file'],
-            target_hash=data['target_hash'],
-            output_file=data['output_file'],
-            output_hash=data['output_hash'],
-            metrics_file=data['metrics_file'],
-            parameters_file=data['parameters_file'],
-            model_file=data['model_file'],
-            requirements_file=data['requirements_file'],
-            python_version=data['python_version'],
+            run_name=data["run_name"],
+            description=data["description"],
+            features_file=data["features_file"],
+            features_hash=data["features_hash"],
+            target_file=data["target_file"],
+            target_hash=data["target_hash"],
+            output_file=data["output_file"],
+            output_hash=data["output_hash"],
+            metrics_file=data["metrics_file"],
+            parameters_file=data["parameters_file"],
+            model_file=data["model_file"],
+            requirements_file=data["requirements_file"],
+            python_version=data["python_version"],
         )
 
         self.host()
@@ -719,7 +719,7 @@ class ExternalTrainingExecution(ITrainingExecution):
         wait_complete : bool, optional
             Whether to wait for execution completion, by default True
         """
-        
+
         self.execution_id = trigger_external_training(
             execution_id=self.execution_id,
             url=self.mlops_class.base_url,
