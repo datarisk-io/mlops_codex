@@ -1,5 +1,7 @@
-# Specific validators for training
-# TODO: maybe it can be generic
+"""
+Specific validators for training module
+"""
+
 from mlops_codex.exceptions import InputError
 
 
