@@ -1,12 +1,12 @@
 import abc
 from time import sleep
-from typing import Any, Union
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 from mlops_codex.__model_states import ModelExecutionState
 from mlops_codex.base import BaseMLOps
-from mlops_codex.exceptions import InputError, TrainingError
+from mlops_codex.exceptions import TrainingError
 from mlops_codex.http_request_handler import make_request, refresh_token
 from mlops_codex.logger_config import get_logger
 
