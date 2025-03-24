@@ -189,15 +189,44 @@ class ITrainingExecution(BaseModel, abc.ABC):
         """
         raise NotImplementedError("Execution info is not implemented.")
 
-    def copy_execution(self):
+    def copy_execution(self, **kwargs):
         url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/copy"
         token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
         return self._do_copy(
-            url, token, self.group, self.experiment_name, self.mlops_class
-
+            url, token, self.group, self.experiment_name, self.mlops_class, **kwargs
         )
 
     @classmethod
     @abc.abstractmethod
-    def _do_copy(cls, url, token, group, experiment_name, mlops_class):
+    def _do_copy(cls, url, token, group, experiment_name, mlops_class, **kwargs):
+        """
+        Abstract method to copy the execution.
+
+        Parameters
+        ----------
+        url: str
+            URL to copy the execution.
+        token: str
+            Authentication token.
+        group: str
+            Group where the training is inserted.
+        experiment_name: str
+            Name of the experiment.
+        mlops_class: BaseMLOps
+            MLOps class instance.
+        kwargs: dict
+            Extra arguments passed to the specific function.
+        """
+        pass
+
+    @abc.abstractmethod
+    def _update_execution(self, **kwargs):
+        """
+        Abstract method to update the execution
+
+        Parameters
+        ----------
+        kwargs: dict
+            Extra arguments passed to the specific function.
+        """
         pass
