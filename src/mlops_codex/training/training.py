@@ -23,13 +23,14 @@ from mlops_codex.exceptions import (
 from mlops_codex.http_request_handler import make_request, refresh_token
 from mlops_codex.logger_config import get_logger
 from mlops_codex.shared import constants
+from mlops_codex.shared.utils import parse_data
 from mlops_codex.training.base import ITrainingExecution
 from mlops_codex.training.training_types import (
     AutoMLTrainingExecution,
     CustomTrainingExecution,
     ExternalTrainingExecution,
 )
-from mlops_codex.validations import file_extension_validation, validate_group_existence
+from mlops_codex.validations import validate_group_existence
 
 patt = re.compile(r"(\d+)")
 logger = get_logger()
@@ -561,7 +562,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
             return describe
         elif mode == "count":
             return describe["ExperimentsQuantity"]
-        elif mode == 'log':
+        elif mode == "log":
             yaml_data = parse_json_to_yaml(describe)
             print(yaml_data)
         else:
@@ -676,22 +677,18 @@ class MLOpsTrainingExperiment(BaseMLOps):
         if extra_files is None:
             extra_files = []
 
-        input_data = {}
-        upload_data = {}
-
-        if train_data:
-            file_extension_validation(train_data, {"csv", "parquet", "txt"})
-            upload_data["input"] = open(train_data, "rb")
-
         if dataset is not None:
             dataset_hash = validate_dataset(dataset)
         else:
             dataset_hash = None
 
-        input_train_data = dataset_hash if dataset_hash is not None else dataset_name
-        form = "dataset_hash" if dataset_hash is not None else "dataset_name"
-
-        input_data[form] = input_train_data
+        input_data, upload_data = parse_data(
+            file_path=train_data,
+            form_data="dataset_hash" if dataset_hash is not None else "dataset_name",
+            file_name=dataset_name,
+            file_form="input",
+            dataset_hash=dataset_hash,
+        )
 
         builder = {
             "Custom": (
@@ -866,7 +863,7 @@ class MLOpsTrainingClient(BaseMLOpsClient):
     def __str__(self):
         return f"Codex version {constants.CODEX_VERSION}"
 
-    def list(self, mode='dict'):
+    def list(self, mode="dict"):
         url = f"{self.base_url}/v2/training"
         token = refresh_token(*self.credentials, self.base_url)
         response = make_request(
@@ -880,11 +877,11 @@ class MLOpsTrainingClient(BaseMLOpsClient):
             },
         )
 
-        if mode == 'dict':
+        if mode == "dict":
             return response.json()
-        if mode == 'count':
+        if mode == "count":
             return len(response.json())
-        if mode == 'log':
+        if mode == "log":
             yaml_data = parse_json_to_yaml(response.json())
             print(yaml_data)
             return
