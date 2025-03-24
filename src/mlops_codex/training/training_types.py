@@ -96,100 +96,6 @@ class CustomTrainingExecution(ITrainingExecution):
 
         return data
 
-    # This function is not accessible to users. When the promote endpoint is changed, I'll make some updates here
-    def __promote(
-        self,
-        model_name: str,
-        operation: str,
-        source_file: str,
-        model_reference: str,
-        schema: str,
-        requirements_file: str = None,
-        input_type: str = None,
-        env: str = None,
-        extra_files: list = None,
-        wait_complete: bool = False,
-    ):
-        """
-        Promotes the current execution.
-
-        Parameters
-        ----------
-        model_name: str
-            Name of the model.
-        operation: str
-            Operation type.
-        source_file: str
-            Path to the source file.
-        model_reference: str
-            Model reference.
-        schema: str
-            Schema file.
-        requirements_file: str, optional
-            Path to the requirements file.
-        input_type: str, optional
-            Input type.
-        env: str, optional
-            Path to the environment file.
-        extra_files: list, optional
-            List of extra files.
-        wait_complete: bool, optional
-            Whether to wait for completion.
-
-        Returns
-        -------
-        None
-        """
-
-        schema_extension = schema.split(".")[-1]
-        self._promote_validation(
-            operation=operation,
-            input_type=input_type,
-            schema_extension=schema_extension,
-        )
-        operation = ModelTypes[operation.title()]
-
-        file_extension_validation(source_file, {"py", "ipynb"})
-
-        file_extension_validation(schema, {"json", "xml", "csv", "parquet"})
-        file_extension_validation(requirements_file, {"txt"})
-        file_extension_validation(env, {"env"})
-
-        input_data = {
-            "name": model_name,
-            "operation": operation,
-            "schema": schema,
-            "model_reference": model_reference,
-            "input_type": input_type,
-        }
-
-        upload_data = [
-            ("source", ("app.py", open(source_file, "rb"))),
-            ("schema", (f"schema.{schema_extension}", parse_dict_or_file(schema))),
-        ]
-        if env is not None:
-            upload_data.append(("env", (".env", open(env, "rb"))))
-
-        if requirements_file is not None:
-            upload_data.append(
-                ("requirements", ("requirements.txt", open(requirements_file, "rb")))
-            )
-
-        if extra_files is not None:
-            extra_data = [
-                ("extra", (c.split("/")[-1], open(c, "rb"))) for c in extra_files
-            ]
-
-            upload_data += extra_data
-
-        self._promote(
-            upload_data=upload_data,
-            input_data=input_data,
-            operation=operation,
-            model_name=model_name,
-            wait_complete=wait_complete,
-        )
-
     def promote(self, *args, **kwargs):
         """
         Abstract method to promote the execution.
@@ -376,39 +282,6 @@ class AutoMLTrainingExecution(ITrainingExecution):
 
         return data
 
-    def __upload_conf_dict(self, conf_dict):
-        """
-        Uploads the configuration dictionary.
-
-        Parameters
-        ----------
-        conf_dict: str
-            Path to the configuration dictionary.
-
-        Returns
-        -------
-        None
-        """
-
-        url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/conf-dict/file"
-        token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
-
-        upload_data = {"conf_dict": parse_dict_or_file(conf_dict)}
-        response = make_request(
-            url=url,
-            method="PATCH",
-            success_code=201,
-            files=upload_data,
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.__upload_conf_dict.__qualname__,
-            },
-        ).json()
-
-        msg = response["Message"]
-        logger.info(msg)
-
     def promote(self, *args, **kwargs):
         """
         Abstract method to promote the execution.
@@ -525,43 +398,6 @@ class ExternalTrainingExecution(ITrainingExecution):
         data = {key: values[key] for key in keys}
 
         return data
-
-    # TODO: turn it into a generic function
-    def __upload_file_or_hash(self, url, input_data=None, upload_data=None):
-        url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/{url}/file"
-        token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
-        response = make_request(
-            url=url,
-            method="PATCH",
-            success_code=201,
-            files=upload_data,
-            data=input_data,
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.__upload_file_or_hash.__qualname__,
-            },
-        ).json()
-
-        logger.info(response["Message"])
-
-    def __set_python_version(self, python_version: str):
-        url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/python-version"
-        token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
-        payload = {"PythonVersion": python_version}
-        response = make_request(
-            url=url,
-            method="PATCH",
-            success_code=201,
-            json=payload,
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.__set_python_version.__qualname__,
-            },
-        ).json()
-
-        logger.info(response["Message"])
 
     def __init__(self, **data):
         super().__init__(**data)
