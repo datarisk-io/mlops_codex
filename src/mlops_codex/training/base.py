@@ -180,20 +180,12 @@ class ITrainingExecution(BaseModel, abc.ABC):
             Positional arguments.
         kwargs: dict
             Keyword arguments.
-
-        Returns
-        -------
-        None
         """
         raise NotImplementedError("Promotion is not implemented.")
 
     def execution_info(self):
         """
         Abstract method to get execution information.
-
-        Returns
-        -------
-        None
         """
         raise NotImplementedError("Execution info is not implemented.")
 
