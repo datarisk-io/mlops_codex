@@ -375,7 +375,7 @@ class AutoMLTrainingExecution(ITrainingExecution):
             input_data=data['input_data'],
             upload_data=data['upload_data'],
             conf_dict=data['conf_dict'],
-            extra_files=data['extra']
+            extra_files=data['extra_files']
         )
 
         self.host()
