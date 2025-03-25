@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from mlops_codex.__model_states import ModelExecutionState
 from mlops_codex.base import BaseMLOps
-from mlops_codex.exceptions import InputError, TrainingError
+from mlops_codex.exceptions import TrainingError
 from mlops_codex.http_request_handler import make_request, refresh_token
 from mlops_codex.logger_config import get_logger
 
@@ -89,182 +89,6 @@ class ITrainingExecution(BaseModel, abc.ABC):
         training_data = response.json()["Description"]
         self.experiment_name = training_data["ExperimentName"]
 
-    def _register_execution(self, run_name: str, description: str, training_type: str):
-        """
-        Registers a new execution.
-
-        Parameters
-        ----------
-        run_name: str
-            Name of the run.
-        description: str
-            Description of the run.
-        training_type: str
-            Type of the training.
-
-        Returns
-        -------
-        int
-            Execution ID.
-        """
-        url = f"{self.mlops_class.base_url}/v2/training/{self.training_hash}/execution"
-        token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
-        payload = {
-            "RunName": run_name,
-            "Description": description,
-            "TrainingType": training_type,
-        }
-        response = make_request(
-            url=url,
-            method="POST",
-            success_code=201,
-            json=payload,
-            headers={"Authorization": f"Bearer {token}"},
-        )
-
-        msg = response.json().get("Message")
-        execution_id = response.json()["ExecutionId"]
-        logger.info(f"{msg} for {run_name}")
-        return execution_id
-
-    def _upload_input_file(self, input_data: str, upload_data: str):
-        """
-        Uploads an input file.
-
-        Parameters
-        ----------
-        input_data: str
-            Input data to be uploaded. It is the payload.
-        upload_data: str
-            Data for the upload. It is the file.
-
-        Returns
-        -------
-        None
-        """
-        url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/input/file"
-        token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
-
-        response = make_request(
-            url=url,
-            method="PATCH",
-            success_code=201,
-            data=input_data,
-            files=upload_data,
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self._upload_input_file.__qualname__,
-            },
-        )
-
-        msg = response.json()["Message"]
-        dataset_hash = response.json()["DatasetHash"]
-
-        logger.info(f"{msg}")
-        logger.info(f"Dataset hash = {dataset_hash}")
-
-    def _upload_requirements(self, requirements_file: str):
-        """
-        Uploads a requirements file.
-
-        Parameters
-        ----------
-        requirements_file: str
-            Path to the requirements file.
-
-        Returns
-        -------
-        None
-        """
-        url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/requirements-file"
-        token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
-
-        upload_data = {"requirements": open(requirements_file, "rb")}
-
-        response = make_request(
-            url=url,
-            method="PATCH",
-            success_code=201,
-            files=upload_data,
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self._upload_requirements.__qualname__,
-            },
-        )
-
-        msg = response.json()["Message"]
-        logger.info(msg)
-
-    def _upload_extra_files(self, extra_files_path: str, name: str):
-        """
-        Uploads extra file.
-
-        Parameters
-        ----------
-        extra_files_path: str
-            Path to the extra file.
-        name: str
-            Name of the file.
-
-        Returns
-        -------
-        None
-        """
-        url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/extra-files"
-        token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
-
-        upload_data = {"extra": open(extra_files_path, "rb")}
-        input_data = {"file_name": name}
-        response = make_request(
-            url=url,
-            method="PATCH",
-            success_code=201,
-            data=input_data,
-            files=upload_data,
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self._upload_extra_files.__qualname__,
-            },
-        )
-
-        msg = response.json()["Message"]
-        logger.info(msg)
-
-    def _upload_env_file(self, env_file: str):
-        """
-        Uploads an environment file.
-
-        Parameters
-        ----------
-        env_file: str
-            Path to the environment file.
-
-        Returns
-        -------
-        None
-        """
-        url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/env/file"
-        token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
-
-        upload_data = {"env": open(env_file, "rb")}
-        response = make_request(
-            url=url,
-            method="PATCH",
-            success_code=201,
-            files=upload_data,
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self._upload_extra_files.__qualname__,
-            },
-        )
-
-        msg = response.json()["Message"]
-        logger.info(msg)
-
     @property
     def status(self) -> str:
         """
@@ -307,10 +131,6 @@ class ITrainingExecution(BaseModel, abc.ABC):
     def host(self):
         """
         Hosts the current execution.
-
-        Returns
-        -------
-        None
         """
         url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}"
         token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
@@ -332,10 +152,6 @@ class ITrainingExecution(BaseModel, abc.ABC):
     def wait_ready(self):
         """
         Waits until the model is ready.
-
-        Returns
-        -------
-        None
         """
         current_status = ModelExecutionState.Running
         print("Training your model...", end="", flush=True)
@@ -353,52 +169,6 @@ class ITrainingExecution(BaseModel, abc.ABC):
         else:
             logger.info(f"Training failed. Current status is {current_status}")
 
-    # TODO: update it when promote endpoint updated
-    def __promote_validation(self, **kwargs):
-        """
-        Validates the promotion process.
-
-        Parameters
-        ----------
-        kwargs: dict
-            Keyword arguments for validation.
-
-        Returns
-        -------
-        None
-        """
-        if kwargs["operation"] == "Async":
-            if kwargs["input_type"] is None:
-                raise InputError(
-                    "For asynchronous models, you must provide the 'input_type' argument."
-                )
-            if kwargs["schema_extension"]:
-                raise InputError(
-                    "The input schema extension must be json, csv, parquet or xml."
-                )
-
-        status = self.status
-        if status != "Succeeded":
-            raise TrainingError(
-                f"Training execution must be Succeeded to be promoted, current status is {status}"
-            )
-
-    def __promote(self, **kwargs):
-        """
-        Promotes the current execution.
-
-        Parameters
-        ----------
-        kwargs: dict
-            Keyword arguments for promotion.
-
-        Returns
-        -------
-        Union[SyncModel, AsyncModel]
-            Promoted model instance.
-        """
-        raise NotImplementedError("Promotion is not implemented.")
-
     @abc.abstractmethod
     def promote(self, *args, **kwargs):
         """
@@ -410,19 +180,53 @@ class ITrainingExecution(BaseModel, abc.ABC):
             Positional arguments.
         kwargs: dict
             Keyword arguments.
-
-        Returns
-        -------
-        None
         """
         raise NotImplementedError("Promotion is not implemented.")
 
     def execution_info(self):
         """
         Abstract method to get execution information.
-
-        Returns
-        -------
-        None
         """
         raise NotImplementedError("Execution info is not implemented.")
+
+    def copy_execution(self, **kwargs):
+        url = f"{self.mlops_class.base_url}/v2/training/execution/{self.execution_id}/copy"
+        token = refresh_token(*self.mlops_class.credentials, self.mlops_class.base_url)
+        return self._do_copy(
+            url, token, self.group, self.experiment_name, self.mlops_class, **kwargs
+        )
+
+    @classmethod
+    @abc.abstractmethod
+    def _do_copy(cls, url, token, group, experiment_name, mlops_class, **kwargs):
+        """
+        Abstract method to copy the execution.
+
+        Parameters
+        ----------
+        url: str
+            URL to copy the execution.
+        token: str
+            Authentication token.
+        group: str
+            Group where the training is inserted.
+        experiment_name: str
+            Name of the experiment.
+        mlops_class: BaseMLOps
+            MLOps class instance.
+        kwargs: dict
+            Extra arguments passed to the specific function.
+        """
+        pass
+
+    @abc.abstractmethod
+    def _update_execution(self, **kwargs):
+        """
+        Abstract method to update the execution
+
+        Parameters
+        ----------
+        kwargs: dict
+            Extra arguments passed to the specific function.
+        """
+        pass
