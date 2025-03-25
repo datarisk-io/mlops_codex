@@ -1,7 +1,7 @@
 requests==2.32.3
 loguru==0.6.0
 pyaml==24.9.0
-python-dotenv==0.21.0
+python-dotenv>=0.21.0
 cachetools
 cloudpickle>=2.0.0
 pyarrow>=1.0.0
