@@ -1,6 +1,9 @@
 from typing import BinaryIO, Dict, Optional, Tuple
 
+import requests
+
 from mlops_codex.exceptions import InputError
+from mlops_codex.shared.constants import CODEX_VERSION
 
 
 def parse_data(
@@ -58,3 +61,19 @@ def parse_data(
         return {form_data: dataset_hash}, None
 
     raise InputError("You must provide either a file path or a dataset hash.")
+
+
+def check_lib_version():
+    response = requests.get(
+        "https://pypi.org/pypi/datarisk-mlops-codex/json"
+    )
+
+    if response.status_code != 200:
+        return
+
+    json_data = response.json()
+
+    info = json_data["info"]
+    major_version = info["version"]
+    if major_version != CODEX_VERSION:
+        print(f"You are using {CODEX_VERSION}, but version {major_version} is recommended.")
