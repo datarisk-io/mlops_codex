@@ -1,6 +1,7 @@
 from typing import BinaryIO, Dict, Optional, Tuple
 
 import requests
+from cachetools.func import ttl_cache
 
 from mlops_codex.exceptions import InputError
 from mlops_codex.shared.constants import CODEX_VERSION
@@ -63,6 +64,7 @@ def parse_data(
     raise InputError("You must provide either a file path or a dataset hash.")
 
 
+@ttl_cache
 def check_lib_version():
     response = requests.get(
         "https://pypi.org/pypi/datarisk-mlops-codex/json",
