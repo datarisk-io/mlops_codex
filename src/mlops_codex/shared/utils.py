@@ -65,7 +65,8 @@ def parse_data(
 
 def check_lib_version():
     response = requests.get(
-        "https://pypi.org/pypi/datarisk-mlops-codex/json"
+        "https://pypi.org/pypi/datarisk-mlops-codex/json",
+        timeout=60
     )
 
     if response.status_code != 200:
