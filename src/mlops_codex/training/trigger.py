@@ -292,7 +292,7 @@ def trigger_external_training(**kwargs) -> int:
         send_json(
             url=f"{kwargs['url']}/v2/training/execution/{execution_id}/python-version",
             token=kwargs["token"],
-            input_data={
+            payload={
                 "PythonVersion": validate_python_version(
                     python_version=kwargs["python_version"]
                 )

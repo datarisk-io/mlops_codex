@@ -21,6 +21,7 @@ from mlops_codex.exceptions import (
 )
 from mlops_codex.http_request_handler import refresh_token, try_login
 from mlops_codex.logger_config import get_logger
+from mlops_codex.shared.utils import check_lib_version
 
 logger = get_logger()
 
@@ -42,6 +43,8 @@ class BaseMLOps:
         if not loaded:
             load_dotenv(find_dotenv(usecwd=True))
         logger.info("Loading .env")
+
+        check_lib_version()
 
         if url is None:
             url = os.getenv("MLOPS_URL")
