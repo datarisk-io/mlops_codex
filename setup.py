@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-from mlops_codex.shared.constants import CODEX_VERSION
+from src.mlops_codex.shared.constants import CODEX_VERSION
 
 MODULE_NAME = 'datarisk_mlops_codex'
 MODULE_NAME_IMPORT = 'mlops_codex'
