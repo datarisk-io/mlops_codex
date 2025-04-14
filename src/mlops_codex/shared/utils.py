@@ -67,8 +67,7 @@ def parse_data(
 @ttl_cache
 def check_lib_version():
     response = requests.get(
-        "https://pypi.org/pypi/datarisk-mlops-codex/json",
-        timeout=60
+        "https://pypi.org/pypi/datarisk-mlops-codex/json", timeout=60
     )
 
     if response.status_code != 200:
@@ -79,4 +78,6 @@ def check_lib_version():
     info = json_data["info"]
     major_version = info["version"]
     if major_version != CODEX_VERSION:
-        print(f"You are using {CODEX_VERSION}, but version {major_version} is recommended.")
+        print(
+            f"You are using {CODEX_VERSION}, but version {major_version} is recommended."
+        )
