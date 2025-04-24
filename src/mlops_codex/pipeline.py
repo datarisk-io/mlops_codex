@@ -211,6 +211,7 @@ class MLOpsPipeline(BaseMLOps):
 
         if conf["training_type"] == "Custom":
             self.__training_run = self.__training.run_training(run_name=run_name, training_type=conf["training_type"],
+                                                               train_data=os.path.join(PATH, conf["data"]),
                                                                requirements_file=os.path.join(PATH, conf["packages"]),
                                                                source_file=os.path.join(PATH, conf["source"]),
                                                                python_version=str(self.python_version),
@@ -222,7 +223,8 @@ class MLOpsPipeline(BaseMLOps):
 
         elif conf["training_type"] == "AutoML":
             self.__training_run = self.__training.run_training(run_name=run_name,
-                                                               training_type=os.path.join(PATH, conf["data"]),
+                                                               training_type=conf["training_type"],
+                                                               train_data=os.path.join(PATH, conf["data"]),
                                                                conf_dict=os.path.join(PATH, conf["config"]),
                                                                wait_complete=True)
 
@@ -239,12 +241,12 @@ class MLOpsPipeline(BaseMLOps):
                 f"Invalid training_type {conf['training_type']}. Valid options are Custom, AutoML and External"
             )
 
-        status = self.__training_run.get_status()
-        if status["Status"] == "Succeeded":
+        status = self.__training_run.status
+        if status == "Succeeded":
             logger.info("Model training finished")
-            return self.__training.training_hash, self.__training_run.exec_id
+            return self.__training.training_hash, self.__training_run.execution_id
         else:
-            raise TrainingError("Training failed: " + status["Message"])
+            raise TrainingError("Training failed")
 
     def run_deploy(self, training_id: Optional[str] = None) -> str:
         """
@@ -277,10 +279,10 @@ class MLOpsPipeline(BaseMLOps):
             logger.info("Deploying scorer from training")
 
             model_name = conf.get(
-                "name", self.__training_run.execution_data.get("ExperimentName", "")
+                "name", self.__training_run.experiment_name
             )
 
-            if self.__training_run.execution_data["TrainingType"] == "Custom":
+            if self.__training_run.model_type == "Custom":
                 self.__model = self.__training_run.promote_model(
                     model_name=model_name,
                     model_reference=conf["score_function"],
@@ -295,7 +297,7 @@ class MLOpsPipeline(BaseMLOps):
                     operation=conf["operation"],
                 )
 
-            elif self.__training_run.execution_data["TrainingType"] == "AutoML":
+            elif self.__training_run.model_type == "AutoML":
                 self.__model = self.__training_run.promote_model(
                     model_name=model_name, operation=conf["operation"]
                 )
