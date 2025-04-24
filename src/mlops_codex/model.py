@@ -1635,10 +1635,10 @@ class MLOpsModelClient(BaseMLOpsClient):
 
         validate_group_existence(group, self)
 
-        if operation.title() != "Sync" or operation.title() != "Async":
-            raise InputError("operation must be either 'Sync' or 'Async'")
-
         operation = operation.title()
+
+        if operation not in ["Sync", "Async"]:
+            raise InputError("operation must be either 'Sync' or 'Async'")
 
         logger.info("Building model...")
         model_hash = self.__upload_model(
