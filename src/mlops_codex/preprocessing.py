@@ -561,7 +561,7 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
             for extra_file in extra_files:
                 self.__upload_extras(preprocessing_script_hash=preprocessing_script_hash, extra_files=extra_file)
                 logger.info("Successfully uploaded extra files")
-        if extra_files is not None:
+        elif extra_files is not None:
             self.__upload_extras(preprocessing_script_hash=preprocessing_script_hash, extra_files=extra_files)
             logger.info("Successfully uploaded extra files")
 
