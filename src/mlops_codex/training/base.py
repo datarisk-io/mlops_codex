@@ -9,6 +9,7 @@ from mlops_codex.base import BaseMLOps
 from mlops_codex.exceptions import TrainingError
 from mlops_codex.http_request_handler import make_request, refresh_token
 from mlops_codex.logger_config import get_logger
+from mlops_codex.model import SyncModel, AsyncModel
 
 logger = get_logger()
 
@@ -42,8 +43,8 @@ class ITrainingExecution(BaseModel, abc.ABC):
     training_hash: str = Field(
         frozen=True, title="Training hash", validate_default=True
     )
-    group: str = Field(frozen=True, title="Training hash", validate_default=True)
-    model_type: str = Field(frozen=True, title="Training type", validate_default=True)
+    group: str = Field(frozen=True, title="Group", validate_default=True)
+    model_type: str = Field(frozen=True, title="Model type", validate_default=True)
 
     execution_id: int = Field(default=None, gt=0)
     experiment_name: str = Field(default=None)
@@ -170,6 +171,9 @@ class ITrainingExecution(BaseModel, abc.ABC):
             logger.info(f"Training failed. Current status is {current_status}")
 
     @abc.abstractmethod
+    def _promote(self, *args, **kwargs):
+        pass
+
     def promote(self, *args, **kwargs):
         """
         Abstract method to promote the execution.
@@ -178,10 +182,25 @@ class ITrainingExecution(BaseModel, abc.ABC):
         ----------
         args: tuple
             Positional arguments.
-        kwargs: dict
+        kwargs
             Keyword arguments.
         """
-        raise NotImplementedError("Promotion is not implemented.")
+        wait_complete = kwargs.pop("wait_complete", False)
+        model_hash = self._promote(*args, **kwargs)
+        operation: str = kwargs["operation"]
+        builder = SyncModel if operation.title() else AsyncModel
+        model = builder(
+            name=kwargs["model_name"],
+            model_hash=model_hash,
+            login=self.login,
+            password=self.password,
+            url=self.url,
+            group=self.group
+        )
+        model.host(operation.title())
+        if wait_complete:
+            model.wait_ready()
+        return model
 
     def execution_info(self):
         """

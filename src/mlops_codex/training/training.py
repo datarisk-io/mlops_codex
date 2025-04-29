@@ -25,7 +25,7 @@ from mlops_codex.logger_config import get_logger
 from mlops_codex.shared import constants
 from mlops_codex.shared.utils import parse_data
 from mlops_codex.training.base import ITrainingExecution
-from mlops_codex.training.training_types import (
+from mlops_codex.training.training_executions import (
     AutoMLTrainingExecution,
     CustomTrainingExecution,
     ExternalTrainingExecution,
@@ -789,7 +789,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
         save_path: Optional[str] = None,
     ):
         """
-        Creates context manager that logs training progress.
+        Creates a context manager that logs training progress.
 
         name: str
             Run name
@@ -847,7 +847,7 @@ class MLOpsTrainingClient(BaseMLOpsClient):
     password: str
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     url: str
-        URL to MLOps Server. Default value is https://neomaril.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
+        URL to MLOps Server. The default value is https://neomaril.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
     ------
@@ -941,7 +941,7 @@ class MLOpsTrainingClient(BaseMLOpsClient):
                                 Regression: the ones that will use regression (predict a continuous quantity) algorithms;
                                 Unsupervised: for training that will use ML algorithms without supervision.
 
-            group (str): name of the group, previous created, where the training will be inserted
+            group (str): name of the group, previously created, where the training will be inserted
 
         Raises:
             InputError: some part of the data is incorrect
