@@ -116,7 +116,8 @@ class CustomTrainingExecution(ITrainingExecution):
             The name of the entry point function at the source file
         Returns
         -------
-        None
+        str
+            Model hash
         """
         user_token = refresh_token(
             *self.mlops_class.credentials, self.mlops_class.base_url
@@ -371,20 +372,24 @@ class AutoMLTrainingExecution(ITrainingExecution):
 
         return data
 
-    def _promote(self, *args, **kwargs):
+    def _promote(self, model_name: str, input_type: str, operation: str, schema_path: str):
         """
         Abstract method to promote the execution.
 
         Parameters
         ----------
-        args: tuple
-            Positional arguments.
-        kwargs: dict
-            Keyword arguments.
-
+        schema_path: str
+            A JSON, CSV or PARQUET file with a sample of the input for the entry point function
+        operation: str
+            Defines how the model will be treated at the API. It can be: Sync or Async
+        model_name: str
+            Corresponds to the name of the model
+        input_type: str
+            Type of the input that the model expects. Must be CSV or Parquet
         Returns
         -------
-        None
+        str
+            Model hash
         """
 
         raise NotImplementedError()
