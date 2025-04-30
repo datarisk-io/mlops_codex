@@ -201,14 +201,11 @@ class MLOpsTrainingLogger:
             Resolution for matplotlib/seaborn plots. Default is 300.
         ext: str, default='png'
             File format to save (e.g., 'png', 'pdf', 'svg', 'html'). If None, defaults to 'png' for static images.
-        **kwargs
-            Additional keyword arguments passed to savefig() or write_image()/write_html().
 
         Raises
         ------
         TypeError
             If the figure type is not supported.
-
         """
 
         filepath = f"{self.save_path}/{filename}.{ext}"
@@ -264,7 +261,7 @@ class MLOpsTrainingLogger:
         Parameters
         ----------
         extra: list
-            A list of paths of the extra files.
+            A list of paths to the extra files.
         """
         self.extras = extra
 
@@ -297,12 +294,12 @@ class MLOpsTrainingLogger:
 
     def add_requirements(self, filename: str):
         """
-        Add requirements file.
+        Add a requirement file.
 
         Parameters
         ----------
         filename: str
-            The name of output filename to save.
+            The name of the output filename to save.
         """
         self.requirements = filename
 
@@ -321,10 +318,10 @@ class MLOpsTrainingLogger:
 
     def __to_json(self, output_filename: str, input_data: dict):
         """
-        Transform dict to json.
+        Transform dict to JSON.
 
         Args:
-            output_filename: The name of output filename to save.
+            output_filename: The name of the output filename to save.
             input_data: A dictionary to save.
         """
         path = os.path.join(self.save_path, f"{output_filename}.json")
@@ -338,7 +335,7 @@ class MLOpsTrainingLogger:
         Transform content to pickle.
 
         Args:
-            output_filename: The name of output filename to save.
+            output_filename: The name of the output filename to save.
             input_data: The content to save.
         """
         path = os.path.join(self.save_path, f"{output_filename}.pkl")
@@ -640,13 +637,13 @@ class MLOpsTrainingExperiment(BaseMLOps):
         metrics_file: Optional[str], default=None
             Path to the metrics file. Obrigatory for 'External' training
         parameters_file: Optional[str], default=None
-            Path to the parameters file. Obrigatory for 'External' training
+            Path to the parameter file. Obrigatory for 'External' training
         model_file: Optional[str], default=None
             Path to the model file. Obrigatory for 'External' training
         extra_files: Optional[list], default=None
-            An optional list with path of files used to train your model
+            An optional list with a path of files used to train your model
         env: Optional[str], default=None
-            An optional path to the provide environment variables
+            An optional path to the provided environment variables
         wait_complete: Optional[bool], default=False
             Lock your script/cell until training is complete.
         Raises
