@@ -679,13 +679,16 @@ class MLOpsTrainingExperiment(BaseMLOps):
         else:
             dataset_hash = None
 
-        input_data, upload_data = parse_data(
-            file_path=train_data,
-            form_data="dataset_hash" if dataset_hash is not None else "dataset_name",
-            file_name=dataset_name,
-            file_form="input",
-            dataset_hash=dataset_hash,
-        )
+        input_data, upload_data = None, None
+
+        if training_type != "External":
+            input_data, upload_data = parse_data(
+                file_path=train_data,
+                form_data="dataset_hash" if dataset_hash is not None else "dataset_name",
+                file_name=dataset_name,
+                file_form="input",
+                dataset_hash=dataset_hash,
+            )
 
         builder = {
             "Custom": (
