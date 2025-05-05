@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from mlops_codex.__model_states import ModelExecutionState
 from mlops_codex.base import BaseMLOps
-from mlops_codex.exceptions import TrainingError
+from mlops_codex.exceptions import TrainingError, InputError
 from mlops_codex.http_request_handler import make_request, refresh_token
 from mlops_codex.logger_config import get_logger
 from mlops_codex.model import SyncModel, AsyncModel
@@ -185,10 +185,15 @@ class ITrainingExecution(BaseModel, abc.ABC):
         kwargs
             Keyword arguments.
         """
+
+        operation: str = kwargs["operation"]
+
+        if operation not in ["Sync", "Async"]:
+            raise InputError("Operation must be either 'Sync' or 'Async'.")
+
         wait_complete = kwargs.pop("wait_complete", False)
         model_hash = self._promote(*args, **kwargs)
-        operation: str = kwargs["operation"]
-        builder = SyncModel if operation.title() else AsyncModel
+        builder = SyncModel if operation else AsyncModel
         model = builder(
             name=kwargs["model_name"],
             model_hash=model_hash,
@@ -197,7 +202,7 @@ class ITrainingExecution(BaseModel, abc.ABC):
             url=self.url,
             group=self.group
         )
-        model.host(operation.title())
+        model.host(operation)
         if wait_complete:
             model.wait_ready()
         return model
