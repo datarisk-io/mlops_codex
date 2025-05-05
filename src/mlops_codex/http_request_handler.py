@@ -30,8 +30,8 @@ def try_login(
 
     Raises:
         AuthenticationError: Raises if the `login` or `password` are wrong
-        ServerError: Raises if the server is not running correctly
-        BaseException: Raises if the server status is something different from 200
+        ServerError: Raises if the server is not correctly running
+        BaseException: Raises if the server status is different from 200
     """
     response = requests.get(f"{base_url}/health", timeout=60)
 

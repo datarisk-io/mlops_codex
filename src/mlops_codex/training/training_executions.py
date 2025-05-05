@@ -96,23 +96,57 @@ class CustomTrainingExecution(ITrainingExecution):
 
         return data
 
-    def promote(self, *args, **kwargs):
+    def _promote(self, source_file_path: str, schema_path: str, operation: str, model_name: str, input_type: str, model_reference: str):
         """
         Abstract method to promote the execution.
 
         Parameters
         ----------
-        args: tuple
-            Positional arguments.
-        kwargs: dict
-            Keyword arguments.
-
+        source_file_path: str
+            A python script with an entry point function. It needs to return a dict, a list of dicts or a JSON string
+        schema_path: str
+            A JSON, CSV or PARQUET file with a sample of the input for the entry point function
+        operation: str
+            Defines how the model will be treated at the API. It can be: Sync or Async
+        input_type: str
+            The type of the input that the model expects, for example, .csv
+        model_name: str
+            Corresponds to the name of the model
+        model_reference: str
+            The name of the entry point function at the source file
         Returns
         -------
-        None
+        str
+            Model hash
         """
+        user_token = refresh_token(
+            *self.mlops_class.credentials, self.mlops_class.base_url
+        )
+        response = make_request(
+            url=f"{self.url}/v2/training/execution/{self.execution_id}/promote",
+            method="PATCH",
+            success_code=201,
+            headers={
+                "Authorization": f"Bearer {user_token}"
+            },
+            files={
+                "source": open(source_file_path, "rb"),
+                "schema": open(schema_path, "rb"),
+            },
+            data={
+                "operation": operation,
+                "input_type": input_type,
+                "name": model_name,
+                "model_reference": model_reference,
+            }
+        )
 
-        raise NotImplementedError("Promote is not implemented.")
+        msg = response.json()["Message"]
+        logger.info(msg)
+
+        model_hash = response.json()["ModelHash"]
+        logger.info(f"Model hash: {model_hash}")
+        return model_hash
 
     def __init__(self, **data):
         super().__init__(**data)
@@ -338,20 +372,24 @@ class AutoMLTrainingExecution(ITrainingExecution):
 
         return data
 
-    def promote(self, *args, **kwargs):
+    def _promote(self, model_name: str, input_type: str, operation: str, schema_path: str):
         """
         Abstract method to promote the execution.
 
         Parameters
         ----------
-        args: tuple
-            Positional arguments.
-        kwargs: dict
-            Keyword arguments.
-
+        schema_path: str
+            A JSON, CSV or PARQUET file with a sample of the input for the entry point function
+        operation: str
+            Defines how the model will be treated at the API. It can be: Sync or Async
+        model_name: str
+            Corresponds to the name of the model
+        input_type: str
+            Type of the input that the model expects. Must be CSV or Parquet
         Returns
         -------
-        None
+        str
+            Model hash
         """
 
         raise NotImplementedError()
@@ -598,7 +636,7 @@ class ExternalTrainingExecution(ITrainingExecution):
         if data["wait_complete"]:
             self.wait_ready()
 
-    def promote(self, *args, **kwargs):
+    def _promote(self, *args, **kwargs):
         """
         Abstract method to promote the execution.
 

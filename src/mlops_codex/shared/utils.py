@@ -40,7 +40,7 @@ def parse_data(
     Raises
     ------
     InputError
-        If invalid combination of parameters is provided
+        If an invalid combination of parameters is provided
     """
     if file_path is not None and dataset_hash is not None:
         raise InputError(
