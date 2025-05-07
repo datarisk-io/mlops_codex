@@ -1,7 +1,7 @@
 from mlops_codex.logger_config import get_logger
 from mlops_codex.shared.data_transmitter import send_file, send_json
 from mlops_codex.shared.utils import parse_data
-from mlops_codex.training.commons import register_execution
+from mlops_codex.trainingv2.commons import register_execution
 from mlops_codex.validations import validate_python_version
 
 logger = get_logger()

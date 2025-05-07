@@ -8,13 +8,13 @@ from mlops_codex.exceptions import InputError
 from mlops_codex.http_request_handler import make_request, refresh_token
 from mlops_codex.logger_config import get_logger
 from mlops_codex.shared.utils import parse_data
-from mlops_codex.training.base import ITrainingExecution
-from mlops_codex.training.trigger import (
+from mlops_codex.trainingv2.base import ITrainingExecution
+from mlops_codex.trainingv2.trigger import (
     trigger_automl_training,
     trigger_custom_training,
     trigger_external_training,
 )
-from mlops_codex.training.validations import validate_input
+from mlops_codex.trainingv2.validations import validate_input
 from mlops_codex.validations import file_extension_validation
 
 logger = get_logger()
