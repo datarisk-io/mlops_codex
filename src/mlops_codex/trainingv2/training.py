@@ -24,8 +24,8 @@ from mlops_codex.http_request_handler import make_request, refresh_token
 from mlops_codex.logger_config import get_logger
 from mlops_codex.shared import constants
 from mlops_codex.shared.utils import parse_data
-from mlops_codex.training.base import ITrainingExecution
-from mlops_codex.training.training_executions import (
+from mlops_codex.trainingv2.base import ITrainingExecution
+from mlops_codex.trainingv2.training_executions import (
     AutoMLTrainingExecution,
     CustomTrainingExecution,
     ExternalTrainingExecution,
