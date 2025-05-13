@@ -1476,34 +1476,32 @@ class MLOpsModelClient(BaseMLOpsClient):
         model_file: str
             Path of the model pkl file
         requirements_file: str
-            Path of the requirements file. The packages versions must be fixed eg: pandas==1.0
+            Path of the requirement file. The package versions must be fixed eg: pandas==1.0
         schema: Union[str, dict], optional
             Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be sending as well
         group: Optional[str], optional
             Group the model is inserted.
         extra_files: Optional[list], optional
-            A optional list with additional files paths that should be uploaded. If the scoring function refer to this file they will be on the same folder as the source file
+            A optional list with additional files paths that should be uploaded. If the scoring function refers to this file they will be on the same folder as the source file
         env: Optional[str], default=True
-            Flag that choose which environment (dev, staging, production) of MLOps you are using. Default is True
+            Flag that choose which environment (dev, staging, production) of MLOps you are using. The default is True
         python_version: Optional[str], default='3.10'
             Python version for the model environment. Available versions are 3.8, 3.9, 3.10
         operation: Optional[str], optional
-            Defines which kind operation is being executed (Sync or Async). Default value is Sync
+            Defines which kind of operation is being executed (Sync or Async). Default value is Sync
         input_type: str
             The type of the input file that should be 'json', 'csv', 'parquet', 'txt', 'xls', 'xlsx'
 
         Raises
         ------
         InputError
-            Some input parameters is invalid
+            Some input parameters are invalid
 
         Returns
         -------
         str
             The new model id (hash)
         """
-
-        url = f"{self.base_url}/model/upload/{group}"
 
         if operation == "Async" and input_type not in ["json", "csv", "parquet"]:
             raise InputError(
@@ -1517,28 +1515,26 @@ class MLOpsModelClient(BaseMLOpsClient):
         file_extension_validation(schema, {"csv", "parquet", "json"})
         python_version = validate_python_version(python_version)
 
-        upload_data = [
-            (
-                "source",
-                (source_file, open(source_file, "rb")),
-            ),
-            ("model", (model_file, open(model_file, "rb"))),
-            ("requirements", ("requirements.txt", open(requirements_file, "rb"))),
-        ]
+        upload_data = {
+            "source": open(source_file, "rb"),
+            "model": open(model_file, "rb"),
+            "requirements": open(requirements_file, "rb"),
+        }
 
         if schema:
             file_extension_validation(schema, {"csv", "parquet", "json"})
-            upload_data.append(("schema", (schema, open(schema, "rb"))))
+            upload_data["schema"] = open(schema, "rb")
 
         if env:
             file_extension_validation(env, {"env"})
-            upload_data.append(("env", (env, open(env, "rb"))))
+            upload_data["env"] = open(env, "rb")
 
         if extra_files:
-            extra_data = [
-                ("extra", (c.split("/")[-1], open(c, "rb"))) for c in extra_files
-            ]
-            upload_data += extra_data
+            extra_data = {
+                "extra": open(c, "rb") for c in extra_files
+            }
+
+            upload_data = {**upload_data, **extra_data}
 
         form_data = {
             "name": model_name,
@@ -1548,10 +1544,10 @@ class MLOpsModelClient(BaseMLOpsClient):
             "python_version": python_version,
         }
 
-        token = refresh_token(*self.credentials, url)
+        token = refresh_token(*self.credentials, self.base_url)
 
         response = make_request(
-            url=f"{url}/model/upload/{group}",
+            url=f"{self.base_url}/model/upload/{group}",
             method="POST",
             success_code=201,
             data=form_data,
@@ -1633,7 +1629,7 @@ class MLOpsModelClient(BaseMLOpsClient):
 
         validate_group_existence(group, self)
 
-        if operation.title() != "Sync" or operation.title() != "Async":
+        if operation.title() not in ["Sync", "Async"]:
             raise InputError("operation must be either 'Sync' or 'Async'")
 
         operation = operation.title()
