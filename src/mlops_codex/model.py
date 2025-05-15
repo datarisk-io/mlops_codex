@@ -1481,7 +1481,7 @@ class MLOpsModelClient(BaseMLOpsClient):
             Path to a JSON or XML file with a sample of the input for the entrypoint function. A dict with the sample input can be sending as well
         group: Optional[str], optional
             Group the model is inserted.
-        extra_files: Optional[list], optional
+        extra_files: Optional[str], optional
             A optional list with additional files paths that should be uploaded. If the scoring function refers to this file they will be on the same folder as the source file
         env: Optional[str], default=True
             Flag that choose which environment (dev, staging, production) of MLOps you are using. The default is True
@@ -1515,26 +1515,25 @@ class MLOpsModelClient(BaseMLOpsClient):
         file_extension_validation(schema, {"csv", "parquet", "json"})
         python_version = validate_python_version(python_version)
 
-        upload_data = {
-            "source": open(source_file, "rb"),
-            "model": open(model_file, "rb"),
-            "requirements": open(requirements_file, "rb"),
-        }
+        upload_data = [
+            ("source",(source_file.split("/")[-1], open(source_file, "rb"))),
+            ("model", (model_file.split("/")[-1], open(model_file, "rb"))),
+            ("requirements", (requirements_file.split("/")[-1], open(requirements_file, "rb")))
+        ]
 
         if schema:
             file_extension_validation(schema, {"csv", "parquet", "json"})
-            upload_data["schema"] = open(schema, "rb")
+            upload_data.append(("schema", (schema.split("/")[-1], open(schema, "rb"))))
 
         if env:
             file_extension_validation(env, {"env"})
-            upload_data["env"] = open(env, "rb")
+            upload_data.append(("env", (env.split("/")[-1], open(env, "rb"))))
 
         if extra_files:
-            extra_data = {
-                "extra": open(c, "rb") for c in extra_files
-            }
-
-            upload_data = {**upload_data, **extra_data}
+            extra_data = [
+                ("extra", (c.split("/")[-1], open(c, "rb"))) for c in extra_files
+            ]
+            upload_data += extra_data
 
         form_data = {
             "name": model_name,
