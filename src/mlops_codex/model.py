@@ -904,9 +904,9 @@ class AsyncModel(MLOpsModel):
             logger.info("Preprocessing complete.")
 
             preprocessed_data_path = "./preprocessed_data.parquet"
-            files = {"input": open(preprocessed_data_path, "rb")}
+            files = [("input", ("preprocessed_data.parquet", open(preprocessed_data_path, "rb")))]
         else:
-            files = {"input": open(data, "rb")}
+            files = [("input", (data.split("/")[-1], open(data, "rb")))]
 
         logger.info("Running data prediction...")
 
