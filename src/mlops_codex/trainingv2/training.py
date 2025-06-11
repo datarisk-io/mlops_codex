@@ -24,8 +24,8 @@ from mlops_codex.http_request_handler import make_request, refresh_token
 from mlops_codex.logger_config import get_logger
 from mlops_codex.shared import constants
 from mlops_codex.shared.utils import parse_data
-from mlops_codex.training.base import ITrainingExecution
-from mlops_codex.training.training_types import (
+from mlops_codex.trainingv2.base import ITrainingExecution
+from mlops_codex.trainingv2.training_executions import (
     AutoMLTrainingExecution,
     CustomTrainingExecution,
     ExternalTrainingExecution,
@@ -201,14 +201,11 @@ class MLOpsTrainingLogger:
             Resolution for matplotlib/seaborn plots. Default is 300.
         ext: str, default='png'
             File format to save (e.g., 'png', 'pdf', 'svg', 'html'). If None, defaults to 'png' for static images.
-        **kwargs
-            Additional keyword arguments passed to savefig() or write_image()/write_html().
 
         Raises
         ------
         TypeError
             If the figure type is not supported.
-
         """
 
         filepath = f"{self.save_path}/{filename}.{ext}"
@@ -264,7 +261,7 @@ class MLOpsTrainingLogger:
         Parameters
         ----------
         extra: list
-            A list of paths of the extra files.
+            A list of paths to the extra files.
         """
         self.extras = extra
 
@@ -297,12 +294,12 @@ class MLOpsTrainingLogger:
 
     def add_requirements(self, filename: str):
         """
-        Add requirements file.
+        Add a requirement file.
 
         Parameters
         ----------
         filename: str
-            The name of output filename to save.
+            The name of the output filename to save.
         """
         self.requirements = filename
 
@@ -321,10 +318,10 @@ class MLOpsTrainingLogger:
 
     def __to_json(self, output_filename: str, input_data: dict):
         """
-        Transform dict to json.
+        Transform dict to JSON.
 
         Args:
-            output_filename: The name of output filename to save.
+            output_filename: The name of the output filename to save.
             input_data: A dictionary to save.
         """
         path = os.path.join(self.save_path, f"{output_filename}.json")
@@ -338,7 +335,7 @@ class MLOpsTrainingLogger:
         Transform content to pickle.
 
         Args:
-            output_filename: The name of output filename to save.
+            output_filename: The name of the output filename to save.
             input_data: The content to save.
         """
         path = os.path.join(self.save_path, f"{output_filename}.pkl")
@@ -640,13 +637,13 @@ class MLOpsTrainingExperiment(BaseMLOps):
         metrics_file: Optional[str], default=None
             Path to the metrics file. Obrigatory for 'External' training
         parameters_file: Optional[str], default=None
-            Path to the parameters file. Obrigatory for 'External' training
+            Path to the parameter file. Obrigatory for 'External' training
         model_file: Optional[str], default=None
             Path to the model file. Obrigatory for 'External' training
         extra_files: Optional[list], default=None
-            An optional list with path of files used to train your model
+            An optional list with a path of files used to train your model
         env: Optional[str], default=None
-            An optional path to the provide environment variables
+            An optional path to the provided environment variables
         wait_complete: Optional[bool], default=False
             Lock your script/cell until training is complete.
         Raises
@@ -682,6 +679,8 @@ class MLOpsTrainingExperiment(BaseMLOps):
         else:
             dataset_hash = None
 
+        input_data, upload_data = None, None
+
         if training_type != "External":
             input_data, upload_data = parse_data(
                 file_path=train_data,
@@ -690,9 +689,6 @@ class MLOpsTrainingExperiment(BaseMLOps):
                 file_form="input",
                 dataset_hash=dataset_hash,
             )
-        else:
-            input_data = None
-            upload_data = None
 
         builder = {
             "Custom": (
@@ -793,7 +789,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
         save_path: Optional[str] = None,
     ):
         """
-        Creates context manager that logs training progress.
+        Creates a context manager that logs training progress.
 
         name: str
             Run name
@@ -851,7 +847,7 @@ class MLOpsTrainingClient(BaseMLOpsClient):
     password: str
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
     url: str
-        URL to MLOps Server. Default value is https://neomaril.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
+        URL to MLOps Server. The default value is https://neomaril.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
     ------
@@ -945,7 +941,7 @@ class MLOpsTrainingClient(BaseMLOpsClient):
                                 Regression: the ones that will use regression (predict a continuous quantity) algorithms;
                                 Unsupervised: for training that will use ML algorithms without supervision.
 
-            group (str): name of the group, previous created, where the training will be inserted
+            group (str): name of the group, previously created, where the training will be inserted
 
         Raises:
             InputError: some part of the data is incorrect
