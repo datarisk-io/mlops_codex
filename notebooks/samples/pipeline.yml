@@ -27,6 +27,6 @@ monitoring:
     preprocess: preprocess_sync.py
     preprocess_function: score
     shap_function: score
-    config: configuration.json
+    config: conf.json
     packages: requirements.txt
 
