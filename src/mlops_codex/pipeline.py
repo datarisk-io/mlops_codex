@@ -244,7 +244,7 @@ class MLOpsPipeline(BaseMLOps):
         status = self.__training_run.status
         if status == "Succeeded":
             logger.info("Model training finished")
-            return self.__training.training_hash, self.__training_run.execution_id
+            return self.__training.training_id, self.__training_run.exec_id
         else:
             raise TrainingError("Training failed")
 
@@ -279,14 +279,15 @@ class MLOpsPipeline(BaseMLOps):
             logger.info("Deploying scorer from training")
 
             model_name = conf.get(
-                "name", self.__training_run.experiment_name
+                "name", self.__training_run.execution_data.get("ExperimentName", "")
             )
 
-            if self.__training_run.model_type == "Custom":
+            if self.__training_run.execution_data["TrainingType"] == "Custom":
                 self.__model = self.__training_run.promote_model(
                     model_name=model_name,
                     model_reference=conf["score_function"],
                     source_file=os.path.join(PATH, conf["source"]),
+                    input_type=conf["input_type"],
                     extra_files=(
                         [os.path.join(PATH, e) for e in extra_files]
                         if extra_files
@@ -331,10 +332,10 @@ class MLOpsPipeline(BaseMLOps):
                 group=self.group,
             )
 
-        while self.__model.status == "Building":
+        while self.__model.status() == "Building":
             self.__model.wait_ready()
 
-        if self.__model.status == "Deployed":
+        if self.__model.status() == "Deployed":
             logger.info("Model deployement finished")
             return self.__model.model_hash
 
@@ -374,6 +375,7 @@ class MLOpsPipeline(BaseMLOps):
                 f.truncate()
 
         model = MLOpsModel(
+            name=conf.get("name"),
             model_hash=conf.get("model_hash", model_id),
             group=self.group,
             login=self.credentials[0],
