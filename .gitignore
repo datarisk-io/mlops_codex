@@ -9,7 +9,6 @@ _build/
 #*
 .idea
 venv
-Pipfile.lock
 
 support/
 debug.py
