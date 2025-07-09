@@ -182,7 +182,7 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         token: str,
     ) -> None:
         """
-        Upload python script to MLOps.
+        Upload a python script to MLOps.
 
         Parameters
         ----------
@@ -430,6 +430,7 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         schema_files_path: Optional[
             Union[Tuple[str, str], List[Tuple[str, str]]]
         ] = None,
+        env_file: Optional[str] = None,
         schema_datasets: Optional[Union[str, List[str]]] = None,
         extra_files: Union[Tuple[str, str], List[Tuple[str, str]]] = None,
         wait_read: bool = False,
@@ -555,6 +556,17 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
             token=token,
         )
         logger.info("Requirements file uploaded")
+
+        if env_file:
+            make_request(
+                url=f"{self.base_url}/v2/preprocessing/{preprocessing_script_hash}/env-file",
+                method='PATCH',
+                success_code=201,
+                files={'env': open(env_file, 'rb')},
+                headers={
+                    "Authorization": f"Bearer {token}",
+                },
+            )
 
         logger.info("Hosting preprocessing script")
 
@@ -2417,6 +2429,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
                 requirements_path=requirements_file,
                 python_version=python_version,
                 schema_files_path=schema,
+                env_file=env,
                 extra_files=extra_files,
                 wait_read=wait_complete,
             )
