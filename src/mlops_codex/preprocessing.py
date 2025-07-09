@@ -558,6 +558,7 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         logger.info("Requirements file uploaded")
 
         if env_file:
+            logger.info("Environment file uploaded")
             make_request(
                 url=f"{self.base_url}/v2/preprocessing/{preprocessing_script_hash}/env-file",
                 method='PATCH',
