@@ -37,9 +37,10 @@ class BaseMLOps:
         login: Optional[str] = None,
         password: Optional[str] = None,
         url: Optional[str] = None,
+        tenant: Optional[str] = None
     ) -> None:
         loaded = load_dotenv()
-        # Something's when running as a script the default version might not work
+        # Something's when running as a script, the default version might not work
         if not loaded:
             load_dotenv(find_dotenv(usecwd=True))
         logger.info("Loading .env")
@@ -54,6 +55,7 @@ class BaseMLOps:
         self.credentials = (
             login if login else os.getenv("MLOPS_USER"),
             password if password else os.getenv("MLOPS_PASSWORD"),
+            tenant if tenant else os.getenv("MLOPS_TENANT")
         )
         self.base_url = url
         self.base_url = parse_url(self.base_url)
@@ -61,6 +63,7 @@ class BaseMLOps:
         self.user_token, self.version = try_login(
             self.credentials[0],
             self.credentials[1],
+            self.credentials[2],
             self.base_url,
         )
         logger.info("Successfully connected to MLOps")
