@@ -16,13 +16,14 @@ logger = get_logger()
 
 
 def try_login(
-    login: str, password: str, base_url: str
+    login: str, password: str, tenant: str, base_url: str
 ) -> Union[Tuple[str, str], Exception]:
     """Try to sign in MLOps
 
     Args:
         login: User email
         password: User password
+        tenant: User tenant
         base_url: URL that will handle the requests
 
     Returns:
@@ -46,16 +47,16 @@ def try_login(
     if server_status != 200:
         raise Exception(f"Unexpected error! {response.text}")
 
-    token = refresh_token(login, password, base_url)
+    token = refresh_token(login, password, tenant, base_url)
     version = response.json().get("Version")
     return token, version
 
 
 @ttl_cache
-def refresh_token(login: str, password: str, base_url: str):
+def refresh_token(login: str, password: str, tenant: str, base_url: str):
     response = requests.post(
         f"{base_url}/login",
-        data={"user": login, "password": password},
+        data={"user": login, "password": password, "tenant": tenant},
         timeout=60,
     )
 

@@ -48,9 +48,9 @@ class MLOpsDatasetClient(BaseMLOpsClient):
     """
 
     def __init__(
-        self, login: str = None, password: str = None, url: str = None
+        self, login: str = None, password: str = None, tenant: str = None, url: str = None
     ) -> None:
-        super().__init__(login=login, password=password, url=url)
+        super().__init__(login=login, password=password, tenant=tenant, url=url)
 
     def __query_datasets(
         self,
