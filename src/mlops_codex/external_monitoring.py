@@ -403,6 +403,11 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
         If the Cloud Credential is Invalid
     """
 
+    def __init__(
+        self, login: str = None, password: str = None, tenant: str = None, url: str = None
+    ) -> None:
+        super().__init__(login=login, password=password, tenant=tenant, url=url)
+
     # TODO: It would be more appropriate to move this to an internal creation method, as its current placement seems illogical.
     #       btw, it is my mistake!!
     class ExternalMonitoringData(NamedTuple):

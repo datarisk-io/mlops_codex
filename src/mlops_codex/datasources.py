@@ -44,6 +44,11 @@ class MLOpsDataSourceClient(BaseMLOpsClient):
         If the Cloud Credential is Invalid
     """
 
+    def __init__(
+        self, login: str = None, password: str = None, tenant: str = None, url: str = None
+    ) -> None:
+        super().__init__(login=login, password=password, tenant=tenant, url=url)
+
     def register_datasource(
         self,
         *,

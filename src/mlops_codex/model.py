@@ -1205,6 +1205,11 @@ class MLOpsModelClient(BaseMLOpsClient):
         execution.download_result()
     """
 
+    def __init__(
+        self, login: str = None, password: str = None, tenant: str = None, url: str = None
+    ) -> None:
+        super().__init__(login=login, password=password, tenant=tenant, url=url)
+
     def __repr__(self) -> str:
         return f'API version {self.version} - MLOpsModelClient(url="{self.base_url}", Token="{self.user_token}")'
 

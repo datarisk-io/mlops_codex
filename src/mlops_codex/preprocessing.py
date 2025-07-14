@@ -44,9 +44,9 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
     """
 
     def __init__(
-        self, login: str = None, password: str = None, url: str = None
+        self, login: str = None, password: str = None, tenant: str = None, url: str = None
     ) -> None:
-        super().__init__(login=login, password=password, url=url)
+        super().__init__(login=login, password=password, tenant=tenant, url=url)
         self.url = f"{self.base_url}/v2/preprocessing"
 
     def __register(self, payload: dict, token: str, group: str) -> str:
@@ -991,6 +991,7 @@ class MLOpsPreprocessingAsyncV2(BaseModel):
 
     login: str = Field(exclude=True, repr=False)
     password: str = Field(exclude=True, repr=False)
+    tenant: str = Field(exclude=True, repr=False)
     url: str = Field(exclude=True, repr=False)
     name: str
     preprocessing_hash: str
@@ -1008,6 +1009,7 @@ class MLOpsPreprocessingAsyncV2(BaseModel):
             self._preprocessing_client = MLOpsPreprocessingAsyncV2Client(
                 login=self.login,
                 password=self.password,
+                tenant=self.tenant,
                 url=self.url,
             )
 
@@ -1878,11 +1880,12 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         self,
         login: Optional[str] = None,
         password: Optional[str] = None,
+        tenant: Optional[str] = None,
         url: Optional[str] = None,
     ):
-        super().__init__(login=login, password=password, url=url)
+        super().__init__(login=login, password=password, tenant=tenant, url=url)
         self.__new_preprocessing_client = MLOpsPreprocessingAsyncV2Client(
-            login=login, password=password, url=url
+            login=login, password=password, tenant=tenant, url=url
         )
 
     def __get_preprocessing_status(self, *, preprocessing_id: str, group: str) -> dict:
