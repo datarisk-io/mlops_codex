@@ -3,6 +3,7 @@
 
 import json
 import os
+from pathlib import Path
 from time import sleep
 from typing import List, Optional, Tuple, Union
 
@@ -882,7 +883,8 @@ class AsyncModel(MLOpsModel):
 
         logger.info("Validating data...")
 
-        validate_data(data, {"csv", "parquet"})
+        if Path(data).is_file():
+            validate_data(data, {"csv", "parquet"})
 
         if preprocessing:
             logger.info("Preprocessing data...")
@@ -905,26 +907,65 @@ class AsyncModel(MLOpsModel):
 
             preprocessed_data_path = "./preprocessed_data.parquet"
             files = [("input", ("preprocessed_data.parquet", open(preprocessed_data_path, "rb")))]
+
+            response = make_request(
+                url=f"{self.base_url}/model/async/run/{self.group}/{self.model_hash}",
+                method="POST",
+                files=files,
+                success_code=202,
+                custom_exception=ModelError,
+                custom_exception_message=f"Failed to predict data for model {self.model_hash} in group {self.group}",
+                specific_error_code=404,
+                logger_msg=f"Failed to predict data for model {self.model_hash} in group {self.group}",
+                headers={
+                    "Authorization": f"Bearer {self.group_token}",
+                    "Neomaril-Origin": "Codex",
+                    "Neomaril-Method": self.predict.__qualname__,
+                },
+            ).json()
         else:
-            files = [("input", (data.split("/")[-1], open(data, "rb")))]
+
+            file_exists = Path(data).is_file()
+
+            if file_exists:
+
+                files = [("input", (data.split("/")[-1], open(data, "rb")))]
+
+                response = make_request(
+                    url=f"{self.base_url}/model/async/run/{self.group}/{self.model_hash}",
+                    method="POST",
+                    files=files,
+                    success_code=202,
+                    custom_exception=ModelError,
+                    custom_exception_message=f"Failed to predict data for model {self.model_hash} in group {self.group}",
+                    specific_error_code=404,
+                    logger_msg=f"Failed to predict data for model {self.model_hash} in group {self.group}",
+                    headers={
+                        "Authorization": f"Bearer {self.group_token}",
+                        "Neomaril-Origin": "Codex",
+                        "Neomaril-Method": self.predict.__qualname__,
+                    },
+                ).json()
+
+            else:
+                form_data = {"dataset_hash": data}
+                response = make_request(
+                    url=f"{self.base_url}/model/async/run/{self.group}/{self.model_hash}",
+                    method="POST",
+                    data=form_data,
+                    success_code=202,
+                    custom_exception=ModelError,
+                    custom_exception_message=f"Failed to predict data for model {self.model_hash} in group {self.group}",
+                    specific_error_code=404,
+                    logger_msg=f"Failed to predict data for model {self.model_hash} in group {self.group}",
+                    headers={
+                        "Authorization": f"Bearer {self.group_token}",
+                        "Neomaril-Origin": "Codex",
+                        "Neomaril-Method": self.predict.__qualname__,
+                    },
+                ).json()
 
         logger.info("Running data prediction...")
-
-        response = make_request(
-            url=f"{self.base_url}/model/async/run/{self.group}/{self.model_hash}",
-            method="POST",
-            files=files,
-            success_code=202,
-            custom_exception=ModelError,
-            custom_exception_message=f"Failed to predict data for model {self.model_hash} in group {self.group}",
-            specific_error_code=404,
-            logger_msg=f"Failed to predict data for model {self.model_hash} in group {self.group}",
-            headers={
-                "Authorization": f"Bearer {self.group_token}",
-                "Neomaril-Origin": "Codex",
-                "Neomaril-Method": self.predict.__qualname__,
-            },
-        ).json()
 
         execution_id = response["ExecutionId"]
 
