@@ -1,36 +1,50 @@
-# MLOps Codex
+# Datarisk MLOps - SDK
 
-For the brazilian portuguese README, click [here :brazil:](./README.pt-br.md).
+![ikjo](https://img.shields.io/pypi/v/datarisk-mlops-codex
+)
 
-## About
+> A Python SDK to interacting with MLOps API <br />
+> This SDK provides tools for training, deploying and monitoring Machine Learning models.
 
-Package for interacting with MLOps, a tool for deploying ML models.
+---
 
-## Getting started
+## Table of Contents
 
-### Install
+- [Installation](#installation)
+- [Getting Started](#getting-started)
+- [For developers](#for-developers)
 
-```
+---
+
+## Installation
+
+### Using pip
+
+```bash
   pip install datarisk-mlops-codex
 ```
 
-### How to use
+---
+
+## Getting Started
 
 Check the [documentation](https://datarisk-io.github.io/mlops_codex) page for more information.
 
 There's also some [example](https://github.com/datarisk-io/mlops_codex/tree/master/notebooks) notebooks.
 
-### For developers
+---
+
+## For developers
 
 Install pipenv
 
-```
-  pip install pipenv
+``` bash
+pip install pipenv
 ```
 
 Install the package enviroment
 
-```
-  pipenv update --dev
-  pipenv shell
+``` bash
+pipenv update --dev
+pipenv shell
 ```
