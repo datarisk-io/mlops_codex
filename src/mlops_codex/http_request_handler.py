@@ -1,7 +1,6 @@
 from typing import Tuple, Union
 
 import requests
-from cachetools.func import ttl_cache
 
 from mlops_codex.__utils import parse_json_to_yaml
 from mlops_codex.exceptions import (
@@ -52,7 +51,6 @@ def try_login(
     return token, version
 
 
-@ttl_cache
 def refresh_token(login: str, password: str, tenant: str, base_url: str):
     response = requests.post(
         f"{base_url}/login",
