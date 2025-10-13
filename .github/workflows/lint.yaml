@@ -1,9 +1,5 @@
 name: Lint
-on:
-  push:
-    branches:
-      - main
-      - develop
+on: pull_request
 
 jobs:
   python:
