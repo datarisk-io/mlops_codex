@@ -45,9 +45,9 @@ class MLOpsDataSourceClient(BaseMLOpsClient):
     """
 
     def __init__(
-        self, login: str = None, password: str = None, tenant: str = None, url: str = None
+        self, login: str, password: str, tenant: str
     ) -> None:
-        super().__init__(login=login, password=password, tenant=tenant, url=url)
+        super().__init__(login=login, password=password, tenant=tenant)
 
     def register_datasource(
         self,
@@ -92,7 +92,7 @@ class MLOpsDataSourceClient(BaseMLOpsClient):
             group=group,
             login=self.credentials[0],
             password=self.credentials[1],
-            url=self.base_url,
+            tenant=self.credentials[2],
         )
 
         url = f"{self.base_url}/datasource/register/{group}"
@@ -250,7 +250,7 @@ class MLOpsDataSourceClient(BaseMLOpsClient):
                     group=datasource.get("Group"),
                     login=self.credentials[0],
                     password=self.credentials[1],
-                    url=self.base_url,
+                    tenant=self.credentials[2],
                 )
         raise InputError("Datasource not found!")
 
@@ -288,13 +288,13 @@ class MLOpsDataSource(BaseMLOps):
         group: str,
         login: str,
         password: str,
-        url: str,
+        tenant: str
     ) -> None:
-        super().__init__(login=login, password=password, url=url)
+        super().__init__(login=login, password=password, tenant=tenant)
         self.datasource_name = datasource_name
         self.provider = provider
         self.group = group
-        self.__datasets = MLOpsDatasetClient(login=login, password=password, url=url)
+        self.__datasets = MLOpsDatasetClient(login=login, password=password, tenant=tenant)
 
     def import_dataset(
         self, *, dataset_uri: str, dataset_name: str, force: bool = False
@@ -356,6 +356,7 @@ class MLOpsDataSource(BaseMLOps):
                 dataset = MLOpsDataset(
                     login=self.credentials[0],
                     password=self.credentials[1],
+                    tenant=self.credentials[2],
                     base_url=self.base_url,
                     hash=dataset_hash,
                     dataset_name=dataset_name,
@@ -368,6 +369,7 @@ class MLOpsDataSource(BaseMLOps):
                     dataset = MLOpsDataset(
                         login=self.credentials[0],
                         password=self.credentials[1],
+                        tenant=self.credentials[2],
                         base_url=self.base_url,
                         hash=ds,
                         dataset_name=dataset_name + f"_{i}",
@@ -446,6 +448,7 @@ class MLOpsDataSource(BaseMLOps):
                 return MLOpsDataset(
                     login=self.credentials[0],
                     password=self.credentials[1],
+                    tenant=self.credentials[2],
                     base_url=self.base_url,
                     hash=dataset.get("Hash"),
                     dataset_name=dataset.get("Name"),

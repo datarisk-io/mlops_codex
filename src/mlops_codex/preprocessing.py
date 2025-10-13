@@ -39,14 +39,12 @@ class MLOpsPreprocessingAsyncV2Client(BaseMLOpsClient):
         Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
     password: str
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
-    url: str
-        URL to MLOps Server. Default value is https://neomaril.datarisk.net, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
     """
 
     def __init__(
-        self, login: str = None, password: str = None, tenant: str = None, url: str = None
+        self, login: str, password: str, tenant: str
     ) -> None:
-        super().__init__(login=login, password=password, tenant=tenant, url=url)
+        super().__init__(login=login, password=password, tenant=tenant)
         self.url = f"{self.base_url}/v2/preprocessing"
 
     def __register(self, payload: dict, token: str, group: str) -> str:
@@ -1010,7 +1008,6 @@ class MLOpsPreprocessingAsyncV2(BaseModel):
                 login=self.login,
                 password=self.password,
                 tenant=self.tenant,
-                url=self.url,
             )
 
     def host(self, wait_ready: bool = False) -> None:
@@ -1233,9 +1230,9 @@ class PreprocessExecution:
         preprocess_hash: str,
         group: str,
         exec_id: int,
-        login: Optional[str] = None,
-        password: Optional[str] = None,
-        url: str = None,
+        login: str,
+        password: str,
+        tenant: str,
     ) -> None:
         self.preprocessing_hash = preprocess_hash
         self.group = group
@@ -1243,7 +1240,7 @@ class PreprocessExecution:
         self.__client = MLOpsPreprocessingAsyncV2Client(
             login=login,
             password=password,
-            url=url,
+            tenant=tenant,
         )
 
     def get_status(self):
@@ -1349,18 +1346,18 @@ class MLOpsPreprocessing(BaseMLOps):
         self,
         *,
         preprocessing_id: str,
-        login: Optional[str] = None,
-        password: Optional[str] = None,
+        login: str,
+        password: str,
+        tenant: str,
         group: Optional[str] = None,
         group_token: Optional[str] = None,
-        url: Optional[str] = None,
     ) -> None:
-        super().__init__(login=login, password=password, url=url)
+        super().__init__(login=login, password=password, tenant=tenant)
         self.preprocessing_id = preprocessing_id
         self.group = group
         self.__token = group_token if group_token else os.getenv("MLOPS_GROUP_TOKEN")
         self.__new_preprocess_client = MLOpsPreprocessingAsyncV2Client(
-            login=login, password=password, url=url
+            login=login, password=password, tenant=tenant
         )
 
         try:
@@ -1577,7 +1574,7 @@ class MLOpsPreprocessing(BaseMLOps):
                 exec_id=execution_id,
                 login=self.credentials[0],
                 password=self.credentials[1],
-                url=self.base_url,
+                tenant=self.credentials[2],
             )
             return run
         except:  # noqa: E722
@@ -1629,7 +1626,7 @@ class MLOpsPreprocessing(BaseMLOps):
                                 exec_id=exec_id,
                                 login=self.credentials[0],
                                 password=self.credentials[1],
-                                url=self.base_url,
+                                tenant=self.credentials[2],
                                 group=self.group,
                                 group_token=group_token,
                             )
@@ -1689,7 +1686,7 @@ class MLOpsPreprocessing(BaseMLOps):
                 exec_id=int(exec_id),
                 login=self.credentials[0],
                 password=self.credentials[1],
-                url=self.base_url,
+                tenant=self.credentials[2],
             )
         raise PreprocessingError("Sync pre processing don't have executions")
 
@@ -1747,6 +1744,7 @@ class MLOpsPreprocessing(BaseMLOps):
             MLOpsDataset(
                 login=self.credentials,
                 password=self.credentials[1],
+                tenant=self.credentials[2],
                 base_url=self.base_url,
                 hash=dataset["DatasetHash"],
                 dataset_name=dataset["DatasetName"],
@@ -1878,14 +1876,13 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
 
     def __init__(
         self,
-        login: Optional[str] = None,
-        password: Optional[str] = None,
-        tenant: Optional[str] = None,
-        url: Optional[str] = None,
+        login: str,
+        password: str,
+        tenant: str,
     ):
-        super().__init__(login=login, password=password, tenant=tenant, url=url)
+        super().__init__(login=login, password=password, tenant=tenant)
         self.__new_preprocessing_client = MLOpsPreprocessingAsyncV2Client(
-            login=login, password=password, tenant=tenant, url=url
+            login=login, password=password, tenant=tenant
         )
 
     def __get_preprocessing_status(self, *, preprocessing_id: str, group: str) -> dict:
@@ -1995,7 +1992,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
                     login=self.credentials[0],
                     password=self.credentials[1],
                     group=group,
-                    url=self.base_url,
+                    tenant=self.credentials[2],
                     group_token=group_token,
                 )
 
@@ -2017,7 +2014,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
                 login=self.credentials[0],
                 password=self.credentials[1],
                 group=group,
-                url=self.base_url,
+                tenant=self.credentials[2],
                 group_token=group_token,
             )
         else:

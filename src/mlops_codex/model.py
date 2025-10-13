@@ -2,7 +2,6 @@
 # coding: utf-8
 
 import json
-import os
 from pathlib import Path
 from time import sleep
 from typing import List, Optional, Tuple, Union
@@ -85,8 +84,6 @@ class MLOpsModel(BaseMLOps):
         Group the model is inserted.
     group_token: str
         Token for executing the model (show when creating a group). It can be informed when getting the model or when running predictions, or using the env variable MLOPS_GROUP_TOKEN
-    url: str
-        URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set these
 
     Raises
     ------
@@ -102,18 +99,16 @@ class MLOpsModel(BaseMLOps):
         name: str,
         model_hash: str,
         group: str,
-        login: Optional[str] = None,
-        password: Optional[str] = None,
-        group_token: Optional[str] = None,
-        url: Optional[str] = None,
+        login: str,
+        password: str,
+        tenant: str,
+        group_token: str,
     ) -> None:
-        super().__init__(login=login, password=password, url=url)
+        super().__init__(login=login, password=password, tenant=tenant)
 
         self.model_hash = model_hash
         self.group = group
-        self.group_token = (
-            group_token if group_token else os.getenv("MLOPS_GROUP_TOKEN")
-        )
+        self.group_token = group_token
         self.name = name
 
     def __repr__(self) -> str:
@@ -683,10 +678,10 @@ class SyncModel(MLOpsModel):
         name: str,
         model_hash: str,
         group: str,
-        login: Optional[str] = None,
-        password: Optional[str] = None,
+        login: str,
+        password: str,
+        tenant: str,
         group_token: Optional[str] = None,
-        url: Optional[str] = None,
     ):
         super().__init__(
             name=name,
@@ -695,7 +690,7 @@ class SyncModel(MLOpsModel):
             login=login,
             password=password,
             group_token=group_token,
-            url=url,
+            tenant=tenant,
         )
 
     def predict(
@@ -768,10 +763,10 @@ class AsyncModel(MLOpsModel):
         name: str,
         model_hash: str,
         group: str,
-        login: Optional[str] = None,
-        password: Optional[str] = None,
+        login: str,
+        password: str,
+        tenant: str,
         group_token: Optional[str] = None,
-        url: Optional[str] = None,
     ):
         super().__init__(
             name=name,
@@ -780,7 +775,7 @@ class AsyncModel(MLOpsModel):
             login=login,
             password=password,
             group_token=group_token,
-            url=url,
+            tenant=tenant,
         )
 
     def execution_status(
@@ -1030,7 +1025,7 @@ class AsyncModel(MLOpsModel):
             exec_id=execution_id,
             login=self.credentials[0],
             password=self.credentials[1],
-            url=self.base_url,
+            tenant=self.credentials[2],
             group_token=self.group_token,
         )
         run.get_status()
@@ -1247,9 +1242,9 @@ class MLOpsModelClient(BaseMLOpsClient):
     """
 
     def __init__(
-        self, login: str = None, password: str = None, tenant: str = None, url: str = None
+        self, login: str, password: str, tenant: str
     ) -> None:
-        super().__init__(login=login, password=password, tenant=tenant, url=url)
+        super().__init__(login=login, password=password, tenant=tenant)
 
     def __repr__(self) -> str:
         return f'API version {self.version} - MLOpsModelClient(url="{self.base_url}", Token="{self.user_token}")'
@@ -1330,7 +1325,7 @@ class MLOpsModelClient(BaseMLOpsClient):
                 name=response["Name"],
                 login=self.credentials[0],
                 password=self.credentials[1],
-                url=self.base_url,
+                tenant=self.credentials[2],
                 model_hash=model_hash,
                 group=group,
                 group_token=group_token,
@@ -1340,7 +1335,7 @@ class MLOpsModelClient(BaseMLOpsClient):
             name=response["Name"],
             login=self.credentials[0],
             password=self.credentials[1],
-            url=self.base_url,
+            tenant=self.credentials[2],
             model_hash=model_hash,
             group=group,
             group_token=group_token,
@@ -1427,7 +1422,7 @@ class MLOpsModelClient(BaseMLOpsClient):
                     name=result["Name"],
                     login=self.credentials[0],
                     password=self.credentials[1],
-                    url=self.base_url,
+                    tenant=self.credentials[2],
                     model_hash=result["ModelHash"],
                     group=result["Group"],
                 )
@@ -1437,7 +1432,7 @@ class MLOpsModelClient(BaseMLOpsClient):
                     name=result["Name"],
                     login=self.credentials[0],
                     password=self.credentials[1],
-                    url=self.base_url,
+                    tenant=self.credentials[2],
                     model_hash=result["ModelHash"],
                     group=result["Group"],
                 )
@@ -1700,7 +1695,7 @@ class MLOpsModelClient(BaseMLOpsClient):
             name=model_name,
             login=self.credentials[0],
             password=self.credentials[1],
-            url=self.base_url,
+            tenant=self.credentials[2],
             model_hash=model_hash,
             group=group,
         )

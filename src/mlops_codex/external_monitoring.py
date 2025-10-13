@@ -35,23 +35,13 @@ class MLOpsExternalMonitoring(BaseMLOps):
         self,
         group: str,
         ex_monitoring_hash: str,
-        status: Optional[MonitoringStatus] = MonitoringStatus.Unvalidated,
-        login: Optional[str] = None,
-        password: Optional[str] = None,
-        url: Optional[str] = None,
+        login: str,
+        password: str,
+        tenant: str,
+        status: Optional[MonitoringStatus] = MonitoringStatus.Unvalidated
     ):
-        """
-        Parameters
-        ----------
-        group:
-        ex_monitoring_hash:
-        status:
-        login:
-        password:
-        url:
-        """
 
-        super().__init__(login=login, password=password, url=url)
+        super().__init__(login=login, password=password, tenant=tenant)
         self.external_monitoring_url = f"{self.base_url}/external-monitoring"
         self.ex_monitoring_hash = ex_monitoring_hash
         self.group = group
@@ -404,9 +394,9 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
     """
 
     def __init__(
-        self, login: str = None, password: str = None, tenant: str = None, url: str = None
+        self, login: str, password: str, tenant: str
     ) -> None:
-        super().__init__(login=login, password=password, tenant=tenant, url=url)
+        super().__init__(login=login, password=password, tenant=tenant)
 
     # TODO: It would be more appropriate to move this to an internal creation method, as its current placement seems illogical.
     #       btw, it is my mistake!!
@@ -596,7 +586,7 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
         external_monitoring = MLOpsExternalMonitoring(
             login=self.credentials[0],
             password=self.credentials[1],
-            url=self.base_url,
+            tenant=self.credentials[2],
             group=kwargs["group"],
             ex_monitoring_hash=external_monitoring_hash,
             status=MonitoringStatus.Unvalidated,
@@ -676,7 +666,7 @@ class MLOpsExternalMonitoringClient(BaseMLOpsClient):
                 external_monitoring = MLOpsExternalMonitoring(
                     login=self.credentials[0],
                     password=self.credentials[1],
-                    url=self.base_url,
+                    tenant=self.credentials[2],
                     group=group,
                     ex_monitoring_hash=external_monitoring_hash,
                 )

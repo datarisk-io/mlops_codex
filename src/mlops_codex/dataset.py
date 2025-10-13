@@ -48,9 +48,9 @@ class MLOpsDatasetClient(BaseMLOpsClient):
     """
 
     def __init__(
-        self, login: str = None, password: str = None, tenant: str = None, url: str = None
+        self, login: str, password: str, tenant: str
     ) -> None:
-        super().__init__(login=login, password=password, tenant=tenant, url=url)
+        super().__init__(login=login, password=password, tenant=tenant)
 
     def __query_datasets(
         self,
@@ -98,6 +98,7 @@ class MLOpsDatasetClient(BaseMLOpsClient):
                 return MLOpsDataset(
                     login=self.credentials[0],
                     password=self.credentials[1],
+                    tenant=self.credentials[2],
                     base_url=self.base_url,
                     hash=dataset_hash,
                     dataset_name=r["Name"],
@@ -195,6 +196,7 @@ class MLOpsDataset:
 
     login: str = field(repr=False)
     password: str = field(repr=False)
+    tenant: str = field(repr=False)
     base_url: str = field(repr=False)
     hash: str
     dataset_name: str
