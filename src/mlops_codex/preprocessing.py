@@ -2236,7 +2236,7 @@ class MLOpsPreprocessingClient(BaseMLOpsClient):
         upload_data = [
             (
                 "source",
-                (file_extesions[source_file.split(".")[-1]], open(source_file, "rb")),
+                (file_extesions[source_file.rsplit(".", maxsplit=1)[-1]], open(source_file, "rb")),
             ),
             ("requirements", ("requirements.txt", open(requirements_file, "rb"))),
         ]

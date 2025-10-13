@@ -79,10 +79,10 @@ class MLOpsExternalMonitoring(BaseMLOps):
         """
         file_extensions = {"py": "script.py", "ipynb": "notebook.ipynb"}
 
-        file_name = file.split("/")[-1]
+        file_name = file.rsplit("/", maxsplit=1)[-1]
 
         if file.endswith(".py") or file.endswith(".ipynb"):
-            file_name = file_extensions[file.split(".")[-1]]
+            file_name = file_extensions[file.rsplit(".", maxsplit=1)[-1]]
 
         upload_data = [(field, (file_name, open(file, "rb")))]
         response = requests.patch(
@@ -190,7 +190,7 @@ class MLOpsExternalMonitoring(BaseMLOps):
                 logger.error(f"You must pass the following arguments: {missing_args}")
                 raise InputError("Missing files, function entrypoint or python version")
 
-        python_version= validate_python_version(python_version)
+        python_version = validate_python_version(python_version)
 
         uploads = [
             ("model", model_file, "model-file", None),

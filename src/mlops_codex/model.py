@@ -1557,9 +1557,9 @@ class MLOpsModelClient(BaseMLOpsClient):
         python_version = validate_python_version(python_version)
 
         upload_data = [
-            ("source",(source_file.split("/")[-1], open(source_file, "rb"))),
-            ("model", (model_file.split("/")[-1], open(model_file, "rb"))),
-            ("requirements", (requirements_file.split("/")[-1], open(requirements_file, "rb")))
+            ("source", (source_file.rsplit("/", maxsplit=1)[-1], open(source_file, "rb"))),
+            ("model", (model_file.rsplit("/", maxsplit=1)[-1], open(model_file, "rb"))),
+            ("requirements", (requirements_file.rsplit("/", maxsplit=1)[-1], open(requirements_file, "rb")))
         ]
 
         if schema:

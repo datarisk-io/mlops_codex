@@ -1,7 +1,4 @@
-import time
-from functools import update_wrapper, lru_cache
-from math import floor
-from typing import BinaryIO, Dict, Optional, Tuple, Callable, Any
+from typing import BinaryIO, Dict, Optional, Tuple
 
 import requests
 
