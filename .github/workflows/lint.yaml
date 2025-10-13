@@ -16,7 +16,7 @@ jobs:
 
       - name: Install ruff
         working-directory: ./
-        run: uv pip install ruff
+        run: uv add ruff
 
       - name: Run Ruff check
         working-directory: ./src/mlops_codex
