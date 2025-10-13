@@ -8,15 +8,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Install Python
-        uses: actions/setup-python@v5
+
+      - name: Install uv and set Python version
+        uses: astral-sh/setup-uv@v1
         with:
           python-version: "3.12"
-      - name: Install dependencies
+
+      - name: Install ruff
         working-directory: ./
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .
-      - name: Run Ruff
+        run: uv pip install ruff
+
+      - name: Run Ruff check
         working-directory: ./src/mlops_codex
-        run: ruff check --output-format=github .
+        run: uv run ruff check --output-format=github .
