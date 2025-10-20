@@ -32,6 +32,9 @@ exclude = [
     "tests/"
 ]
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/mlops_codex"]
+
 [tool.uv]
 dev-dependencies = [
     "m2r2==0.3.4",
