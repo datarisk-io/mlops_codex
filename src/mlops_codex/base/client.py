@@ -3,14 +3,14 @@ from typing import Literal
 
 import requests
 
-from V2.utils.exceptions import raise_for_status, APITimeoutError, APIConnectionError
+from mlops_codex.utils.exceptions import APIConnectionError, APITimeoutError, raise_for_status
 
 
 def send_http_request(
-        url: str,
-        method: Literal['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-        successful_code: HTTPStatus,
-        **kwargs
+    url: str,
+    method: Literal['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    successful_code: HTTPStatus,
+    **kwargs,
 ) -> requests.Response:
     """
     Generic function used to make a request to MLOps server.
@@ -26,14 +26,9 @@ def send_http_request(
     Raises:
         requests.exceptions.RequestException: If the request fails.
     """
-    request = requests.Request(
-        method=method,
-        url=url,
-        **kwargs
-    )
+    request = requests.Request(method=method, url=url, **kwargs)
 
     try:
-
         prepared_request = request.prepare()
         with requests.Session() as session:
             response = session.send(prepared_request, timeout=60)
