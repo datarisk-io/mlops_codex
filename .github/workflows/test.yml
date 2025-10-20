@@ -1,7 +1,6 @@
 name: Check the python packages
 
-on:
-  push:
+on: workflow_dispatch
 
 permissions:
   contents: read
