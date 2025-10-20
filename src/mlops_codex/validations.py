@@ -62,7 +62,7 @@ def date_validation(start: str, end: str) -> Tuple[str, str]:
 
 
 def file_extension_validation(file_name: str, permitted_extensions: Set[str]):
-    if file_name.split(".")[-1] not in permitted_extensions:
+    if file_name.rsplit(".", maxsplit=1)[-1] not in permitted_extensions:
         raise InputError(f"File {file_name} must have extension {permitted_extensions}")
     return True
 
