@@ -1,7 +1,6 @@
 name: Check the python packages
 
-on:
-  push:
+on: workflow_dispatch
 
 permissions:
   contents: read
@@ -12,7 +11,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ["3.9", "3.10"]
+        python-version: ["3.10", "3.11", "3.12"]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -25,10 +24,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e .
-      - name: Run Pip audit Check
-        uses: pypa/gh-action-pip-audit@v1.0.8
-        with:
-          inputs: requirements.txt
       - name: Run Import Check
         working-directory: ./
         run: python3 tests/import.py

@@ -450,9 +450,9 @@ class MLOpsTrainingExecution(MLOpsExecution):
         training_id: str,
         group: str,
         exec_id: str,
-        login: Optional[str] = None,
-        password: Optional[str] = None,
-        url: str = None,
+        login: str,
+        password: str,
+        tenant: str
     ) -> None:
         super().__init__(
             parent_id=training_id,
@@ -460,7 +460,7 @@ class MLOpsTrainingExecution(MLOpsExecution):
             exec_id=exec_id,
             login=login,
             password=password,
-            url=url,
+            tenant=tenant,
             group=group,
         )
 
@@ -738,7 +738,7 @@ class MLOpsTrainingExecution(MLOpsExecution):
             model_hash=model_hash,
             login=self.credentials[0],
             password=self.credentials[1],
-            url=self.base_url,
+            tenant=self.credentials[2],
             group=self.group,
         )
 
@@ -802,12 +802,12 @@ class MLOpsTrainingExperiment(BaseMLOps):
         self,
         *,
         training_id: str,
-        login: Optional[str] = None,
-        password: Optional[str] = None,
+        login: str,
+        password: str,
+        tenant: str,
         group: str = "datarisk",
-        url: str = "https://neomaril.datarisk.net/",
     ) -> None:
-        super().__init__(login=login, password=password, url=url)
+        super().__init__(login=login, password=password, tenant=tenant)
 
         self.training_id = training_id
         self.group = group
@@ -1307,7 +1307,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
                 exec_id=exec_id,
                 login=self.credentials[0],
                 password=self.credentials[1],
-                url=self.base_url,
+                tenant=self.credentials[2],
             )
             response = run.get_status()
             status = response["Status"]
@@ -1357,7 +1357,7 @@ class MLOpsTrainingExperiment(BaseMLOps):
             exec_id=exec_id,
             login=self.credentials[0],
             password=self.credentials[1],
-            url=self.base_url,
+            tenant=self.credentials[2],
         )
         exec.get_status()
 
@@ -1446,10 +1446,8 @@ class MLOpsTrainingClient(BaseMLOpsClient):
 
     """
 
-    def __init__(
-        self, login: str = None, password: str = None, tenant: str = None, url: str = None
-    ) -> None:
-        super().__init__(login=login, password=password, tenant=tenant, url=url)
+    def __init__(self, login: str, password: str, tenant: str) -> None:
+        super().__init__(login=login, password=password, tenant=tenant)
 
     def __repr__(self) -> str:
         return f'API version {self.version} \n Token="{self.user_token}'
@@ -1490,7 +1488,7 @@ class MLOpsTrainingClient(BaseMLOpsClient):
             login=self.credentials[0],
             password=self.credentials[1],
             group=group,
-            url=self.base_url,
+            tenant=self.credentials[2],
         )
 
     def __get_repeated_thash(
@@ -1693,5 +1691,5 @@ class MLOpsTrainingClient(BaseMLOpsClient):
             login=self.credentials[0],
             password=self.credentials[1],
             group=group,
-            url=self.base_url,
+            tenant=self.credentials[2],
         )

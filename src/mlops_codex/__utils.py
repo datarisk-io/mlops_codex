@@ -5,8 +5,6 @@ import typing
 from functools import wraps
 from typing import Callable, Type
 
-import yaml
-
 
 def parse_dict_or_file(obj):
     if isinstance(obj, str):
@@ -38,7 +36,7 @@ def parse_json_to_yaml(data) -> str:
     Returns:
         str: data in the yaml format
     """
-    return yaml.dump(data, allow_unicode=True, default_flow_style=False)
+    return json.dumps(data)
 
 
 def extract_execution_number_from_string(text: str) -> int:

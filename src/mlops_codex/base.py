@@ -1,10 +1,8 @@
-import os
 from datetime import datetime, timedelta
 from time import sleep
 from typing import Optional
 
 import requests
-from dotenv import find_dotenv, load_dotenv
 
 from mlops_codex.__model_states import ModelExecutionState
 from mlops_codex.__utils import (
@@ -34,30 +32,15 @@ class BaseMLOps:
     def __init__(
         self,
         *,
-        login: Optional[str] = None,
-        password: Optional[str] = None,
-        url: Optional[str] = None,
-        tenant: Optional[str] = None
+        login: str,
+        password: str,
+        tenant: str
     ) -> None:
-        loaded = load_dotenv()
-        # Something's when running as a script, the default version might not work
-        if not loaded:
-            load_dotenv(find_dotenv(usecwd=True))
-        logger.info("Loading .env")
 
         check_lib_version()
 
-        if url is None:
-            url = os.getenv("MLOPS_URL")
-        if url is None:
-            url = "https://neomaril.datarisk.net/"
-
-        self.credentials = (
-            login if login else os.getenv("MLOPS_USER"),
-            password if password else os.getenv("MLOPS_PASSWORD"),
-            tenant if tenant else os.getenv("MLOPS_TENANT")
-        )
-        self.base_url = url
+        self.credentials = (login, password, tenant)
+        self.base_url = "https://neomaril.datarisk.net/"
         self.base_url = parse_url(self.base_url)
 
         self.user_token, self.version = try_login(
@@ -140,8 +123,6 @@ class BaseMLOpsClient(BaseMLOps):
         Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
     password: str
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
-    url: str
-        URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
     ------
@@ -375,8 +356,6 @@ class MLOpsExecution(BaseMLOps):
         Login for authenticating with the client. You can also use the env variable MLOPS_USER to set this
     password: Optional[str], optional
         Password for authenticating with the client. You can also use the env variable MLOPS_PASSWORD to set this
-    url: Optional[str], optional
-        URL to MLOps Server. Default value is https://neomaril.datarisk.net/, use it to test your deployment first before changing to production. You can also use the env variable MLOPS_URL to set this
 
     Raises
     ------
@@ -416,27 +395,22 @@ class MLOpsExecution(BaseMLOps):
     def __init__(
         self,
         *,
+        login: str,
+        password: str,
+        tenant: str,
         parent_id: str,
         exec_type: str,
         group: Optional[str] = None,
         exec_id: Optional[str] = None,
-        login: Optional[str] = None,
-        password: Optional[str] = None,
-        url: str = None,
         group_token: Optional[str] = None,
     ) -> None:
-        super().__init__(login=login, password=password, url=url)
-        loaded = load_dotenv()
-        # Something when running as a script the default version might not work
-        if not loaded:
-            load_dotenv(find_dotenv(usecwd=True))
-        logger.info("Loading .env")
+        super().__init__(login=login, password=password, tenant=tenant)
 
         self.exec_type = exec_type
         self.exec_id = exec_id
         self.status = ModelExecutionState.Requested
         self.group = group
-        self.__token = group_token if group_token else os.getenv("MLOPS_GROUP_TOKEN")
+        self.__token = group_token
 
         if exec_type == "AsyncModel":
             self.__url_path = "model/async"
