@@ -1,6 +1,6 @@
 [project]
-name = "mlops-codex"
-version = "4.0.0"
+name = "datarisk-mlops-codex"
+version = "4.0.1"
 description = "A Python SDK for interacting with the DataRisk MLOps API"
 readme = "README.md"
 requires-python = ">=3.10"
