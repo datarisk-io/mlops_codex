@@ -13,18 +13,19 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/datarisk-mlops-codex
+
     permissions:
       id-token: write  # necessário para Trusted Publishing
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install uv
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install Python 3.12
+        run: uv python install 3.12
 
       - name: Build package
         run: uv build
