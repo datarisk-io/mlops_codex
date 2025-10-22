@@ -76,9 +76,9 @@ class SyncPreprocessingClient:
         logger.debug(f"Neomaril response, {response}.")
 
         nsp_json = response.json()
-        nsp_json["group_name"] = sp.group_name
-        nsp_json["status"] = "Ready"
-        nsp_json["python_version"] = sp.python_version
+        nsp_json["Group"] = sp.group_name
+        nsp_json["Status"] = "Ready"
+        nsp_json["PythonVersion"] = sp.python_version
 
         nsp = NeomarilSyncPreprocessing(**nsp_json)
 
