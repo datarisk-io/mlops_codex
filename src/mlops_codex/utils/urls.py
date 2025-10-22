@@ -26,3 +26,12 @@ class TrainingUrl(StrEnum):
     PROMOTE_URL = (
         f'{BASE_URL}/training/promote/{{group_name}}/{{training_hash}}/{{execution_id}}'
     )
+
+
+class SyncPreprocessingUrl(StrEnum):
+    REGISTER_URL = f'{BASE_URL}/preprocessing/register/{{group_name}}'
+    STATUS_HOST_URL = f'{BASE_URL}/preprocessing/status/{{group_name}}/{{script_hash}}'
+    LOGS_URL = f'{BASE_URL}/preprocessing/logs/{{group_name}}/{{script_hash}}'
+    DESCRIBE_URL = f'{BASE_URL}/preprocessing/describe/{{group_name}}/{{script_hash}}'
+    HOST_URL = f'{BASE_URL}/preprocessing/sync/host/{{group_name}}/{{script_hash}}'
+    SEARCH_URL = f'{BASE_URL}/preprocessing/search'
