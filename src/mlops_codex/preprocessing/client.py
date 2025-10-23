@@ -3,6 +3,8 @@ from http import HTTPStatus
 from attrs import define, field
 from cachetools.func import ttl_cache
 
+from pydantic import BaseModel, Field
+
 from mlops_codex.base.client import send_http_request
 from mlops_codex.logger_config import get_logger
 from mlops_codex.utils.urls import AdminUrl, SyncPreprocessingUrl
@@ -26,14 +28,12 @@ class InvalidPreprocessingError(Exception):
         return f"Could not send request, invalid Neomaril preprocessing instance."
 
 
-class SyncPreprocessingClient:
+class SyncPreprocessingClient(BaseModel):
     """
     Preprocessing base client.
     """
 
-    def __init__(self, token: str):
-        self.__bearer_token = token
-        self.__neomaril_sync_preprocessing = None
+    bearer_token: str = Field(description="Neomaril session token")
 
     def register(self, sp: SyncPreprocessing) -> NeomarilSyncPreprocessing:
         """
@@ -65,7 +65,7 @@ class SyncPreprocessingClient:
             method="POST",
             successful_code=HTTPStatus.CREATED,
             headers={
-                "Authorization": "Bearer " + self.__bearer_token,
+                "Authorization": "Bearer " + self.bearer_token,
                 "Neomaril-Origin": "Codex",
                 "Neomaril-Method": self.register.__qualname__,
             },
@@ -109,7 +109,7 @@ class SyncPreprocessingClient:
             method="GET",
             successful_code=HTTPStatus.OK,
             headers={
-                "Authorization": "Bearer " + self.__bearer_token,
+                "Authorization": "Bearer " + self.bearer_token,
                 "Neomaril-Origin": "Codex",
                 "Neomaril-Method": self.get_status.__qualname__,
             },
@@ -133,7 +133,7 @@ class SyncPreprocessingClient:
             method="GET",
             successful_code=HTTPStatus.OK,
             headers={
-                "Authorization": "Bearer " + self.__bearer_token,
+                "Authorization": "Bearer " + self.bearer_token,
                 "Neomaril-Origin": "Codex",
                 "Neomaril-Method": self.get_status.__qualname__,
             },
@@ -157,7 +157,7 @@ class SyncPreprocessingClient:
             method="GET",
             successful_code=HTTPStatus.OK,
             headers={
-                "Authorization": "Bearer " + self.__bearer_token,
+                "Authorization": "Bearer " + self.bearer_token,
                 "Neomaril-Origin": "Codex",
                 "Neomaril-Method": self.get_status.__qualname__,
             },
@@ -181,7 +181,7 @@ class SyncPreprocessingClient:
             method="GET",
             successful_code=HTTPStatus.ACCEPTED,
             headers={
-                "Authorization": "Bearer " + self.__bearer_token,
+                "Authorization": "Bearer " + self.bearer_token,
                 "Neomaril-Origin": "Codex",
                 "Neomaril-Method": self.get_status.__qualname__,
             },
@@ -198,7 +198,7 @@ class SyncPreprocessingClient:
             method="GET",
             successful_code=HTTPStatus.OK,
             headers={
-                "Authorization": "Bearer " + self.__bearer_token,
+                "Authorization": "Bearer " + self.bearer_token,
                 "Neomaril-Origin": "Codex",
                 "Neomaril-Method": self.get_status.__qualname__,
             },
