@@ -34,6 +34,7 @@ class SyncPreprocessingClient(BaseModel):
     """
 
     bearer_token: str = Field(description="Neomaril session token")
+    __neomaril_sync_preprocessing = None
 
     def register(self, sp: SyncPreprocessing) -> NeomarilSyncPreprocessing:
         """
