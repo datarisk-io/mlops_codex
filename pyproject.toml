@@ -7,6 +7,7 @@ requires-python = ">=3.10"
 dependencies = [
     "cachetools==6.2.1",
     "loguru>=0.7.3",
+    "pydantic-core==2.41.4",
     "pydantic[email]==2.12.3",
     "requests==2.32.5",
 ]
