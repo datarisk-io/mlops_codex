@@ -3,7 +3,7 @@ from typing import Literal
 
 import requests
 
-from mlops_codex.utils.exceptions import APIConnectionError, APITimeoutError, raise_for_status
+from mlops_codex.exceptions.api_exceptions import APIConnectionError, APITimeoutError, raise_for_status
 
 
 def send_http_request(

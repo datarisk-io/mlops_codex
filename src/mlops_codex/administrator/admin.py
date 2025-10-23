@@ -1,53 +1,38 @@
 from http import HTTPStatus
+from typing import Any, cast
 
-from attrs import define, field
-from cachetools.func import ttl_cache
+from pydantic import BaseModel, EmailStr, Field, PrivateAttr
 
+from mlops_codex.administrator.auth import AuthManager
+from mlops_codex.administrator.proxy import ServiceProxy
 from mlops_codex.base.client import send_http_request
 from mlops_codex.logger_config import get_logger
+from mlops_codex.train.client import MLOpsTrainClient
 from mlops_codex.utils.urls import AdminUrl
 
 logger = get_logger()
 
-@ttl_cache(ttl=10800)
-def _login(email: str, password: str, tenant: str) -> str:
+
+class Admin(BaseModel):
     """
-    Refresh login token
-
-    Args:
-        email (str): Email address
-        password (str): Password
-        tenant (str): Tenant
-
-    Returns:
-        (str): Return new login token
+    Administration class for the Datarisk MLOps API.
     """
 
-    print("Admin url", AdminUrl.LOGIN_URL)
+    email: EmailStr | str = Field(alias='email')
+    password: str = Field(repr=False)
+    tenant: str = Field(alias='tenant')
 
-    response = send_http_request(
-        url=AdminUrl.LOGIN_URL,
-        method='POST',
-        successful_code=HTTPStatus.OK,
-        data={'user': email, 'password': password, 'tenant': tenant},
-    )
+    __train: ServiceProxy = PrivateAttr()
 
-    return response.json()['Token']
+    __auth: AuthManager = PrivateAttr()
 
+    def model_post_init(self, context: Any) -> None:
+        self.__auth = AuthManager(email=self.email, password=self.password, tenant=self.tenant)
+        self.__train = ServiceProxy(service=MLOpsTrainClient(), auth_manager=self.__auth)
 
-@define(slots=True)
-class MLOpsAdmin:
-    """
-    Administration class for the MLOps API.
-    """
-
-    email = field(type=str)
-    password = field(type=str)
-    tenant = field(type=str)
-    _login_token = field(default=None, repr=False, type=str)
-
-    def __attrs_post_init__(self):
-        self._login_token = _login(self.email, self.password, self.tenant)
+    @property
+    def train(self) -> MLOpsTrainClient:
+        return cast(MLOpsTrainClient, cast(object, self.__train))
 
     def list_groups(self) -> list[str]:
         """

@@ -1,1 +1,3 @@
-from .admin import MLOpsAdmin
+from .admin import Admin
+
+__all__ = ["Admin"]

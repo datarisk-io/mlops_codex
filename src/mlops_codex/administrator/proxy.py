@@ -1,28 +1,31 @@
 from functools import wraps
 
-from attrs import define
-
-from mlops_codex.administrator.admin import MLOpsAdmin
+from mlops_codex.administrator.auth import AuthManager
 
 
-@define(slots=True)
 class ServiceProxy:
     """
     The service proxy is intended to intercept every method and check if the user
     is logged in.
     """
-    service: object
-    admin: MLOpsAdmin
+
+    def __init__(self, service: object, auth_manager: AuthManager):
+        self.__service = service
+        self.__auth_manager = auth_manager
 
     def __getattr__(self, method_name):
-        attr = getattr(self.service, method_name)
+        attr = getattr(self.__service, method_name)
 
         if not callable(attr):
             raise AttributeError(f"Method '{method_name}' not found.")
 
         @wraps(attr)
         def wrapper(*args, **kwargs):
-            headers = {'Authorization': f'Bearer {self.admin.token}'}
+            headers = {
+                'Authorization': f'Bearer {self.__auth_manager.token}',
+                'Neomaril-Origin': 'Codex',
+                'Neomaril-Method': method_name,
+            }
             kwargs['headers'] = headers
             return attr(*args, **kwargs)
 
