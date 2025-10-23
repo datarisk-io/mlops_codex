@@ -35,3 +35,4 @@ class SyncPreprocessingUrl(StrEnum):
     DESCRIBE_URL = f'{BASE_URL}/preprocessing/describe/{{group_name}}/{{script_hash}}'
     HOST_URL = f'{BASE_URL}/preprocessing/sync/host/{{group_name}}/{{script_hash}}'
     SEARCH_URL = f'{BASE_URL}/preprocessing/search'
+    RUN_URL = f'{BASE_URL}/preprocessing/sync/run/{{group_name}}/{{script_hash}}'
