@@ -26,7 +26,7 @@ def register(data: dict[str, str], group: str, **kwargs) -> str:
         method='POST',
         successful_code=HTTPStatus.CREATED,
         data=data,
-        **kwargs
+        **kwargs,
     ).json()
 
     print(response['Message'])
@@ -49,16 +49,14 @@ def upload(group: str, training_hash: str, **kwargs) -> int:
     return response['ExecutionId']
 
 
-def execute(
-    group: str, training_hash: str, execution_id: int, **kwargs
-) -> None:
+def execute(group: str, training_hash: str, execution_id: int, **kwargs) -> None:
     response = send_http_request(
         url=TrainingUrl.EXECUTE_URL.format(
             group_name=group, training_hash=training_hash, execution_id=execution_id
         ),
         method='GET',
         successful_code=HTTPStatus.OK,
-        **kwargs
+        **kwargs,
     ).json()
 
     print(response['Message'])
@@ -69,7 +67,7 @@ def status(group: str, execution_id: int, **kwargs):
         url=TrainingUrl.STATUS_URL.format(group_name=group, execution_id=execution_id),
         method='GET',
         successful_code=HTTPStatus.OK,
-        **kwargs
+        **kwargs,
     ).json()
 
     str_status = response['Status']
@@ -83,7 +81,21 @@ class MLOpsTrainClient(BaseModel):
     """
 
     @staticmethod
-    def setup(experiment_name: str, model_type: str, group: str, **kwargs) -> MLOpsExperiment:
+    def setup_project_experiment(
+        experiment_name: str, model_type: str, group: str, **kwargs
+    ) -> MLOpsExperiment:
+        """
+        Set up a new project experiment.
+
+        Args:
+            experiment_name (str): Name of the new experiment.
+            model_type (str): Type of the model.
+            group (str): Name of the group.
+            **kwargs:
+                Additional arguments to send an HTTP request.
+        Returns:
+
+        """
         is_valid_model_type(model_type)
 
         data = {'experiment_name': experiment_name, 'model_type': model_type}
