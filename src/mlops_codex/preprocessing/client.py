@@ -165,7 +165,7 @@ class SyncPreprocessingClient(BaseModel):
 
         return response.json()
 
-    def host(self) -> str:
+    def host(self) -> dict[str, object]:
         """
         Get logs of a `sync preprocessing`.
         """
@@ -205,3 +205,28 @@ class SyncPreprocessingClient(BaseModel):
         )
 
         return [NeomarilSyncPreprocessing(**sp) for sp in response.json()["Results"]]
+
+    def run(self, input_str: str, group_token: str) -> dict[str, object]:
+        """
+        Run a `sync Preprocessing` with `input_json` and `group_token`.
+        """
+
+        if self.__neomaril_sync_preprocessing is None:
+            raise InvalidPreprocessingError()
+
+        response = send_http_request(
+            url=SyncPreprocessingUrl.RUN_URL.format(
+                group_name=self.__neomaril_sync_preprocessing.group_name,
+                script_hash=self.__neomaril_sync_preprocessing.hash,
+            ),
+            method="POST",
+            successful_code=HTTPStatus.OK,
+            headers={
+                "Authorization": "Bearer " + group_token,
+                "Neomaril-Origin": "Codex",
+                "Neomaril-Method": self.get_status.__qualname__,
+            },
+            data=input_str,
+        )
+
+        return response.json()
