@@ -36,3 +36,13 @@ class SyncPreprocessingUrl(StrEnum):
     HOST_URL = f'{BASE_URL}/preprocessing/sync/host/{{group_name}}/{{script_hash}}'
     SEARCH_URL = f'{BASE_URL}/preprocessing/search'
     RUN_URL = f'{BASE_URL}/preprocessing/sync/run/{{group_name}}/{{script_hash}}'
+
+
+class AsyncPreprocessingUrlV1(StrEnum):
+    STATUS_HOST_URL = f'{BASE_URL}/preprocessing/status/{{group_name}}/{{script_hash}}'
+    LOGS_URL = f'{BASE_URL}/preprocessing/logs/{{group_name}}/{{script_hash}}'
+    DESCRIBE_URL = f'{BASE_URL}/preprocessing/describe/{{group_name}}/{{script_hash}}'
+    HOST_URL = f'{BASE_URL}/preprocessing/async/host/{{group_name}}/{{script_hash}}'
+    SEARCH_URL = f'{BASE_URL}/preprocessing/search'
+    RUN_URL = f'{BASE_URL}/preprocessing/async/run/{{group_name}}/{{script_hash}}'
+    STATUS_EXECUTION_URL = f'{BASE_URL}/preprocessing/async/status/{{group_name}}/{{execution_id}}'
