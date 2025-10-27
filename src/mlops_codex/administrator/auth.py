@@ -21,8 +21,6 @@ def _login(email: EmailStr, password: str, tenant: str) -> str:
         (str): Return new login token
     """
 
-    print("Admin url", AdminUrl.LOGIN_URL)
-
     response = send_http_request(
         url=AdminUrl.LOGIN_URL,
         method='POST',
@@ -40,5 +38,8 @@ class AuthManager(BaseModel):
     tenant: str = Field(alias='tenant')
 
     @property
-    def token(self) -> str:
-        return _login(self.email, self.password, self.tenant)
+    def header(self) -> dict[str, str]:
+        token = _login(self.email, self.password, self.tenant)
+        return {
+            'Authorization': f'Bearer {token}'
+        }
