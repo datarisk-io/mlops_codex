@@ -1,3 +1,7 @@
-from .models import MLOpsExperiment, MLOpsTrainExecution
+from typing import Union
 
-__all__ = ['MLOpsExperiment', 'MLOpsTrainExecution']
+from .models import MLOpsExperiment, MLOpsTrainExecution, CustomTrain
+
+TrainExecution = Union[MLOpsTrainExecution, CustomTrain]
+
+__all__ = ['MLOpsExperiment', 'MLOpsTrainExecution', 'CustomTrain']
