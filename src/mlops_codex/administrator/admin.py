@@ -18,9 +18,9 @@ class Admin(BaseModel):
     Administration class for the Datarisk MLOps API.
     """
 
-    email: EmailStr | str = Field(alias='email')
+    email: EmailStr | str
     password: str = Field(repr=False)
-    tenant: str = Field(alias='tenant')
+    tenant: str
 
     __train: ServiceProxy = PrivateAttr()
 
@@ -47,7 +47,7 @@ class Admin(BaseModel):
             method='GET',
             successful_code=HTTPStatus.OK,
             headers={
-                'Authorization': 'Bearer ' + self._login_token,
+                'Authorization': f'Bearer {self._login_token}',
                 'Neomaril-Origin': 'Codex',
                 'Neomaril-Method': self.list_groups.__qualname__,
             },
@@ -73,7 +73,7 @@ class Admin(BaseModel):
             successful_code=HTTPStatus.CREATED,
             data={'name': name, 'description': description},
             headers={
-                'Authorization': 'Bearer ' + self._login_token,
+                'Authorization': f'Bearer {self._login_token}',
                 'Neomaril-Origin': 'Codex',
                 'Neomaril-Method': self.create_group.__qualname__,
             },
@@ -105,7 +105,7 @@ class Admin(BaseModel):
             successful_code=HTTPStatus.CREATED,
             params={'force': str(force).lower()},
             headers={
-                'Authorization': 'Bearer ' + self._login_token,
+                'Authorization': f'Bearer {self._login_token}',
                 'Neomaril-Origin': 'Codex',
                 'Neomaril-Method': self.refresh_group_token.__qualname__,
             },
