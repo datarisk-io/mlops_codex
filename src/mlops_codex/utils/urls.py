@@ -4,6 +4,9 @@ from mlops_codex.constants import BASE_URL
 
 
 class AdminUrl(StrEnum):
+    """
+    Url for administration endpoints
+    """
     LOGIN_URL = f'{BASE_URL}/login'
     LIST_GROUP_URL = f'{BASE_URL}/groups'
     CREATE_GROUP_URL = f'{BASE_URL}/groups'
@@ -11,6 +14,9 @@ class AdminUrl(StrEnum):
 
 
 class TrainingUrl(StrEnum):
+    """
+    Url for training endpoints
+    """
     REGISTER_URL = f'{BASE_URL}/training/register/{{group_name}}'
     UPLOAD_URL = f'{BASE_URL}/training/upload/{{group_name}}/{{training_hash}}'
     EXECUTE_URL = (
