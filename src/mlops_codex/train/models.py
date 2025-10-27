@@ -2,12 +2,21 @@ from typing import Annotated
 
 from pydantic import BaseModel, BeforeValidator, FilePath, PositiveInt
 
+from mlops_codex.administrator.auth import AuthManager
+from mlops_codex.train.client import status
+from mlops_codex.utils.services_status import ExecutionStatus
 from mlops_codex.utils.validations import str_to_path
 from mlops_codex.utils.validations import validate_python_version
 
 
 class MLOpsExperiment(BaseModel):
-    """ """
+    """
+    A MLOps experiment
+
+    Args:
+        training_hash (str): The hash of the training run
+        experiment_name (str): The name of the experiment
+    """
 
     training_hash: str
     experiment_name: str
@@ -16,13 +25,22 @@ class MLOpsExperiment(BaseModel):
 
 
 class MLOpsTrainExecution(BaseModel):
-    """ """
+    """
+    A MLOps training execution
+    """
 
     experiment: MLOpsExperiment
     execution_id: PositiveInt
+    auth: AuthManager
 
     @property
-    def status(self) -> str: ...
+    def status(self) -> str:
+        response = status(
+            group=self.experiment.group,
+            execution_id=self.execution_id,
+            headers=self.auth.header,
+        ).json()
+        return ExecutionStatus(response['Status'])
 
 
 class CustomTrain(BaseModel):
