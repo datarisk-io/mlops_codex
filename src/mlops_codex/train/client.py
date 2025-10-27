@@ -1,4 +1,3 @@
-import time
 from http import HTTPStatus
 
 from pydantic import BaseModel
@@ -7,15 +6,14 @@ from mlops_codex.base.client import send_http_request
 from mlops_codex.exceptions.module_exceptions import TrainExecutionException
 from mlops_codex.train import TrainExecution
 from mlops_codex.train.assemblers import (
-    assemble_custom_request_content,
     assemble_automl_request_content,
+    assemble_custom_request_content,
 )
 from mlops_codex.train.models import MLOpsExperiment, MLOpsTrainExecution
 from mlops_codex.train.validators import is_valid_model_type
 from mlops_codex.utils.helpers import wait
 from mlops_codex.utils.services_status import ExecutionStatus
 from mlops_codex.utils.urls import TrainingUrl
-
 
 assemblers = {
     'Custom': assemble_custom_request_content,
@@ -116,7 +114,7 @@ class MLOpsTrainClient(BaseModel):
         experiment: MLOpsExperiment,
         train_type: TrainExecution,
         wait_ready: bool = False,
-        **kwargs
+        **kwargs,
     ):
         assembler = assemblers[repr(train_type)]
         data, files = assembler(**train_type.model_dump())
