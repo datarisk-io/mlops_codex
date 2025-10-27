@@ -5,5 +5,5 @@ class ExecutionStatus(StrEnum):
     UPLOADED = 'Uploaded'
     REQUESTED = 'Requested'
     RUNNING = 'Running'
-    SUCCESS = "Succeeded"
-    FAILED = "Failed"
+    SUCCEEDED = 'Succeeded'
+    FAILED = 'Failed'
