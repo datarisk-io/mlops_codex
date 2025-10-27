@@ -1,19 +1,17 @@
-from http import HTTPStatus
-
 from pydantic import BaseModel
 
-from mlops_codex.base.client import send_http_request
+from mlops_codex.administrator.auth import AuthManager
 from mlops_codex.exceptions.module_exceptions import TrainExecutionException
 from mlops_codex.train import TrainExecution
 from mlops_codex.train.assemblers import (
     assemble_automl_request_content,
     assemble_custom_request_content,
 )
+from mlops_codex.train.client import register, upload, execute, status
 from mlops_codex.train.models import MLOpsExperiment, MLOpsTrainExecution
 from mlops_codex.train.validators import is_valid_model_type
 from mlops_codex.utils.helpers import wait
 from mlops_codex.utils.services_status import ExecutionStatus
-from mlops_codex.utils.urls import TrainingUrl
 
 assemblers = {
     'Custom': assemble_custom_request_content,
@@ -21,69 +19,15 @@ assemblers = {
 }
 
 
-def register(data: dict[str, str], group: str, **kwargs) -> str:
-    response = send_http_request(
-        url=TrainingUrl.REGISTER_URL.format(group_name=group),
-        method='POST',
-        successful_code=HTTPStatus.CREATED,
-        data=data,
-        **kwargs,
-    ).json()
-
-    print(response['Message'])
-
-    return response['TrainingHash']
-
-
-def upload(group: str, training_hash: str, **kwargs) -> int:
-    response = send_http_request(
-        url=TrainingUrl.UPLOAD_URL.format(
-            group_name=group, training_hash=training_hash
-        ),
-        method='POST',
-        successful_code=HTTPStatus.CREATED,
-        **kwargs,
-    ).json()
-
-    print(response['Message'])
-
-    return response['ExecutionId']
-
-
-def execute(group: str, training_hash: str, execution_id: int, **kwargs) -> None:
-    response = send_http_request(
-        url=TrainingUrl.EXECUTE_URL.format(
-            group_name=group, training_hash=training_hash, execution_id=execution_id
-        ),
-        method='GET',
-        successful_code=HTTPStatus.OK,
-        **kwargs,
-    ).json()
-
-    print(response['Message'])
-
-
-def status(group: str, execution_id: int, **kwargs) -> ExecutionStatus:
-    response = send_http_request(
-        url=TrainingUrl.STATUS_URL.format(group_name=group, execution_id=execution_id),
-        method='GET',
-        successful_code=HTTPStatus.OK,
-        **kwargs,
-    ).json()
-
-    str_status = response['Status']
-    print(response['Message'])
-    return ExecutionStatus(str_status)
-
-
 class MLOpsTrainClient(BaseModel):
     """
     Train class to connect with the Train module in Datarisk MLOps API.
     """
 
-    @staticmethod
+    auth: AuthManager
+
     def setup_project_experiment(
-        experiment_name: str, model_type: str, group: str, **kwargs
+        self, experiment_name: str, model_type: str, group: str
     ) -> MLOpsExperiment:
         """
         Set up a new project experiment.
@@ -92,15 +36,13 @@ class MLOpsTrainClient(BaseModel):
             experiment_name (str): Name of the new experiment.
             model_type (str): Type of the model.
             group (str): Name of the group.
-            **kwargs:
-                Additional arguments to send an HTTP request.
         Returns:
-
+            (MLOpsExperiment): New experiment.
         """
         is_valid_model_type(model_type)
 
         data = {'experiment_name': experiment_name, 'model_type': model_type}
-        training_hash = register(group=group, data=data, **kwargs)
+        training_hash = register(group=group, data=data, headers=self.auth.header)
 
         return MLOpsExperiment(
             training_hash=training_hash,
@@ -109,13 +51,23 @@ class MLOpsTrainClient(BaseModel):
             model_type=model_type,
         )
 
-    @staticmethod
     def run(
+        self,
         experiment: MLOpsExperiment,
         train_type: TrainExecution,
         wait_ready: bool = False,
-        **kwargs,
-    ):
+    ) -> MLOpsTrainExecution:
+        """
+        Run the training type in a given experiment.
+
+        Args:
+            experiment (MLOpsExperiment): Experiment to run.
+            train_type (TrainExecution): Train execution to run.
+            wait_ready (bool, optional): Whether to wait for the training to be ready.
+
+        Returns:
+            (MLOpsTrainExecution): Train execution.
+        """
         assembler = assemblers[repr(train_type)]
         data, files = assembler(**train_type.model_dump())
 
@@ -124,25 +76,28 @@ class MLOpsTrainClient(BaseModel):
             training_hash=experiment.training_hash,
             data=data,
             files=files,
-            **kwargs,
+            headers=self.auth.header,
         )
 
         execute(
             group=experiment.group,
             training_hash=experiment.training_hash,
             execution_id=execution_id,
-            **kwargs,
+            headers=self.auth.header,
         )
 
         if wait_ready:
-            execution_status = wait(
+            json_response = wait(
                 f=status,
                 valid_status=[ExecutionStatus.SUCCEEDED, ExecutionStatus.FAILED],
                 status_enum=ExecutionStatus,
                 status_key='Status',
                 group=experiment.group,
                 execution_id=execution_id,
-            )['Description']
+                headers=self.auth.header,
+            )
+
+            execution_status = ExecutionStatus(json_response['Status'])
 
             if execution_status == ExecutionStatus.FAILED:
                 raise TrainExecutionException()
@@ -150,6 +105,7 @@ class MLOpsTrainClient(BaseModel):
         return MLOpsTrainExecution(
             experiment=experiment,
             execution_id=execution_id,
+            auth=self.auth,
         )
 
     def deploy(self, *args, **kwargs): ...
