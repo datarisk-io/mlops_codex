@@ -21,7 +21,7 @@ from mlops_codex.exceptions import (
 )
 from mlops_codex.http_request_handler import refresh_token
 from mlops_codex.logger_config import get_logger
-from mlops_codex.validations import validate_python_version
+from mlops_codex.utils.validations import validate_python_version
 
 logger = get_logger()
 

@@ -1,13 +1,16 @@
+import time
 from http import HTTPStatus
 
 from pydantic import BaseModel
 
 from mlops_codex.base.client import send_http_request
+from mlops_codex.exceptions.module_exceptions import TrainExecutionException
+from mlops_codex.train import TrainExecution
 from mlops_codex.train.assemblers import (
     assemble_custom_request_content,
     assemble_automl_request_content,
 )
-from mlops_codex.train.models import MLOpsExperiment
+from mlops_codex.train.models import MLOpsExperiment, MLOpsTrainExecution
 from mlops_codex.train.validators import is_valid_model_type
 from mlops_codex.utils.helpers import wait
 from mlops_codex.utils.services_status import ExecutionStatus
@@ -62,7 +65,7 @@ def execute(group: str, training_hash: str, execution_id: int, **kwargs) -> None
     print(response['Message'])
 
 
-def status(group: str, execution_id: int, **kwargs):
+def status(group: str, execution_id: int, **kwargs) -> ExecutionStatus:
     response = send_http_request(
         url=TrainingUrl.STATUS_URL.format(group_name=group, execution_id=execution_id),
         method='GET',
@@ -108,34 +111,47 @@ class MLOpsTrainClient(BaseModel):
             model_type=model_type,
         )
 
-    # @staticmethod
-    # def run(experiment: MLOpsExperiment, wait_ready: bool = False, **kwargs):
-    #     training_type = kwargs.pop('training_type')
-    #     data, files = assemblers[training_type](**kwargs)
-    #
-    #     execution_id = upload(
-    #         group=experiment.group,
-    #         training_hash=experiment.training_hash,
-    #         data=data,
-    #         files=files,
-    #         login_token=login_token,
-    #     )
-    #
-    #     execute(
-    #         group=experiment.group,
-    #         training_hash=experiment.training_hash,
-    #         execution_id=execution_id,
-    #         login_token=login_token,
-    #     )
-    #
-    #     if wait_ready:
-    #         wait(
-    #             f=status,
-    #             valid_status=[ExecutionStatus.SUCCESS, ExecutionStatus.FAILED],
-    #             status_enum=ExecutionStatus,
-    #             login_token=self.login_token,
-    #             group=group,
-    #             execution_id=execution_id,
-    #         )
-    #
-    # def deploy(self, *args, **kwargs): ...
+    @staticmethod
+    def run(
+        experiment: MLOpsExperiment,
+        train_type: TrainExecution,
+        wait_ready: bool = False,
+        **kwargs
+    ):
+        assembler = assemblers[repr(train_type)]
+        data, files = assembler(**train_type.model_dump())
+
+        execution_id = upload(
+            group=experiment.group,
+            training_hash=experiment.training_hash,
+            data=data,
+            files=files,
+            **kwargs,
+        )
+
+        execute(
+            group=experiment.group,
+            training_hash=experiment.training_hash,
+            execution_id=execution_id,
+            **kwargs,
+        )
+
+        if wait_ready:
+            execution_status = wait(
+                f=status,
+                valid_status=[ExecutionStatus.SUCCEEDED, ExecutionStatus.FAILED],
+                status_enum=ExecutionStatus,
+                status_key='Status',
+                group=experiment.group,
+                execution_id=execution_id,
+            )['Description']
+
+            if execution_status == ExecutionStatus.FAILED:
+                raise TrainExecutionException()
+
+        return MLOpsTrainExecution(
+            experiment=experiment,
+            execution_id=execution_id,
+        )
+
+    def deploy(self, *args, **kwargs): ...
