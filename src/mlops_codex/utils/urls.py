@@ -13,5 +13,7 @@ class AdminUrl(StrEnum):
 class TrainingUrl(StrEnum):
     REGISTER_URL = f'{BASE_URL}/training/register/{{group_name}}'
     UPLOAD_URL = f'{BASE_URL}/training/upload/{{group_name}}/{{training_hash}}'
-    EXECUTE_URL = f'{BASE_URL}/training/execute/{{group_name}}/{{training_hash}}/{{execution_id}}'
+    EXECUTE_URL = (
+        f'{BASE_URL}/training/execute/{{group_name}}/{{training_hash}}/{{execution_id}}'
+    )
     STATUS_URL = f'{BASE_URL}/training/status/{{group_name}}/{{execution_id}}'
