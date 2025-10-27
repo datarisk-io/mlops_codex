@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Callable
 
 from mlops_codex.exceptions.module_exceptions import PythonVersionException
 
@@ -38,3 +39,23 @@ def str_to_path(path: str) -> Path | None:
     if path.exists():
         return path
     raise FileNotFoundError(f"Path '{path}' does not exist")
+
+
+def file_extension_validation(*permitted_extensions: str) -> Callable[[Path], Path]:
+    """
+    Validates that the file extension is valid.
+
+    Args:
+        permitted_extensions: List of permitted file extensions.
+    Returns:
+        (bool): True if the file extension is valid, otherwise raises an exception.
+    """
+
+    def _validate(path: Path) -> Path:
+        if path.suffix.lower() not in permitted_extensions:
+            raise ValueError(
+                f"File '{path.name}' must have extension {permitted_extensions}"
+            )
+        return path
+
+    return _validate
