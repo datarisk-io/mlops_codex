@@ -6,8 +6,9 @@ from mlops_codex.train import TrainExecution
 from mlops_codex.train.assemblers import (
     assemble_automl_request_content,
     assemble_custom_request_content,
+    assemble_external_training_request_content,
 )
-from mlops_codex.train.client import register, upload, execute, status
+from mlops_codex.train.client import execute, register, status, upload
 from mlops_codex.train.models import MLOpsExperiment, MLOpsTrainExecution
 from mlops_codex.train.validators import is_valid_model_type
 from mlops_codex.utils.helpers import wait
@@ -16,6 +17,7 @@ from mlops_codex.utils.services_status import ExecutionStatus
 assemblers = {
     'Custom': assemble_custom_request_content,
     'AutoML': assemble_automl_request_content,
+    'External': assemble_external_training_request_content,
 }
 
 
