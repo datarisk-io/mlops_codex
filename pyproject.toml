@@ -34,6 +34,7 @@ packages = ["src/mlops_codex"]
 
 [dependency-groups]
 dev = [
+    "isort==7.0.0",
     "m2r2==0.3.4",
     "pydata-sphinx-theme==0.16.1",
     "pyright==1.1.406",
