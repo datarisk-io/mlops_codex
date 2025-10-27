@@ -1,13 +1,12 @@
 import pathlib
 
-from mlops_codex.options.options import PythonVersion
 from mlops_codex.utils.conversors import file_or_dataset
 
 
 def assemble_custom_request_content(
     training_reference: str,
     run_name: str,
-    python_version: PythonVersion,
+    python_version: str,
     input_data: str,
     source: pathlib.Path,
     requirements: pathlib.Path,
@@ -39,7 +38,6 @@ def assemble_custom_request_content(
 
     if extras is not None:
         extra_data = [('extra', (e.name, open(e, 'rb'))) for e in extras]
-
         files += extra_data
 
     return data, files
