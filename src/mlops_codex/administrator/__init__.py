@@ -1,3 +1,3 @@
-from .admin import Admin
+from .admin import DatariskMLops
 
-__all__ = ["Admin"]
+__all__ = ['DatariskMLops']
