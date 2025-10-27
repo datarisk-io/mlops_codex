@@ -13,6 +13,22 @@ def assemble_custom_request_content(
     env_file: pathlib.Path = None,
     extras: list[pathlib.Path] = None,
 ):
+    """
+    Assembles custom training request content
+
+    Args:
+        training_reference (str): Entrypoint function name
+        run_name (str): Experiment name
+        python_version (str): Python version. Available versions are 3.8, 3.9 and 3.10
+        input_data (str): Input data. It can be a path to a file or a dataset hash which a string
+        source (pathlib.Path): Path to the .py script with an entry point function
+        requirements (pathlib.Path): Path to the requirements file. It must be a txt file
+        env_file (pathlib.Path): Path to the .env file
+        extras (list[pathlib.Path]): Paths to extras file. It can be a list of extra files
+
+    Returns:
+        (tuple[dict, list]): Return a tuple with the data and the files that will be uploaded
+    """
     data = {
         'training_reference': training_reference,
         'run_name': run_name,
@@ -48,6 +64,18 @@ def assemble_automl_request_content(
     input_data: str,
     configuration: pathlib.Path,
 ):
+    """
+    Assembles automl request content
+
+    Args:
+        run_name (str): Experiment name
+        input_data (str): Input data. It can be a path to a file or a dataset hash which a string
+        configuration (pathlib.Path): Path to the configuration file. It must be a json file
+
+    Returns:
+        (tuple[dict, list]): Return a tuple with the data and the files that will be uploaded
+    """
+
     data = {
         'run_name': run_name,
         'training_type': 'AutoML',

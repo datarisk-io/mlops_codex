@@ -13,9 +13,9 @@ def _login(email: EmailStr, password: str, tenant: str) -> str:
     Refresh login token
 
     Args:
-        email (EmailStr): Email address
-        password (str): Password
-        tenant (str): Tenant
+        email (EmailStr): Email address of the user.
+        password (str): Password of the user.
+        tenant (str): Tenant where user is connected.
 
     Returns:
         (str): Return new login token
@@ -32,6 +32,14 @@ def _login(email: EmailStr, password: str, tenant: str) -> str:
 
 
 class AuthManager(BaseModel):
+    """
+    Class responsible for login and authentication the user.
+
+    Args:
+        email (EmailStr): Email address of the user.
+        password (str): Password of the user.
+        tenant (str): Tenant where user is connected.
+    """
 
     email: EmailStr = Field(alias='email')
     password: str = Field(repr=False)
@@ -39,7 +47,11 @@ class AuthManager(BaseModel):
 
     @property
     def header(self) -> dict[str, str]:
+        """
+        Return login header
+
+        Returns:
+            (dict): Return login header to inject into API calls.
+        """
         token = _login(self.email, self.password, self.tenant)
-        return {
-            'Authorization': f'Bearer {token}'
-        }
+        return {'Authorization': f'Bearer {token}'}

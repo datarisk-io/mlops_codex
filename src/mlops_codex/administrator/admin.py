@@ -12,9 +12,14 @@ from mlops_codex.utils.urls import AdminUrl
 logger = get_logger()
 
 
-class Admin(BaseModel):
+class DatariskMLops(BaseModel):
     """
     Administration class for the Datarisk MLOps API.
+
+    Args:
+        email (EmailStr): Email address of the user.
+        password (str): Password of the user.
+        tenant (str): Tenant where user is connected.
     """
 
     email: EmailStr | str

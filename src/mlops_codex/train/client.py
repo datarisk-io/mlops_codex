@@ -7,6 +7,17 @@ from mlops_codex.utils.urls import TrainingUrl
 
 
 def register(data: dict[str, str], group: str, headers: dict) -> str:
+    """
+    Register a new training experiment. It sends a multipart form.
+
+    Args:
+        data (dict): Text data parameters
+        group (str): Group name where the experiment will be registered
+        headers (dict): HTTP headers
+
+    Returns:
+        (str): Training hash
+    """
     response = send_http_request(
         url=TrainingUrl.REGISTER_URL.format(group_name=group),
         method='POST',
@@ -20,7 +31,21 @@ def register(data: dict[str, str], group: str, headers: dict) -> str:
     return response['TrainingHash']
 
 
-def upload(group: str, training_hash: str, headers: dict, data: dict, files: list) -> int:
+def upload(
+    group: str, training_hash: str, headers: dict, data: dict, files: list
+) -> int:
+    """
+    Upload a new training experiment. It sends a multipart form.
+    Args:
+        group (str): Group name where the experiment will be registered
+        training_hash (str): Training hash
+        headers (dict): HTTP headers
+        data (dict): Text data parameters
+        files (list): List of files to be uploaded
+
+    Returns:
+        (int): Execution id that references to a training execution
+    """
     response = send_http_request(
         url=TrainingUrl.UPLOAD_URL.format(
             group_name=group, training_hash=training_hash
@@ -38,6 +63,15 @@ def upload(group: str, training_hash: str, headers: dict, data: dict, files: lis
 
 
 def execute(group: str, training_hash: str, execution_id: int, headers: dict) -> None:
+    """
+    Send an HTTP request to enable the training execution.
+
+    Args:
+        group (str): Group name where the experiment will be executed
+        training_hash (str): Training hash
+        execution_id (int): Training execution id
+        headers (dict): HTTP headers
+    """
     response = send_http_request(
         url=TrainingUrl.EXECUTE_URL.format(
             group_name=group, training_hash=training_hash, execution_id=execution_id
@@ -51,6 +85,17 @@ def execute(group: str, training_hash: str, execution_id: int, headers: dict) ->
 
 
 def status(group: str, execution_id: int, headers: dict) -> Response:
+    """
+    Send an HTTP request to enable the training execution.
+
+    Args:
+        group (str): Group name where the experiment will be executed
+        execution_id (int): Training execution id
+        headers (dict): HTTP headers
+
+    Returns:
+        (Response): HTTP response
+    """
     response = send_http_request(
         url=TrainingUrl.STATUS_URL.format(group_name=group, execution_id=execution_id),
         method='GET',

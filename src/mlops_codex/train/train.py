@@ -22,6 +22,9 @@ assemblers = {
 class MLOpsTrainClient(BaseModel):
     """
     Train class to connect with the Train module in Datarisk MLOps API.
+
+    Args:
+        auth (AuthManager): Auth manager.
     """
 
     auth: AuthManager
