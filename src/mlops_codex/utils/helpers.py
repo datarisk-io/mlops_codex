@@ -8,10 +8,11 @@ def wait(
 ) -> dict:
     print('Waiting for ready', end='')
     current_status = None
-    response = {}
+    json_response = {}
     while current_status not in valid_status:
         time.sleep(30)
-        response = f(**kwargs).json()
+        json_response = f(**kwargs).json()
         print('.', end='', flush=True)
-        current_status = status_enum(response[status_key])
-    return response.json()
+        current_status = status_enum(json_response[status_key])
+    print()
+    return json_response
