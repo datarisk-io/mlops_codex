@@ -31,7 +31,6 @@ def str_to_path(path: str) -> Path | None:
     Returns:
         (Path): A Path object.
     """
-
     if path is None:
         return None
 
@@ -50,7 +49,6 @@ def file_extension_validation(*permitted_extensions: str) -> Callable[[Path], Pa
     Returns:
         (bool): True if the file extension is valid, otherwise raises an exception.
     """
-
     def _validate(path: Path) -> Path:
         if path.suffix.lower() not in permitted_extensions:
             raise ValueError(
