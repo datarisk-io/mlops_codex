@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, FilePath
 
 from mlops_codex.administrator.auth import AuthManager
 from mlops_codex.exceptions.module_exceptions import TrainExecutionException
@@ -8,11 +8,12 @@ from mlops_codex.train.assemblers import (
     assemble_custom_request_content,
     assemble_external_training_request_content,
 )
-from mlops_codex.train.client import execute, register, status, upload
+from mlops_codex.train.client import execute, register, status, upload, promote
 from mlops_codex.train.models import MLOpsExperiment, MLOpsTrainExecution
 from mlops_codex.train.validators import is_valid_model_type
 from mlops_codex.utils.helpers import wait
 from mlops_codex.utils.services_status import ExecutionStatus
+from mlops_codex.utils.validations import str_to_path
 
 assemblers = {
     'Custom': assemble_custom_request_content,
@@ -113,4 +114,55 @@ class MLOpsTrainClient(BaseModel):
             auth=self.auth,
         )
 
-    def deploy(self, *args, **kwargs): ...
+    def deploy(
+        self,
+        execution: MLOpsTrainExecution,
+        source: FilePath | str,
+        schema: FilePath | str,
+        name: str,
+        model_reference: str,
+        operation: str,
+        input_type: str,
+    ) -> str:
+        """
+        Deploy a trained model.
+
+        Args:
+            execution (MLOpsTrainExecution): Train execution to deploy
+            source (FilePath | str): Path to the .py script with an entry point function
+            schema (FilePath | str): Path to a json file with a sample of the input for the entry point function
+            name (str): Name of the model, should be not null, case-sensitive, have between 3 and 32 characters, that could be alphanumeric including accentuation (for example: 'é', à', 'ç','ñ') and space
+            model_reference (str): Name of the entry point function at the source file
+            operation (str): Defines how the model will be treated at the API. It can be:
+                             - Sync: for synchronous models that will work as real-time executions;
+                             - Async: for asynchronous models that will not deliver real-time executions.
+            input_type (str): The type of the input that the model expect
+
+        Returns:
+            (str): Model hash
+        """
+
+        data = {
+            'name': name,
+            'operation': operation,
+            'input_type': input_type,
+            'model_reference': model_reference,
+        }
+
+        source = str_to_path(source)
+        schema = str_to_path(schema)
+
+        files = [
+            ('source', (source.name, open(source, 'rb'))),
+            ('schema', (schema.name, open(schema, 'rb'))),
+        ]
+
+        model_hash = promote(
+            group=execution.experiment.group,
+            training_hash=execution.training_hash,
+            execution_id=execution.execution_id,
+            data=data,
+            files=files,
+            headers=self.auth.header,
+        )
+        return model_hash

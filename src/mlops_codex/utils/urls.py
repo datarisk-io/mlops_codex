@@ -23,3 +23,6 @@ class TrainingUrl(StrEnum):
         f'{BASE_URL}/training/execute/{{group_name}}/{{training_hash}}/{{execution_id}}'
     )
     STATUS_URL = f'{BASE_URL}/training/status/{{group_name}}/{{execution_id}}'
+    PROMOTE_URL = (
+        f'{BASE_URL}/training/promote/{{group_name}}/{{training_hash}}/{{execution_id}}'
+    )

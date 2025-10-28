@@ -104,3 +104,40 @@ def status(group: str, execution_id: int, headers: dict) -> Response:
     )
 
     return response
+
+
+def promote(
+    group: str,
+    training_hash: str,
+    execution_id: int,
+    headers: dict,
+    data: dict,
+    files: list
+) -> str:
+    """
+    Send an HTTP request to promote a training execution to a deployed model.
+
+    Args:
+        group (str): Group name where the experiment will be registered
+        training_hash (str): Training hash
+        execution_id (int): Training execution id
+        headers (dict): HTTP headers
+        data (dict): Text data parameters
+        files (list): List of files to be uploaded
+
+    Returns:
+        (str): Model hash
+    """
+    response = send_http_request(
+        url=TrainingUrl.PROMOTE_URL.format(
+            group_name=group, training_hash=training_hash, execution_id=execution_id
+        ),
+        method='POST',
+        successful_code=HTTPStatus.CREATED,
+        data=data,
+        files=files,
+        headers=headers,
+    ).json()
+    print(response['Message'])
+    model_hash = response['ModelHash']
+    return model_hash
