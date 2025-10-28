@@ -8,12 +8,16 @@ from mlops_codex.train.assemblers import (
     assemble_custom_request_content,
     assemble_external_training_request_content,
 )
-from mlops_codex.train.client import execute, register, status, upload, promote
+from mlops_codex.train.client import execute, register, status, upload, promote, search
 from mlops_codex.train.models import MLOpsExperiment, MLOpsTrainExecution
 from mlops_codex.train.validators import is_valid_model_type
 from mlops_codex.utils.helpers import wait
+from mlops_codex.utils.logger_configuration import get_logger
 from mlops_codex.utils.services_status import ExecutionStatus
 from mlops_codex.utils.validations import str_to_path
+
+
+logger = get_logger()
 
 assemblers = {
     'Custom': assemble_custom_request_content,
@@ -32,8 +36,34 @@ class MLOpsTrainClient(BaseModel):
 
     auth: AuthManager
 
+    def __get_repeated_thash(
+        self, model_type: str, experiment_name: str, group: str
+    ) -> str | None:
+        """Look for a previous train experiment.
+        Args:
+            experiment_name (str): name given to the training
+            model_type (str): type of the model being trained
+            group (str): name of the group, previous created, where the training will be inserted
+
+        Returns:
+            (str | None): Training hash if found, otherwise None
+        """
+        response = search(self.auth.header)
+
+        results = response.get('Results')
+        for result in results:
+            condition = (
+                result['ExperimentName'] == experiment_name
+                and result['GroupName'] == group
+                and result['ModelType'] == model_type
+            )
+            if condition:
+                logger.info('Found experiment with same attributes...')
+                return result['TrainingHash']
+        return None
+
     def setup_project_experiment(
-        self, experiment_name: str, model_type: str, group: str
+        self, experiment_name: str, model_type: str, group: str, force: bool = False
     ) -> MLOpsExperiment:
         """
         Set up a new project experiment.
@@ -42,13 +72,26 @@ class MLOpsTrainClient(BaseModel):
             experiment_name (str): Name of the new experiment.
             model_type (str): Type of the model.
             group (str): Name of the group.
+            force (bool, optional): Whether to recreate an existing experiment.
         Returns:
             (MLOpsExperiment): New experiment.
         """
         is_valid_model_type(model_type)
 
-        data = {'experiment_name': experiment_name, 'model_type': model_type}
-        training_hash = register(group=group, data=data, headers=self.auth.header)
+        training_hash = self.__get_repeated_thash(
+            model_type=model_type, experiment_name=experiment_name, group=group
+        )
+
+        if force or training_hash is None:
+            msg = (
+                'The experiment you are creating has identical name, group, and model type attributes to an existing one. '
+                'Since forced creation is active, we will continue with the process as specified'
+                if force
+                else 'Could not find experiment. Creating a new one...'
+            )
+            logger.info(msg)
+            data = {'experiment_name': experiment_name, 'model_type': model_type}
+            training_hash = register(group=group, data=data, headers=self.auth.header)
 
         return MLOpsExperiment(
             training_hash=training_hash,
