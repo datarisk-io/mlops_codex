@@ -20,6 +20,7 @@ class MLOpsExperiment(BaseModel):
         training_hash (str): The hash of the training run
         experiment_name (str): The name of the experiment
     """
+
     training_hash: str
     experiment_name: str
     model_type: str
@@ -35,6 +36,7 @@ class MLOpsTrainExecution(BaseModel):
         execution_id (str): The execution id of the training execution
         auth (AuthManager): Auth manager.
     """
+
     experiment: MLOpsExperiment
     execution_id: PositiveInt
     auth: AuthManager
@@ -64,6 +66,7 @@ class CustomTrain(BaseModel):
         extras (list[str | FilePath | None]): Paths to extras file. It can be a list of extra files
 
     """
+
     training_reference: str
     run_name: str
     python_version: Annotated[str, BeforeValidator(validate_python_version)]
@@ -98,6 +101,7 @@ class AutoMLTrain(BaseModel):
         input_data (str): Input data. It can be a path to a file or a dataset hash which a string
         configuration (str | FilePath): Path to the configuration file. It must be a json file
     """
+
     run_name: str
     input_data: str
     configuration: Annotated[
@@ -127,6 +131,7 @@ class External(BaseModel):
         model_hash (str | None): .json file containing experiment parameters
 
     """
+
     run_name: str
     python_version: Annotated[str, BeforeValidator(validate_python_version)]
     features: Annotated[
