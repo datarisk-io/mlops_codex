@@ -64,8 +64,7 @@ class SyncPreprocessing(BaseModel):
     extra_file_paths: list[Path] | None = Annotated[
         list[Path] | None,
         Field(description="Path to the .env file."),
-        AfterValidator(is_valid_filepaths),
-        default,
+        AfterValidator(is_valid_filepaths)
     ]
 
 
