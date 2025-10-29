@@ -1,9 +1,10 @@
+import pathlib
 from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, BeforeValidator, FilePath, PositiveInt
 
 from mlops_codex.administrator.auth import AuthManager
-from mlops_codex.train.client import status
+from mlops_codex.train.client import status, result
 from mlops_codex.utils.services_status import ExecutionStatus
 from mlops_codex.utils.validations import (
     file_extension_validation,
@@ -43,12 +44,41 @@ class MLOpsTrainExecution(BaseModel):
 
     @property
     def status(self) -> str:
+        """
+        Get status of the training execution
+        """
         response = status(
             group=self.experiment.group,
             execution_id=self.execution_id,
             headers=self.auth.header,
         ).json()
         return ExecutionStatus(response['Status'])
+
+    def download(self, file_name: str, path: str = None) -> None:
+        """
+        Download the training run
+
+        Args:
+            file_name (str): Name of the file to download
+            path (str, optional): Path to the folder to download the file. Defaults to None.
+        """
+
+        if path is None:
+            path = './'
+
+        if not path.endswith('/'):
+            file_name = f'/{file_name}'
+
+        full_path = pathlib.Path(f'{path}{file_name}')
+
+        content = result(
+            group=self.experiment.group,
+            execution_id=self.execution_id,
+            headers=self.auth.header,
+        )
+
+        with open(full_path, 'wb') as f:
+            f.write(content)
 
 
 class CustomTrain(BaseModel):

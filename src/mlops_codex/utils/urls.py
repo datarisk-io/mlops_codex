@@ -31,3 +31,4 @@ class TrainingUrl(StrEnum):
     DESCRIBE_EXECUTION_URL = (
         f'{BASE_URL}/training/describe/{{group_name}}/{{training_hash}}/{{execution_id}}'
     )
+    RESULT_URL = f'{BASE_URL}/training/result/{{group_name}}/{{execution_id}}'

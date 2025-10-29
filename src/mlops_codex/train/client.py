@@ -240,3 +240,29 @@ def describe_execution(
     )
 
     return response.json()
+
+
+def result(
+    group: str,
+    execution_id: int,
+    headers: dict,
+) -> bytes:
+    """
+
+    Args:
+        group (str): Group name where the experiment will be registered
+        execution_id (int): Training execution id
+        headers (dict): HTTP headers
+
+    Returns:
+        (bytes): 
+    """
+
+    response = send_http_request(
+        url=TrainingUrl.RESULT_URL.format(group_name=group, execution_id=execution_id),
+        method='GET',
+        successful_code=HTTPStatus.OK,
+        headers=headers,
+    )
+
+    return response.content
