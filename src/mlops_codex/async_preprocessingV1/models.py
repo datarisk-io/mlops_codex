@@ -8,6 +8,8 @@ class NeomarilAsyncPreprocessingV1(BaseModel):
     Attributes:
         hash (str): Neomaril unique identifier.
         group_name (str): Neomaril group name.
+        status (str): The status of a `NeomarilAsyncPreprocessingV1`.
+        python_version (str): The `python_version` of a `NeomarilAsyncPreprocessingV1`.
     """
 
     hash: str = Field(description="Unique hash identifier", alias="Hash")

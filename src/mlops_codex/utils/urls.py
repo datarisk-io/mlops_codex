@@ -46,3 +46,14 @@ class AsyncPreprocessingUrlV1(StrEnum):
     SEARCH_URL = f'{BASE_URL}/preprocessing/search'
     RUN_URL = f'{BASE_URL}/preprocessing/async/run/{{group_name}}/{{script_hash}}'
     STATUS_EXECUTION_URL = f'{BASE_URL}/preprocessing/async/status/{{group_name}}/{{execution_id}}'
+
+
+class AsyncPreprocessingUrlV2(StrEnum):
+    REGISTER_URL = f'{BASE_URL}/v2/preprocessing/{{group_name}}'
+    REGISTER_REQUIREMENTS_URL = f'{BASE_URL}/v2/preprocessing/{{script_hash}}/requirements-file'
+    REGISTER_SCHEMA_URL = f'{BASE_URL}/v2/preprocessing/{{script_hash}}/schema'
+    REGISTER_SCRIPT_URL = f'{BASE_URL}/v2/preprocessing/{{script_hash}}/script-file'
+    REGISTER_ENV_URL = f'{BASE_URL}/v2/preprocessing/{{script_hash}}/env-file'
+    REGISTER_EXTRAS_URL = f'{BASE_URL}/v2/preprocessing/{{script_hash}}/extra-file'
+    STATUS_HOST_URL = f'{BASE_URL}/v2/preprocessing/{{script_hash}}/status'
+    DESCRIBE_URL = f'{BASE_URL}/v2/preprocessing/{{script_hash}}'

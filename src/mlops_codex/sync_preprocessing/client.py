@@ -14,23 +14,29 @@ from models import SyncPreprocessing, NeomarilSyncPreprocessing
 logger = get_logger()
 
 
-class InvalidPreprocessingError(Exception):
-    """Invalid preprocessing error."""
+class InvalidSyncPreprocessingError(Exception):
+    """Invalid sync preprocessing error."""
 
     def __init__(
         self,
-        message: str = "Not a valid Neomaril preprocessing instance. `register` or `use_exisisting_preprocessing`.",
+        message: str = """
+            Not a valid Neomaril sync preprocessing instance.
+            `register` or `use_exisisting_preprocessing` to use the current function.",
+        """,
     ) -> None:
         super().__init__(message)
         self.message = message
 
     def __str__(self):
-        return f"Could not send request, invalid Neomaril preprocessing instance."
+        return f"Could not send request, invalid Neomaril sync preprocessing instance."
 
 
 class SyncPreprocessingClient(BaseModel):
     """
-    Preprocessing base client.
+    Client to handle all `SyncPreprocessing` Neomaril operations.
+
+    Args:
+        - bearer_token: a valid Neomaril bearer token.
     """
 
     bearer_token: str = Field(description="Neomaril session token")
@@ -38,11 +44,13 @@ class SyncPreprocessingClient(BaseModel):
 
     def register(self, sp: SyncPreprocessing) -> NeomarilSyncPreprocessing:
         """
-        List all MLOps groups the user has access to.
+        Register a new `syncPreprocessing` in Neomaril.
+
+        Args:
+            - sp(SyncPreprocessing): a valid `SyncPreprocessing`.
 
         Returns:
-            list[str]: List of MLOps groups the user has access to.
-
+            NeomarilSyncPreprocessing: a `created` Neomaril sync preprocessing entity.
         """
         logger.debug("Opening files to send.")
 
@@ -51,6 +59,13 @@ class SyncPreprocessingClient(BaseModel):
             "requirements": open(sp.requirements_file_path, "rb"),
             "schema": open(sp.schema_file_path, "rb"),
         }
+
+        if sp.env_file_path is not None:
+            files["env"] = open(sp.env_file_path, "rb")
+
+        if sp.extra_file_paths is not None:
+            for extra_file in sp.extra_file_paths:
+                files["extra"] = open(extra_file, "rb")
 
         data = {
             "script_reference": sp.script_reference,
@@ -90,6 +105,9 @@ class SyncPreprocessingClient(BaseModel):
     def use_existing_preprocessing(self, nps: NeomarilSyncPreprocessing):
         """
         Set a existing sync preprocessing.
+
+        Args:
+            - nps(NeomarilSyncPreprocessing): a `search` neomaril preprocessing.
         """
 
         self.__neomaril_sync_preprocessing = nps
@@ -100,7 +118,7 @@ class SyncPreprocessingClient(BaseModel):
         """
 
         if self.__neomaril_sync_preprocessing is None:
-            raise InvalidPreprocessingError()
+            raise InvalidSyncPreprocessingError()
 
         response = send_http_request(
             url=SyncPreprocessingUrl.STATUS_HOST_URL.format(
@@ -124,7 +142,7 @@ class SyncPreprocessingClient(BaseModel):
         """
 
         if self.__neomaril_sync_preprocessing is None:
-            raise InvalidPreprocessingError()
+            raise InvalidSyncPreprocessingError()
 
         response = send_http_request(
             url=SyncPreprocessingUrl.LOGS_URL.format(
@@ -144,11 +162,11 @@ class SyncPreprocessingClient(BaseModel):
 
     def describe(self) -> str:
         """
-        Get logs of a `sync preprocessing`.
+        Describe (get information) of a `sync preprocessing`.
         """
 
         if self.__neomaril_sync_preprocessing is None:
-            raise InvalidPreprocessingError()
+            raise InvalidSyncPreprocessingError()
 
         response = send_http_request(
             url=SyncPreprocessingUrl.DESCRIBE_URL.format(
@@ -168,11 +186,11 @@ class SyncPreprocessingClient(BaseModel):
 
     def host(self) -> dict[str, object]:
         """
-        Get logs of a `sync preprocessing`.
+        Start the `host` process of a `sync preprocessing`.
         """
 
         if self.__neomaril_sync_preprocessing is None:
-            raise InvalidPreprocessingError()
+            raise InvalidSyncPreprocessingError()
 
         response = send_http_request(
             url=SyncPreprocessingUrl.HOST_URL.format(
@@ -192,7 +210,7 @@ class SyncPreprocessingClient(BaseModel):
 
     def search(self) -> list[NeomarilSyncPreprocessing]:
         """
-        Search for Sync preprocessings.
+        Search (list) for Sync preprocessings.
         """
         response = send_http_request(
             url=f"{SyncPreprocessingUrl.SEARCH_URL}?operation=Sync",
@@ -210,10 +228,13 @@ class SyncPreprocessingClient(BaseModel):
     def run(self, input_str: str, group_token: str) -> dict[str, object]:
         """
         Run a `sync Preprocessing` with `input_json` and `group_token`.
+        Args:
+            - input_str(str): the input of the `preprocessing` to run.
+            - group_token(str): the group token.
         """
 
         if self.__neomaril_sync_preprocessing is None:
-            raise InvalidPreprocessingError()
+            raise InvalidSyncPreprocessingError()
 
         response = send_http_request(
             url=SyncPreprocessingUrl.RUN_URL.format(

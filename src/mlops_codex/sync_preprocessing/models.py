@@ -6,12 +6,16 @@ from pathlib import Path
 
 
 def is_valid_filepath(path: Path) -> bool:
-    path.exists()
+    return path.exists()
+
+
+def is_valid_filepaths(paths: list[Path]) -> bool:
+    return all([is_valid_filepath(path) for path in paths])
 
 
 class SyncPreprocessing(BaseModel):
     """
-    A representation for `syncPreprocessings`.
+    A representation for `syncPreprocessing`s.
 
     Attributes:
         name (str): human identifier.
@@ -21,6 +25,8 @@ class SyncPreprocessing(BaseModel):
         source_file_path (str): path to a valid file.
         requirements_file_path (str): path to a valid file.
         schema_file_path (str): path to a valid file.
+        env_file_path (Optional[str]): optional path to a valid file.
+        extra_file_paths (Optional[list[str]]): optional list of valid path files.
     """
 
     name: str = Field(description="Preprocessing human identifier.")
@@ -49,14 +55,29 @@ class SyncPreprocessing(BaseModel):
         AfterValidator(is_valid_filepath),
     ]
 
+    env_file_path: Path | None = Annotated[
+        Path | None,
+        Field(description="Path to the .env file."),
+        AfterValidator(is_valid_filepath),
+    ]
+
+    extra_file_paths: list[Path] | None = Annotated[
+        list[Path] | None,
+        Field(description="Path to the .env file."),
+        AfterValidator(is_valid_filepaths),
+        default,
+    ]
+
 
 class NeomarilSyncPreprocessing(BaseModel):
     """
-    A created `syncPreprocessing`.
+    A neomaril `syncPreprocessing`.
 
     Attributes:
         hash (str): Neomaril unique identifier.
         group_name (str): Neomaril group name.
+        status(str): Neomaril preproc status.
+        python_version(str): Neomaril python version.
     """
 
     hash: str = Field(description="Unique hash identifier", alias="Hash")

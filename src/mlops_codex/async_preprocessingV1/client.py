@@ -17,12 +17,12 @@ from models import NeomarilAsyncPreprocessingV1
 logger = get_logger()
 
 
-class InvalidPreprocessingError(Exception):
+class InvalidAsyncPreprocessingError(Exception):
     """Invalid preprocessing error."""
 
     def __init__(
         self,
-        message: str = "Not a valid Neomaril preprocessing instance. `use_exisisting_preprocessing`.",
+        message: str = "Not a valid Neomaril async preprocessing instance. `use_exisisting_preprocessing`.",
     ) -> None:
         super().__init__(message)
         self.message = message
@@ -33,7 +33,10 @@ class InvalidPreprocessingError(Exception):
 
 class AsyncPreprocessingClientV1(BaseModel):
     """
-    Async preprocessing base client.
+    Async preprocessing client class.
+
+    Args:
+        - bearer_token: a valid Neomaril bearer token.
     """
 
     bearer_token: str = Field(description="Neomaril session token")
@@ -42,17 +45,20 @@ class AsyncPreprocessingClientV1(BaseModel):
     def use_existing_preprocessing(self, npa: NeomarilAsyncPreprocessingV1):
         """
         Set a existing sync preprocessing.
+
+        Args:
+            - npa (NeomarilAsyncPreprocessingV1): a `search` neomaril preprocessing.
         """
 
         self.__neomaril_async_preprocessing = npa
 
     def get_status(self) -> str:
         """
-        Get host status of a `sync preprocessing`.
+        Get host status of a `async preprocessing`.
         """
 
         if self.__neomaril_async_preprocessing is None:
-            raise InvalidPreprocessingError()
+            raise InvalidAsyncPreprocessingError()
 
         response = send_http_request(
             url=AsyncPreprocessingUrlV1.STATUS_HOST_URL.format(
@@ -72,11 +78,11 @@ class AsyncPreprocessingClientV1(BaseModel):
 
     def get_logs(self) -> str:
         """
-        Get logs of a `sync preprocessing`.
+        Get logs of a `async preprocessing`.
         """
 
         if self.__neomaril_async_preprocessing is None:
-            raise InvalidPreprocessingError()
+            raise InvalidAsyncPreprocessingError()
 
         response = send_http_request(
             url=AsyncPreprocessingUrlV1.LOGS_URL.format(
@@ -96,11 +102,11 @@ class AsyncPreprocessingClientV1(BaseModel):
 
     def describe(self) -> str:
         """
-        Get logs of a `sync preprocessing`.
+        Describe (get information) a `async preprocessing`.
         """
 
         if self.__neomaril_async_preprocessing is None:
-            raise InvalidPreprocessingError()
+            raise InvalidAsyncPreprocessingError()
 
         response = send_http_request(
             url=AsyncPreprocessingUrlV1.DESCRIBE_URL.format(
@@ -120,11 +126,11 @@ class AsyncPreprocessingClientV1(BaseModel):
 
     def host(self) -> dict[str, object]:
         """
-        Get logs of a `sync preprocessing`.
+        Start the `host` process of a `async preprocessing`.
         """
 
         if self.__neomaril_async_preprocessing is None:
-            raise InvalidPreprocessingError()
+            raise InvalidAsyncPreprocessingError()
 
         response = send_http_request(
             url=AsyncPreprocessingUrlV1.HOST_URL.format(
@@ -144,7 +150,7 @@ class AsyncPreprocessingClientV1(BaseModel):
 
     def search(self) -> list[NeomarilAsyncPreprocessingV1]:
         """
-        Search for Sync preprocessings.
+        Search (list) for `async preprocessing`s.
         """
         logger.debug("Sending search request to neomaril.")
 
@@ -161,12 +167,18 @@ class AsyncPreprocessingClientV1(BaseModel):
 
         return [NeomarilAsyncPreprocessingV1(**sp) for sp in response.json()["Results"]]
 
-    def get_execution_status(self, execution_id: int, group_token: str):
+    def get_execution_status(
+        self, execution_id: int, group_token: str
+    ) -> dict[str, object]:
         """
-        Get status of `execution_id`.
+        Get status of `execution_id`, with the given `execution_id` and `group_token`.
+
+        Args:
+            - execution_id(int): the `execution id`.
+            - group_token(str): the group token.
         """
         if self.__neomaril_async_preprocessing is None:
-            raise InvalidPreprocessingError()
+            raise InvalidAsyncPreprocessingError()
 
         response = send_http_request(
             url=AsyncPreprocessingUrlV1.STATUS_EXECUTION_URL.format(
@@ -184,25 +196,22 @@ class AsyncPreprocessingClientV1(BaseModel):
 
         return response.json()
 
-    def __wait_for_execution(self, execution_id: int, group_token: str):
+    def __wait_for_execution(
+        self, execution_id: int, group_token: str
+    ) -> dict[str, object]:
         """
         Check the execution status of the preprocessing script every 30 seconds.
 
-        Parameters
-        ----------
-        execution_id: int
-            Execution id of the preprocessing script.
-
-        Returns
-        -------
-        Tuple[ModelExecutionState, Union[str, None]]
-            Status of the execution of the preprocessing script. If the execution is successful, the output dataset hash is also returned.
+        Args:
+            execution_id(int): execution id of the preprocessing script.
         """
         status_response = self.get_execution_status(execution_id, group_token)
         status = status_response["Status"]
 
         print("Waiting for preprocessing script to finish", end="")
-        while (status == ModelExecutionState.Running) or (status == ModelExecutionState.Requested):
+        while (status == ModelExecutionState.Running) or (
+            status == ModelExecutionState.Requested
+        ):
             sleep(30)
             print("aq")
             status_response = self.get_execution_status(execution_id, group_token)
@@ -218,17 +227,19 @@ class AsyncPreprocessingClientV1(BaseModel):
         )
         return status_response
 
-    def run_with_dataset(self, dataset_hash: Path, group_token: str, waitForReady: bool = False) -> dict[str, object]:
+    def run_with_dataset(
+        self, dataset_hash: Path, group_token: str, waitForReady: bool = False
+    ) -> dict[str, object]:
         """
         Run a `async Preprocessing` with `dataset_hash`.
         """
 
         if self.__neomaril_async_preprocessing is None:
-            raise InvalidPreprocessingError()
+            raise InvalidAsyncPreprocessingError()
 
-        data = { "dataset_hash": dataset_hash }
+        data = {"dataset_hash": dataset_hash}
 
-        logger.debug("found dataset file, sending request to neomaril.")
+        logger.debug(f"sending a `run` with `dataset_hash`, {dataset_hash}")
 
         response = send_http_request(
             url=AsyncPreprocessingUrlV1.RUN_URL.format(
@@ -250,16 +261,18 @@ class AsyncPreprocessingClientV1(BaseModel):
             return self.__wait_for_execution(execution_id, group_token)
         return response.json()
 
-    def run_with_file(self, input_file_path: Path, group_token: str, waitForReady: bool = False) -> dict[str, object]:
+    def run_with_file(
+        self, input_file_path: Path, group_token: str, waitForReady: bool = False
+    ) -> dict[str, object]:
         """
         Run a `async Preprocessing` with `input_file_path`.
         """
 
         if self.__neomaril_async_preprocessing is None:
-            raise InvalidPreprocessingError()
+            raise InvalidAsyncPreprocessingError()
 
         if input_file_path.exists():
-            files = { "dataset": open(input_file_path, "rb") }
+            files = {"dataset": open(input_file_path, "rb")}
 
             logger.debug("found dataset file, sending request to neomaril.")
 
@@ -275,7 +288,7 @@ class AsyncPreprocessingClientV1(BaseModel):
                     "Neomaril-Origin": "Codex",
                     "Neomaril-Method": self.get_status.__qualname__,
                 },
-                files=files
+                files=files,
             )
 
             if waitForReady:
@@ -286,4 +299,3 @@ class AsyncPreprocessingClientV1(BaseModel):
         else:
             logger.debug(f"file: {input_file_path} doesn't exists")
             return None
-
