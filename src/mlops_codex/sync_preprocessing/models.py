@@ -1,4 +1,4 @@
-from typing import Any, Annotated
+from typing import Any, Annotated, Optional
 
 from pydantic import BaseModel, Field, AfterValidator
 
@@ -55,17 +55,17 @@ class SyncPreprocessing(BaseModel):
         AfterValidator(is_valid_filepath),
     ]
 
-    env_file_path: Path | None = Annotated[
-        Path | None,
+    env_file_path: Annotated[
+        Path,
         Field(description="Path to the .env file."),
         AfterValidator(is_valid_filepath),
-    ]
+    ] = None
 
-    extra_file_paths: list[Path] | None = Annotated[
-        list[Path] | None,
+    extra_file_paths: Annotated[
+        list[Path],
         Field(description="Path to the .env file."),
-        AfterValidator(is_valid_filepaths)
-    ]
+        AfterValidator(is_valid_filepaths),
+    ] = None
 
 
 class NeomarilSyncPreprocessing(BaseModel):
