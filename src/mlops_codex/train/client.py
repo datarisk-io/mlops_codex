@@ -181,3 +181,62 @@ def search(
         params=params,
     )
     return response.json()
+
+
+def describe(
+    group: str,
+    training_hash: str,
+    headers: dict,
+):
+    """
+    Get experiment details
+
+    Args:
+        group (str): Group name where the experiment were be registered
+        training_hash (str): Training hash
+        headers (dict): HTTP headers
+
+    Returns:
+        (dict): json with experiment details
+    """
+
+    response = send_http_request(
+        url=TrainingUrl.DESCRIBE_URL.format(
+            group_name=group, training_hash=training_hash
+        ),
+        method='GET',
+        successful_code=HTTPStatus.OK,
+        headers=headers,
+    )
+
+    return response.json()
+
+
+def describe_execution(
+    group: str,
+    training_hash: str,
+    execution_id: int,
+    headers: dict,
+) -> dict:
+    """
+    Get execution details
+
+    Args:
+        group (str): Group name where the experiment will be registered
+        training_hash (str): Training hash
+        execution_id (int): Training execution id
+        headers (dict): HTTP headers
+
+    Returns:
+        (dict): json with experiment details
+    """
+    response = send_http_request(
+        url=TrainingUrl.DESCRIBE_EXECUTION_URL.format(
+            group_name=group, training_hash=training_hash, execution_id=execution_id
+        ),
+        method='GET',
+        successful_code=HTTPStatus.OK,
+        headers=headers,
+    )
+
+    return response.json()

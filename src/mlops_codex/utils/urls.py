@@ -26,6 +26,8 @@ class TrainingUrl(StrEnum):
     PROMOTE_URL = (
         f'{BASE_URL}/training/promote/{{group_name}}/{{training_hash}}/{{execution_id}}'
     )
-    SEARCH_URL = (
-        f'{BASE_URL}/training/search'
+    SEARCH_URL = f'{BASE_URL}/training/search'
+    DESCRIBE_URL = f'{BASE_URL}/training/describe/{{group_name}}/{{training_hash}}'
+    DESCRIBE_EXECUTION_URL = (
+        f'{BASE_URL}/training/describe/{{group_name}}/{{training_hash}}/{{execution_id}}'
     )

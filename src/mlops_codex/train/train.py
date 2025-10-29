@@ -8,7 +8,16 @@ from mlops_codex.train.assemblers import (
     assemble_custom_request_content,
     assemble_external_training_request_content,
 )
-from mlops_codex.train.client import execute, register, status, upload, promote, search
+from mlops_codex.train.client import (
+    execute,
+    register,
+    status,
+    upload,
+    promote,
+    search,
+    describe,
+    describe_execution,
+)
 from mlops_codex.train.models import MLOpsExperiment, MLOpsTrainExecution
 from mlops_codex.train.validators import is_valid_model_type
 from mlops_codex.utils.helpers import wait
@@ -209,3 +218,64 @@ class MLOpsTrainClient(BaseModel):
             headers=self.auth.header,
         )
         return model_hash
+
+    def load_experiment(self, training_hash: str, group: str) -> MLOpsExperiment:
+        """
+        Access a model using its hash and group
+
+        Args:
+            training_hash (str): Training hash
+            group (str): Group where the experiment will be loaded
+
+        Returns:
+            (MLOpsExperiment): Experiment loaded
+        """
+        json_data = describe(
+            group=group,
+            training_hash=training_hash,
+            headers=self.auth.header,
+        )
+
+        description = json_data['Description']
+
+        return MLOpsExperiment(
+            training_hash=training_hash,
+            experiment_name=description['ExperimentName'],
+            model_type=description['ModelType'],
+            group=group,
+        )
+
+    def load_training_execution(
+        self, group: str, training_hash: str, execution_id: str | int
+    ) -> MLOpsTrainExecution:
+        """
+        Load a training execution instance
+
+        Args:
+            group (str): Group where the execution will be loaded
+            training_hash (str): Training hash
+            execution_id (str | int): Training execution ID
+
+        Returns:
+            (MLOpsTrainExecution): Training execution loaded
+        """
+        json_data = describe_execution(
+            group=group,
+            training_hash=training_hash,
+            execution_id=execution_id,
+            headers=self.auth.header,
+        )
+
+        description = json_data['Description']
+        experiment = MLOpsExperiment(
+            training_hash=description['TrainingHash'],
+            experiment_name=description['ExperimentName'],
+            model_type=description['ModelType'],
+            group=group,
+        )
+
+        return MLOpsTrainExecution(
+            experiment=experiment,
+            execution_id=description['ExecutionId'],
+            auth=self.auth,
+        )
