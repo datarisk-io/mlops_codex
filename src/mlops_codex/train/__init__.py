@@ -1,7 +1,14 @@
 from typing import Union
 
-from .models import CustomTrain, External, MLOpsExperiment, MLOpsTrainExecution
+from .models import AutoMLTrain, CustomTrain, External, MLOpsExperiment, MLOpsTrainExecution
 
-TrainExecution = Union[MLOpsTrainExecution, CustomTrain, External]
+TrainExecution = Union[AutoMLTrain, CustomTrain, External, MLOpsTrainExecution]
 
-__all__ = ['MLOpsExperiment', 'MLOpsTrainExecution', 'CustomTrain', 'TrainExecution']
+__all__ = [
+    'MLOpsExperiment',
+    'MLOpsTrainExecution',
+    'CustomTrain',
+    'TrainExecution',
+    'AutoMLTrain',
+    'External',
+]
