@@ -255,7 +255,7 @@ def result(
         headers (dict): HTTP headers
 
     Returns:
-        (bytes): 
+        (bytes): Content in bytes
     """
 
     response = send_http_request(

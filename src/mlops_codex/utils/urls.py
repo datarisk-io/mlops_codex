@@ -7,6 +7,7 @@ class AdminUrl(StrEnum):
     """
     Url for administration endpoints
     """
+
     LOGIN_URL = f'{BASE_URL}/login'
     LIST_GROUP_URL = f'{BASE_URL}/groups'
     CREATE_GROUP_URL = f'{BASE_URL}/groups'
@@ -17,6 +18,7 @@ class TrainingUrl(StrEnum):
     """
     Url for training endpoints
     """
+
     REGISTER_URL = f'{BASE_URL}/training/register/{{group_name}}'
     UPLOAD_URL = f'{BASE_URL}/training/upload/{{group_name}}/{{training_hash}}'
     EXECUTE_URL = (
@@ -28,7 +30,5 @@ class TrainingUrl(StrEnum):
     )
     SEARCH_URL = f'{BASE_URL}/training/search'
     DESCRIBE_URL = f'{BASE_URL}/training/describe/{{group_name}}/{{training_hash}}'
-    DESCRIBE_EXECUTION_URL = (
-        f'{BASE_URL}/training/describe/{{group_name}}/{{training_hash}}/{{execution_id}}'
-    )
+    DESCRIBE_EXECUTION_URL = f'{BASE_URL}/training/describe/{{group_name}}/{{training_hash}}/{{execution_id}}'
     RESULT_URL = f'{BASE_URL}/training/result/{{group_name}}/{{execution_id}}'
