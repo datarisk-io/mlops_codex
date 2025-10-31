@@ -5,14 +5,11 @@ description = "A Python SDK for interacting with the DataRisk MLOps API"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "cloudpickle>=3.1.1",
-    "lazy-imports>=1.0.1",
+    "cachetools==6.2.1",
     "loguru>=0.7.3",
-    "pandas>=2.3.3",
-    "plotly>=6.3.1",
-    "pydantic>=2.12.0",
+    "pydantic-core==2.41.4",
+    "pydantic[email]==2.12.3",
     "requests==2.32.5",
-    "seaborn>=0.13.2",
 ]
 license = "MIT"
 license-files = ["LICENSE.txt"]
@@ -35,13 +32,14 @@ exclude = [
 [tool.hatch.build.targets.wheel]
 packages = ["src/mlops_codex"]
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
+    "isort==7.0.0",
     "m2r2==0.3.4",
     "pydata-sphinx-theme==0.16.1",
-    "pyright>=1.1.406",
-    "ruff>=0.14.0",
-    "sphinx==8.2.3",
+    "pyright==1.1.406",
+    "ruff==0.14.0",
+    "sphinx==8.1.3",
     "taskipy>=1.14.1",
 ]
 

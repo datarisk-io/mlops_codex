@@ -21,7 +21,7 @@ from mlops_codex.exceptions import (
 from mlops_codex.http_request_handler import make_request, refresh_token
 from mlops_codex.logger_config import get_logger
 from mlops_codex.preprocessing import MLOpsPreprocessing
-from mlops_codex.validations import (
+from mlops_codex.utils.validations import (
     file_extension_validation,
     validate_data,
     validate_group_existence,

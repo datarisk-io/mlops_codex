@@ -43,32 +43,35 @@ The available options for model types are:
 Creating the training experiment
 --------------------------------
 
-We can create the experiment using the :py:meth:`mlops_codex.training.MLOpsTrainingClient.create_training_experiment` method.
+To create a new experiment, you must access the interface provided as shown in the example below.
 
 .. code-block:: python
 
-    # Import the client
-    from mlops_codex.training import MLOpsTrainingClient
+    from mlops_codex.administrator import DatariskMLops
 
-    # Start the client
-    training_client = MLOpsTrainingClient()
-
-    # Creating a new training experiment
-    training = training_client.create_training_experiment(
-        experiment_name='Teste notebook',
-        model_type='Classification',
-        group='datarisk',
-        force=False
+    client = DatariskMLops(
+        email="<email>",
+        password="<password>",
+        tenant="<tenant>"
     )
 
+    experiment = client.train.setup_project_experiment(
+        experiment_name='experimentName',
+        model_type='Classification',
+        group='<group>',
+    )
+
+The method returns an instance of the class :py:class:`mlops_codex.train.models.MLOpsExperiment`, which allows you to create multiple executions that function as versions of the main experiment.
 
 
-The method returns an instance of the class :py:class:`mlops_codex.training.MLOpsTrainingExperiment`, which allows you to create multiple executions that function as versions of the main experiment.
-You must upload a dataset and your python script for your execution if it is a Custom experiment, or provide the configuration for the AutoML experiment.
+Train Models
+--------------
+
+The datarisk-mlops-codex provides custom classes for each training type. Each class has its own necessary and optional files, allowing for better user control.
 
 
 Running a custom training execution
-----------------------------
+~~~~~~~~~~~~~~~
 
 For the custom experiment you need a entrypoint function like this:
 
@@ -172,26 +175,25 @@ Additionally, we also need environment information, such as the Python version a
 
 This structure ensures that all relevant details are logged and available for monitoring in MLOps, making the model's lifecycle transparent and manageable.
 
-Then we can call the :py:meth:`mlops_codex.training.MLOpsTrainingExperiment.run_training` method:
-
 .. code-block:: python
 
     # With the experiment class we can create multiple model runs
-    PATH = './samples/train/'
-
-    run1 = training.run_training(
-        run_name='First test', # Run name
-        train_data=PATH+'dados.csv', # Path to the file with training data
-        training_type='Custom', # Training type. Can be External, Custom or AutoML
-        source_file=PATH+'app.py', # Path of the source file
-        requirements_file=PATH+'requirements.txt', # Path of the requirements file, 
-        #env=PATH+'.env'  #  File for env variables (this will be encrypted in the server)
-        #extra_files=[PATH+'utils.py'], # List with extra files paths that should be uploaded along (they will be all in the same folder)
-        training_reference='train_model', # The name of the entrypoint function that is going to be called inside the source file 
-        python_version='3.9', # Can be 3.8 to 3.10
-        wait_complete=True
+    train_type = CustomTrain(
+        training_reference='train_model',
+        run_name='more test',
+        python_version='3.10',
+        input_data=PATH + 'dados.csv',
+        source=PATH + 'app.py',
+        requirements=PATH + 'requirements.txt',
     )
 
+    exe = client.train.run(
+        experiment=experiment,
+        train_type=train_type,
+        wait_ready=True
+    )
+
+    print(exe.status)
 
 Running an AutoML training execution
 ----------------------------
@@ -200,15 +202,19 @@ For the AutoML we just need the data and the configuration parameters. You can c
 
 .. code-block:: python
 
-    PATH = './samples/autoML/'
-
-    run2 = training.run_training(
-        run_name='First test', # Run name
-        training_type='Custom', # Training type. Can be External, Custom or AutoML
-        train_data=PATH+'dados.csv', # Path to the file with training data
-        conf_dict=PATH+'conf.json', # Path of the configuration file
-        wait_complete=True
+    train_type = AutoMLTrain(
+        run_name='autoMLTest',
+        input_data=PATH + 'dados.csv',
+        configuration=PATH + 'conf.json',
     )
+
+    exe = client.train.run(
+        experiment=experiment,
+        train_type=train_type,
+        wait_ready=True
+    )
+
+    print(exe.status)
 
 See an example of the a configuration file:
 
@@ -238,78 +244,31 @@ See the example below, using a python script to perform and save an External tra
 
 .. code-block:: python
 
-    from mlops_codex.training import MLOpsTrainingClient
-    import pandas as pd
-    from lightgbm import LGBMClassifier
-    from sklearn.impute import SimpleImputer
-    from sklearn.pipeline import make_pipeline
-    from sklearn.model_selection import cross_val_score
-    import matplotlib.pyplot as plt
+    train_type = External(
+        run_name='externalTest'
+        python_version='3.10'
+        features=PATH + 'features.parquet'
+        target=PATH + 'target.parquet'
+        output=PATH + 'output.parquet'
+        metrics=PATH + 'metrics.json'
+        model=PATH + 'model.pkl'
+        requirements=PATH + 'requirements.txt'
+        parameters=PATH + 'params.json'
+    )
 
-    # Start the model client
-    client = MLOpsTrainingClient()
+    exe = client.train.run(
+        experiment=experiment,
+        train_type=train_type,
+        wait_ready=True
+    )
 
-    # Create an experiment
-    training = client.create_training_experiment('Teste', 'Classification', group='datarisk')
-
-    # Your variables
-    base_path = './samples/train/'
-    df = pd.read_csv(base_path+"/dados.csv")
-    X = df.drop(columns=['target'])
-    y = df[["target"]]
-
-
-    plt.scatter(df["mean_radius"], df["mean_texture"])
-
-    # Graph Title
-    plt.title("Relação entre mean_radius e mean_texture")
-
-    # Config axis
-    plt.xlabel("mean_radius")
-    plt.ylabel("mean_texture")
-
-    fig = plt.gcf()
-
-    # Plot
-    plt.show()
-
-    # Build a pipeline
-    pipe = make_pipeline(SimpleImputer(), LGBMClassifier(force_col_wise=True))
-
-    # log the model and save the metrics and model output
-    with training.log_train('Teste 1', X, y) as logger:
-        pipe.fit(X, y)
-        logger.save_model(pipe)
-
-        logger.add_extra('./extra.txt')
-
-        logger.save_and_add_plot(fig, 'graphic1')
-        model_output = pd.DataFrame({"pred": pipe.predict(X), "proba": pipe.predict_proba(X)[:,1]})
-        logger.save_model_output(model_output)
-
-        auc = cross_val_score(pipe, X, y, cv=5, scoring="roc_auc")
-        f_score = cross_val_score(pipe, X, y, cv=5, scoring="f1")
-        logger.save_metric(name='auc', value=auc.mean())
-        logger.save_metric(name='f1_score', value=f_score.mean())
-
-        logger.set_python_version('3.10')
+    print(exe.status)
 
 
-Checking the execution results
+Downloading result
 ------------------------------
 
-The :py:meth:`mlops_codex.training.MLOpsTrainingExperiment.run_training` method returns an instance of the :py:class:`mlops_codex.training.MLOpsTrainingExecution` class.
-This class allows you to monitor the asynchronous execution of the specified experiment version and retrieve detailed information about its progress and status.
+You can download the result of a training execution
 
 .. code-block:: python
-
-    run1.get_status()
-    run1.execution_info()
-
-We can also download the results (model file and files saved in the `extra` key)
-
-.. code-block:: python
-
-    run1.download_result()
-
-If the model is good enough we can start the deploying process.
+    exe.download()
